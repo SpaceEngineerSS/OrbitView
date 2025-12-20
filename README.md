@@ -9,9 +9,9 @@
   [![Next.js](https://img.shields.io/badge/Next.js-16-black)](https://nextjs.org/)
   [![CesiumJS](https://img.shields.io/badge/CesiumJS-1.135-green)](https://cesium.com/)
   [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)](https://www.typescriptlang.org/)
-  [![Vercel](https://img.shields.io/badge/Deploy-Vercel-black?logo=vercel)](https://orbitview-five.vercel.app)
-
-  [Demo](https://orbitview-five.vercel.app) • [Features](#features) • [Quick Start](#quick-start) • [Documentation](#documentation) • [Scientific Validation](#scientific-validation) • [Contributing](#contributing)
+  [![Vercel Deployment](https://img.shields.io/badge/Deploy-Vercel-black?logo=vercel)](https://orbitview.vercel.app)
+  
+  [Documentation](#documentation) • [Features](#features) • [Quick Start](#quick-start) • [Scientific Validation](#scientific-validation) • [Contributing](#contributing)
 </div>
 
 ---
@@ -169,6 +169,13 @@ This project was developed by **Mehmet Gümüş**.
 - [CelesTrak](https://celestrak.org/) for satellite TLE data
 - [CesiumJS](https://cesium.com/) for the amazing 3D globe engine
 - [satellite.js](https://github.com/shashwatak/satellite-js) for orbital calculations
+
+---
+
+## 🚀 Live Demo
+
+You can test the latest stable version of OrbitView here:
+[**orbitview-five.vercel.app**](https://orbitview-five.vercel.app)
 
 ---
 
