@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import Link from "next/link";
 
 export default function NotFound() {
     useEffect(() => {
@@ -76,18 +77,18 @@ export default function NotFound() {
 
                 {/* Action Buttons */}
                 <div className="flex items-center justify-center gap-4">
-                    <a
+                    <Link
                         href="/"
                         className="px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-semibold rounded-xl hover:from-cyan-400 hover:to-blue-500 transition-all shadow-[0_0_30px_rgba(6,182,212,0.3)] hover:shadow-[0_0_40px_rgba(6,182,212,0.5)]"
                     >
                         Return to OrbitView
-                    </a>
-                    <a
+                    </Link>
+                    <Link
                         href="/"
                         className="px-6 py-3 bg-slate-800/50 border border-slate-700 text-slate-300 font-semibold rounded-xl hover:bg-slate-800 hover:border-slate-600 transition-all"
                     >
                         Track ISS
-                    </a>
+                    </Link>
                 </div>
 
                 {/* Coordinates */}

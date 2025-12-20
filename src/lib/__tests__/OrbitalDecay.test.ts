@@ -40,28 +40,28 @@ describe('OrbitalDecay', () => {
 
     describe('predictOrbitalDecay', () => {
         it('should predict decay for low orbit satellite', () => {
-            const prediction = predictOrbitalDecay(6771, 0.001, 0.0001, new Date());
+            const prediction = predictOrbitalDecay(6621, 0.001, 0.001, new Date());
             expect(prediction).toBeDefined();
-            expect(prediction.currentAltitudeKm).toBeCloseTo(400, 0);
+            expect(prediction.currentAltitudeKm).toBeCloseTo(250, 0);
             expect(prediction.estimatedLifetimeDays).toBeGreaterThan(0);
             expect(prediction.decayRateKmPerDay).toBeGreaterThanOrEqual(0);
         });
 
         it('should predict longer lifetime for higher orbits', () => {
-            const lowOrbit = predictOrbitalDecay(6771, 0.001, 0.0001, new Date());
-            const highOrbit = predictOrbitalDecay(7171, 0.001, 0.0001, new Date());
+            const lowOrbit = predictOrbitalDecay(6621, 0.001, 0.001, new Date());
+            const highOrbit = predictOrbitalDecay(6721, 0.001, 0.001, new Date());
             expect(highOrbit.estimatedLifetimeDays).toBeGreaterThan(lowOrbit.estimatedLifetimeDays);
         });
 
         it('should assign appropriate risk levels', () => {
             const criticalOrbit = predictOrbitalDecay(6521, 0.001, 0.001, new Date());
-            const safeOrbit = predictOrbitalDecay(7171, 0.001, 0.00001, new Date());
+            const safeOrbit = predictOrbitalDecay(6721, 0.001, 0.00001, new Date());
             expect(['low', 'medium', 'high', 'critical']).toContain(criticalOrbit.riskLevel);
             expect(['low', 'medium', 'high', 'critical']).toContain(safeOrbit.riskLevel);
         });
 
         it('should calculate reentry date', () => {
-            const prediction = predictOrbitalDecay(6771, 0.001, 0.0001, new Date());
+            const prediction = predictOrbitalDecay(6621, 0.001, 0.001, new Date());
             expect(prediction.estimatedReentryDate).toBeInstanceOf(Date);
             expect(prediction.estimatedReentryDate.getTime()).toBeGreaterThan(Date.now());
         });

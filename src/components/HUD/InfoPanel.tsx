@@ -325,7 +325,7 @@ const InfoPanel: React.FC<InfoPanelProps> = ({
         if (name.includes('DEBRIS') || name.includes('ROCKET BODY')) return { label: 'Debris', color: 'red', icon: ShieldAlert };
         if (name.includes('JWST')) return { label: 'Deep Space', color: 'amber', icon: Orbit };
         return { label: 'Satellite', color: 'cyan', icon: Satellite };
-    }, [object?.name]);
+    }, [object]);
 
     useEffect(() => {
         const checkMobile = () => setIsMobile(window.innerWidth < 768);

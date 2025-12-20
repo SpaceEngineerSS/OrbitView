@@ -95,11 +95,13 @@ describe('GroundTrack', () => {
         });
 
         it('should be more restrictive with higher elevation requirements', () => {
-            const inHorizon = isWithinFootprint(0, 0, 400, 20, 0, 0);
-            const in30deg = isWithinFootprint(0, 0, 400, 20, 0, 30);
-            // Observer at 20 degrees away might be in horizon but not in 30deg zone
+            const inHorizon = isWithinFootprint(0, 0, 400, 10, 0, 0);
+            const in30deg = isWithinFootprint(0, 0, 400, 10, 0, 30);
+
+            // Observer at 10 degrees away (~1100km) is within horizon footprint (~2200km)
             expect(inHorizon).toBe(true);
-            // 30 degree elevation is more restrictive
+            // But outside 30 degree elevation footprint (~600km)
+            expect(in30deg).toBe(false);
         });
     });
 });
