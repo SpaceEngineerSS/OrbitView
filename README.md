@@ -3,8 +3,8 @@
 <div align="center">
   <img src="public/orbitview-logo-full.png" alt="OrbitView Logo" width="600">
   
-  **Real-time satellite tracking and orbital analysis platform**
-
+ > **Advanced 3D Satellite Tracking & Orbital Mechanics Platform**  
+> Real-time visualization, pass prediction, and conjunction analysis powered by CesiumJS and SGP4.
   [![MIT License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
   [![Next.js](https://img.shields.io/badge/Next.js-16-black)](https://nextjs.org/)
   [![CesiumJS](https://img.shields.io/badge/CesiumJS-1.135-green)](https://cesium.com/)
