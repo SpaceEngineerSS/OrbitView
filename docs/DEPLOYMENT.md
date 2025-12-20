@@ -12,7 +12,7 @@ OrbitView is optimized for Vercel.
 4.  **Configure Environment Variables**:
     -   `SPACETRACK_USER`: Your Space-Track.org email (optional)
     -   `SPACETRACK_PASS`: Your Space-Track.org password (optional)
-    -   `NEXT_PUBLIC_APP_URL`: `https://orbitview.vercel.app`
+    -   `NEXT_PUBLIC_APP_URL`: `https://orbitview-five.vercel.app`
 5.  **Click Deploy**.
 
 ## 🐳 Docker Deployment (Self-Hosting)

@@ -17,7 +17,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "OrbitView - Real-time Satellite Tracking",
   description: "Track 5000+ satellites in real-time on an interactive 3D globe. Analyze orbits, predict passes, and explore space with scientific tools.",
-  metadataBase: new URL("https://orbitview.vercel.app"),
+  metadataBase: new URL("https://orbitview-five.vercel.app"),
   manifest: "/manifest.json",
   keywords: ["satellite tracking", "space", "orbit visualization", "ISS tracker", "starlink", "real-time", "3D globe", "orbital mechanics", "pass prediction", "astronomy"],
   authors: [{ name: "Mehmet Gümüş", url: "https://spacegumus.com.tr" }],
@@ -46,7 +46,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "OrbitView - Real-time Satellite Tracking",
     description: "Track 5000+ satellites in real-time. Interactive 3D globe with scientific analysis tools.",
-    url: "https://orbitview.vercel.app",
+    url: "https://orbitview-five.vercel.app",
     siteName: "OrbitView",
     images: [
       {
