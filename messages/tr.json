@@ -1,0 +1,147 @@
+{
+    "app": {
+        "title": "OrbitView",
+        "loading": "YÖRÜNGE GÖRÜNTÜLEYİCİ BAŞLATILIYOR...",
+        "loadingSatellites": "Uydu verileri yükleniyor..."
+    },
+    "sidebar": {
+        "search": "Uydu ara...",
+        "filter": {
+            "all": "Tümü",
+            "iss": "ISS",
+            "starlink": "Starlink",
+            "gps": "GPS",
+            "weather": "Meteoroloji",
+            "debris": "Uzay Çöpü"
+        },
+        "statistics": "İstatistikler",
+        "favorites": "Favoriler",
+        "noFavorites": "Henüz favori yok",
+        "noResults": "Uydu bulunamadı"
+    },
+    "infoPanel": {
+        "trackingActive": "TAKİP AKTİF",
+        "mountCamera": "KAMERA BAĞLA",
+        "unmount": "AYIR",
+        "analyze": "ANALİZ",
+        "telemetry": "Telemetri",
+        "orbitalData": "Yörünge Verisi",
+        "id": "ID",
+        "type": "TİP",
+        "signalStrength": "Sinyal Gücü",
+        "receptionQuality": "Alım Kalitesi",
+        "realTimeTelemetry": "Gerçek Zamanlı Telemetri",
+        "latitude": "ENLEM",
+        "longitude": "BOYLAM",
+        "altitude": "YÜKSEKLİK",
+        "velocity": "HIZ",
+        "acquiringSignal": "SİNYAL ALINIYOR...",
+        "signalIntegrity": "SİNYAL BÜTÜNLÜĞÜ",
+        "optimal": "OPTİMAL",
+        "orbitalElements": "Yörünge Elementleri",
+        "orbitalPeriod": "Yörünge Periyodu",
+        "apogee": "Apoapis",
+        "perigee": "Periapis",
+        "inclination": "Eğiklik",
+        "nextPass": "SONRAKİ GEÇİŞ",
+        "duration": "Süre",
+        "maxElevation": "Maks. Yükseklik"
+    },
+    "timeline": {
+        "play": "Oynat",
+        "pause": "Duraklat",
+        "speed": "Hız",
+        "realTime": "Gerçek Zaman",
+        "jumpToNow": "Şimdiye Atla"
+    },
+    "location": {
+        "title": "Gözlemci Konumu",
+        "subtitle": "Yer istasyonu konumunuzu belirleyin",
+        "useMyLocation": "Konumumu Kullan",
+        "detecting": "Tespit ediliyor...",
+        "quickSelect": "Hızlı Seçim",
+        "manualCoordinates": "Manuel Koordinatlar",
+        "latitude": "Enlem (°)",
+        "longitude": "Boylam (°)",
+        "altitude": "Yükseklik (m)",
+        "saveLocation": "Konumu Kaydet",
+        "locationUpdated": "Konum güncellendi",
+        "geolocationError": "Konum alınamadı",
+        "geolocationNotSupported": "Tarayıcınız konum özelliğini desteklemiyor",
+        "invalidLatitude": "Enlem -90 ile 90 arasında olmalıdır",
+        "invalidLongitude": "Boylam -180 ile 180 arasında olmalıdır"
+    },
+    "modeSwitch": {
+        "explorer": "Kaşif",
+        "analyst": "Analist"
+    },
+    "keyboard": {
+        "title": "Klavye Kısayolları",
+        "search": "Aramaya odaklan",
+        "favorite": "Favori ekle/çıkar",
+        "random": "Rastgele uydu",
+        "playPause": "Oynat/Duraklat",
+        "escape": "Panelleri kapat",
+        "help": "Kısayolları göster",
+        "analyst": "Analist Modunu Aç/Kapa"
+    },
+    "scientific": {
+        "dashboard": "Bilimsel Panel",
+        "doppler": "Doppler",
+        "decay": "Çürüme",
+        "conjunction": "Kavuşum",
+        "prediction": "Geçiş Tahmini",
+        "elements": "Elementler",
+        "semiMajorAxis": "Yarı Büyük Eksen",
+        "eccentricity": "Dışmerkezlik",
+        "raan": "Yükselen Düğüm Boylamı",
+        "argOfPerigee": "Perijee Argümanı",
+        "meanAnomaly": "Ortalama Anomali",
+        "meanMotion": "Ortalama Hareket",
+        "orbitType": "Yörünge Tipi"
+    },
+    "references": {
+        "title": "Referanslar ve Alıntılar",
+        "primarySources": "Birincil Kaynaklar",
+        "dataSources": "Veri Kaynakları",
+        "libraries": "Kütüphaneler",
+        "algorithms": "Algoritmalar",
+        "copyBibtex": "BibTeX Kopyala",
+        "copied": "Kopyalandı!"
+    },
+    "settings": {
+        "title": "Ayarlar",
+        "units": "Birimler",
+        "metric": "Metrik",
+        "imperial": "İngiliz",
+        "timeFormat": "Saat Formatı",
+        "theme": "Tema",
+        "dark": "Karanlık",
+        "system": "Sistem",
+        "maxSatellites": "Maks. Uydu Sayısı",
+        "orbitPathQuality": "Yörünge Yolu Kalitesi",
+        "showLabels": "Etiketleri Göster",
+        "showOrbits": "Yörüngeleri Göster",
+        "showGroundTrack": "Yer İzini Göster",
+        "showFootprint": "Ayak İzini Göster",
+        "enableLighting": "Aydınlatmayı Etkinleştir",
+        "enableAtmosphere": "Atmosferi Etkinleştir"
+    },
+    "footer": {
+        "builtWith": "ile yapıldı",
+        "forSpaceEnthusiasts": "uzay meraklıları için",
+        "dataFrom": "Veriler:",
+        "version": "Sürüm"
+    },
+    "common": {
+        "close": "Kapat",
+        "save": "Kaydet",
+        "cancel": "İptal",
+        "loading": "Yükleniyor...",
+        "error": "Hata",
+        "success": "Başarılı",
+        "minutes": "dakika",
+        "hours": "saat",
+        "days": "gün"
+    }
+}

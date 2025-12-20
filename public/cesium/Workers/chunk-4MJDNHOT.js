@@ -1,0 +1,1 @@
+import{f as t}from"./chunk-KWAHJ72S.js";var n=function(n){n=n??t.EMPTY_OBJECT,this.position=n.position,this.normal=n.normal,this.st=n.st,this.bitangent=n.bitangent,this.tangent=n.tangent,this.color=n.color};export{n as a};

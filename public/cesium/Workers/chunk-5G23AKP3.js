@@ -1,0 +1,2 @@
+import{e as t}from"./chunk-XRRBRTKL.js";function r(t){let r;this.name="RuntimeError",this.message=t;try{throw Error()}catch(t){r=t.stack}this.stack=r}t(Object.create)&&(r.prototype=Object.create(Error.prototype),r.prototype.constructor=r),r.prototype.toString=function(){let r=`${this.name}: ${this.message}`;return t(this.stack)&&(r+=`
+${this.stack.toString()}`),r};var e=r;export{e as a};

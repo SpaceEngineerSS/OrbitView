@@ -1,0 +1,1 @@
+var e=Object.freeze({NONE:0,TOP:1,ALL:2});export{e as a};

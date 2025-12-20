@@ -1,0 +1,147 @@
+{
+    "app": {
+        "title": "OrbitView",
+        "loading": "INITIALIZING ORBIT VIEWER...",
+        "loadingSatellites": "Loading satellite data..."
+    },
+    "sidebar": {
+        "search": "Search satellites...",
+        "filter": {
+            "all": "All",
+            "iss": "ISS",
+            "starlink": "Starlink",
+            "gps": "GPS",
+            "weather": "Weather",
+            "debris": "Debris"
+        },
+        "statistics": "Statistics",
+        "favorites": "Favorites",
+        "noFavorites": "No favorites yet",
+        "noResults": "No satellites found"
+    },
+    "infoPanel": {
+        "trackingActive": "TRACKING ACTIVE",
+        "mountCamera": "MOUNT CAMERA",
+        "unmount": "UNMOUNT",
+        "analyze": "ANALYZE",
+        "telemetry": "Telemetry",
+        "orbitalData": "Orbital Data",
+        "id": "ID",
+        "type": "TYPE",
+        "signalStrength": "Signal Strength",
+        "receptionQuality": "Reception Quality",
+        "realTimeTelemetry": "Real-time Telemetry",
+        "latitude": "LATITUDE",
+        "longitude": "LONGITUDE",
+        "altitude": "ALTITUDE",
+        "velocity": "VELOCITY",
+        "acquiringSignal": "ACQUIRING SIGNAL...",
+        "signalIntegrity": "SIGNAL INTEGRITY",
+        "optimal": "OPTIMAL",
+        "orbitalElements": "Orbital Elements",
+        "orbitalPeriod": "Orbital Period",
+        "apogee": "Apogee",
+        "perigee": "Perigee",
+        "inclination": "Inclination",
+        "nextPass": "NEXT PASS",
+        "duration": "Duration",
+        "maxElevation": "Max Elevation"
+    },
+    "timeline": {
+        "play": "Play",
+        "pause": "Pause",
+        "speed": "Speed",
+        "realTime": "Real-time",
+        "jumpToNow": "Jump to Now"
+    },
+    "location": {
+        "title": "Observer Location",
+        "subtitle": "Set your ground station position",
+        "useMyLocation": "Use My Location",
+        "detecting": "Detecting...",
+        "quickSelect": "Quick Select",
+        "manualCoordinates": "Manual Coordinates",
+        "latitude": "Latitude (°)",
+        "longitude": "Longitude (°)",
+        "altitude": "Altitude (m)",
+        "saveLocation": "Save Location",
+        "locationUpdated": "Location updated",
+        "geolocationError": "Unable to get location",
+        "geolocationNotSupported": "Geolocation is not supported by your browser",
+        "invalidLatitude": "Latitude must be between -90 and 90",
+        "invalidLongitude": "Longitude must be between -180 and 180"
+    },
+    "modeSwitch": {
+        "explorer": "Explorer",
+        "analyst": "Analyst"
+    },
+    "keyboard": {
+        "title": "Keyboard Shortcuts",
+        "search": "Focus search",
+        "favorite": "Toggle favorite",
+        "random": "Random satellite",
+        "playPause": "Toggle play/pause",
+        "escape": "Close panels",
+        "help": "Show shortcuts",
+        "analyst": "Toggle Analyst Mode"
+    },
+    "scientific": {
+        "dashboard": "Scientific Dashboard",
+        "doppler": "Doppler",
+        "decay": "Decay",
+        "conjunction": "Conjunction",
+        "prediction": "Pass Prediction",
+        "elements": "Elements",
+        "semiMajorAxis": "Semi-Major Axis",
+        "eccentricity": "Eccentricity",
+        "raan": "Right Ascension of Ascending Node",
+        "argOfPerigee": "Argument of Perigee",
+        "meanAnomaly": "Mean Anomaly",
+        "meanMotion": "Mean Motion",
+        "orbitType": "Orbit Type"
+    },
+    "references": {
+        "title": "References & Citations",
+        "primarySources": "Primary Sources",
+        "dataSources": "Data Sources",
+        "libraries": "Libraries",
+        "algorithms": "Algorithms",
+        "copyBibtex": "Copy BibTeX",
+        "copied": "Copied!"
+    },
+    "settings": {
+        "title": "Settings",
+        "units": "Units",
+        "metric": "Metric",
+        "imperial": "Imperial",
+        "timeFormat": "Time Format",
+        "theme": "Theme",
+        "dark": "Dark",
+        "system": "System",
+        "maxSatellites": "Max Satellites",
+        "orbitPathQuality": "Orbit Path Quality",
+        "showLabels": "Show Labels",
+        "showOrbits": "Show Orbits",
+        "showGroundTrack": "Show Ground Track",
+        "showFootprint": "Show Footprint",
+        "enableLighting": "Enable Lighting",
+        "enableAtmosphere": "Enable Atmosphere"
+    },
+    "footer": {
+        "builtWith": "Built with",
+        "forSpaceEnthusiasts": "for space enthusiasts",
+        "dataFrom": "Data from:",
+        "version": "Version"
+    },
+    "common": {
+        "close": "Close",
+        "save": "Save",
+        "cancel": "Cancel",
+        "loading": "Loading...",
+        "error": "Error",
+        "success": "Success",
+        "minutes": "minutes",
+        "hours": "hours",
+        "days": "days"
+    }
+}

@@ -1,0 +1,3 @@
+import{e as e}from"./chunk-XRRBRTKL.js";var r=function(r){let s,a=r.name,t=r.message;s=e(a)&&e(t)?`${a}: ${t}`:r.toString();let o=r.stack;return e(o)&&(s+=`
+${o}`),s},s=function(e){async function s({data:s}){let a=[],t={id:s.id,result:void 0,error:void 0};self.CESIUM_BASE_URL=s.baseUrl;try{t.result=await e(s.parameters,a)}catch(e){e instanceof Error?t.error={name:e.name,message:e.message,stack:e.stack}:t.error=e}s.canTransferArrayBuffer||(a.length=0);try{postMessage(t,a)}catch(e){t.result=void 0,t.error=`postMessage failed with error: ${r(e)}
+  with responseMessage: ${JSON.stringify(t)}`,postMessage(t)}}return self.onmessage=s,self.onmessageerror=function(e){postMessage({id:e.data?.id,error:`postMessage failed with error: ${JSON.stringify(e)}`})},self};export{s as a};
