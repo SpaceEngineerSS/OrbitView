@@ -18,7 +18,7 @@
 
 <div align="center">
   <p><b>Scientific Satellite Tracker & Orbital Analysis</b></p>
-  <img src="public/orbit.view.png" alt="OrbitView Demo" width="900">
+  <img src="public/orbitview.png" alt="OrbitView Demo" width="900">
 </div>
 
 ---
