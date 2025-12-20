@@ -9,17 +9,10 @@ import { SpaceObject } from "@/lib/space-objects";
 import * as satellite from "satellite.js";
 import { Compass, Smartphone } from "lucide-react";
 import { SensorManager } from "@/lib/SensorManager";
+import { AppSettings } from "./HUD/SettingsPanel";
 
 if (typeof window !== "undefined") {
   (window as any).CESIUM_BASE_URL = "/cesium";
-}
-
-interface GlobeSettings {
-  showGroundTrack?: boolean;
-  showFootprint?: boolean;
-  showNightShadow?: boolean;
-  showOrbitPaths?: boolean;
-  enableLOD?: boolean;
 }
 
 interface GlobeProps {
@@ -31,7 +24,7 @@ interface GlobeProps {
   filter?: string;
   searchQuery?: string;
   viewMode?: 'ORBIT' | 'SATELLITE_POV';
-  settings?: GlobeSettings;
+  settings?: AppSettings;
   observerPosition?: {
     latitude: number;
     longitude: number;
