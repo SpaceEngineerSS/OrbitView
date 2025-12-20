@@ -315,6 +315,18 @@ const InfoPanel: React.FC<InfoPanelProps> = ({
     const [isMobile, setIsMobile] = useState(false);
     const t = useTranslations();
 
+    // Detect satellite type for color coding - must be before early return
+    const satType = useMemo(() => {
+        if (!object) return { label: 'Satellite', color: 'cyan', icon: Satellite };
+        const name = object.name.toUpperCase();
+        if (name.includes('STARLINK')) return { label: 'Starlink', color: 'blue', icon: Rocket };
+        if (name.includes('ISS') || name.includes('ZARYA') || name.includes('TIANHE')) return { label: 'Station', color: 'purple', icon: Radio };
+        if (name.includes('GPS') || name.includes('NAVSTAR') || name.includes('GLONASS') || name.includes('GALILEO') || name.includes('BEIDOU')) return { label: 'GNSS', color: 'green', icon: Navigation };
+        if (name.includes('DEBRIS') || name.includes('ROCKET BODY')) return { label: 'Debris', color: 'red', icon: ShieldAlert };
+        if (name.includes('JWST')) return { label: 'Deep Space', color: 'amber', icon: Orbit };
+        return { label: 'Satellite', color: 'cyan', icon: Satellite };
+    }, [object?.name]);
+
     useEffect(() => {
         const checkMobile = () => setIsMobile(window.innerWidth < 768);
         checkMobile();
@@ -323,17 +335,6 @@ const InfoPanel: React.FC<InfoPanelProps> = ({
     }, []);
 
     if (!object) return null;
-
-    // Detect satellite type for color coding
-    const satType = useMemo(() => {
-        const name = object.name.toUpperCase();
-        if (name.includes('STARLINK')) return { label: 'Starlink', color: 'blue', icon: Rocket };
-        if (name.includes('ISS') || name.includes('ZARYA') || name.includes('TIANHE')) return { label: 'Station', color: 'purple', icon: Radio };
-        if (name.includes('GPS') || name.includes('NAVSTAR') || name.includes('GLONASS') || name.includes('GALILEO') || name.includes('BEIDOU')) return { label: 'GNSS', color: 'green', icon: Navigation };
-        if (name.includes('DEBRIS') || name.includes('ROCKET BODY')) return { label: 'Debris', color: 'red', icon: ShieldAlert };
-        if (name.includes('JWST')) return { label: 'Deep Space', color: 'amber', icon: Orbit };
-        return { label: 'Satellite', color: 'cyan', icon: Satellite };
-    }, [object.name]);
 
     const handleShare = async () => {
         const shareData = {
@@ -548,7 +549,7 @@ const InfoPanel: React.FC<InfoPanelProps> = ({
                                 <span className="text-xs font-bold text-purple-400">NEXT PASS</span>
                             </div>
                             <div className="font-mono text-sm text-white">
-                                {new Date(Date.now() + 3600000).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })} UTC
+                                ~1 hour from now UTC
                             </div>
                             <div className="text-[10px] text-purple-300 mt-1">Duration: ~8 minutes • Max Elevation: 45°</div>
                         </div>

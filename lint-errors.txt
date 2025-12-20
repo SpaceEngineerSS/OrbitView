@@ -1,0 +1,23 @@
+﻿node.exe : The compact
+ formatter is no longe
+r part of core ESLint.
+ Install it manually w
+ith `npm install -D es
+lint-formatter-compact
+`
+At C:\Program Files\no
+dejs\npx.ps1:29 char:3
++   & $NODE_EXE $NPX_C
+LI_JS $args
++   ~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~
+    + CategoryInfo    
+          : NotSpeci  
+  fied: (The compac   
+ t for...matter-co    
+mpact`:String) []    ,
+ RemoteException
+    + FullyQualifiedE 
+   rrorId : NativeCo  
+  mmandError
+ 
