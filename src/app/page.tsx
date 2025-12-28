@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useCallback, Suspense } from "react";
+import React, { useState, useEffect, useMemo, useCallback, Suspense, useRef } from "react";
 import dynamic from "next/dynamic";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import Sidebar from "@/components/HUD/Sidebar";
@@ -54,6 +54,7 @@ function PageContent() {
     const [telemetry, setTelemetry] = useState<any>(null);
     const [currentTime, setCurrentTime] = useState<Date | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const initialDeepLinkRef = useRef(false);
 
     // Sync selected satellite with URL
     useEffect(() => {
@@ -210,23 +211,26 @@ function PageContent() {
 
     // Deep Linking: Auto-select satellite from URL
     useEffect(() => {
-        if (satId && objects.length > 0 && !isLoading) {
-            const currentId = selectedObject?.id;
-            if (satId !== currentId) {
-                const sat = objects.find(o => o.id === satId);
-                if (sat) {
-                    setSelectedObject(sat);
-                    // Only toast on initial track or if triggered by link
-                    if (!currentId) {
-                        toast.info(`Tracking: ${sat.name}`, {
-                            icon: '🛰️',
-                            duration: 5000
-                        });
+        if (!initialDeepLinkRef.current && objects.length > 0 && !isLoading) {
+            initialDeepLinkRef.current = true;
+            if (satId) {
+                const currentId = selectedObject?.id;
+                if (satId !== currentId) {
+                    const sat = objects.find(o => o.id === satId);
+                    if (sat) {
+                        setSelectedObject(sat);
+                        // Only toast on initial track or if triggered by link
+                        if (!currentId) {
+                            toast.info(`Tracking: ${sat.name}`, {
+                                icon: '🛰️',
+                                duration: 5000
+                            });
+                        }
                     }
                 }
             }
         }
-    }, [satId, objects, isLoading]);
+    }, [satId, objects, isLoading, selectedObject?.id]);
 
     useEffect(() => {
         const timer = setInterval(() => {
