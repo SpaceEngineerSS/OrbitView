@@ -369,6 +369,32 @@ const InfoPanel: React.FC<InfoPanelProps> = ({
         downloadFile(csv, `${object.name.replace(/\s/g, '_')}_telemetry.csv`, 'text/csv');
     };
 
+    // Export full data as JSON
+    const handleExportJSON = () => {
+        const jsonData = {
+            satellite: {
+                name: object.name,
+                noradId: object.id,
+                type: object.type,
+                category: object.category || 'LEO',
+                tle: object.type === 'TLE' && object.tle ? {
+                    line1: object.tle.line1,
+                    line2: object.tle.line2
+                } : null
+            },
+            telemetry: telemetry ? {
+                timestamp: new Date().toISOString(),
+                latitude: telemetry.lat,
+                longitude: telemetry.lon,
+                altitude_km: telemetry.alt,
+                velocity_km_s: telemetry.velocity
+            } : null,
+            exportedAt: new Date().toISOString(),
+            source: 'OrbitView v2.0'
+        };
+        downloadFile(JSON.stringify(jsonData, null, 2), `${object.name.replace(/\s/g, '_')}_data.json`, 'application/json');
+    };
+
     // Helper to download file
     const downloadFile = (content: string, filename: string, type: string) => {
         const blob = new Blob([content], { type });
@@ -559,7 +585,7 @@ const InfoPanel: React.FC<InfoPanelProps> = ({
                             <h3 className="text-[10px] font-bold text-slate-500 uppercase mb-2 tracking-wider flex items-center gap-2">
                                 <Download size={12} /> Export Data
                             </h3>
-                            <div className="flex gap-2">
+                            <div className="flex gap-2 flex-wrap">
                                 {object.type === 'TLE' && object.tle && (
                                     <button
                                         onClick={handleExportTLE}
@@ -575,6 +601,13 @@ const InfoPanel: React.FC<InfoPanelProps> = ({
                                 >
                                     <Download size={14} />
                                     CSV
+                                </button>
+                                <button
+                                    onClick={handleExportJSON}
+                                    className="flex-1 flex items-center justify-center gap-2 py-2 px-3 bg-purple-500/10 border border-purple-500/30 rounded-lg text-purple-400 text-xs font-bold hover:bg-purple-500/20 transition-colors"
+                                >
+                                    <FileText size={14} />
+                                    JSON
                                 </button>
                             </div>
                         </div>

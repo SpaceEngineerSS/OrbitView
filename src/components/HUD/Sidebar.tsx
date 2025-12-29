@@ -549,14 +549,15 @@ const Sidebar: React.FC<SidebarProps> = ({
               dragConstraints={{ top: 0, bottom: 0 }}
               dragElastic={0.2}
               onDragEnd={handleDragEnd}
-              className="bottom-sheet bg-slate-950/95 backdrop-blur-xl border-t border-white/10 z-40 flex flex-col"
+              className="bottom-sheet bg-slate-950/80 backdrop-blur-2xl border-t border-white/5 z-40 flex flex-col shadow-2xl shadow-cyan-500/5"
+              style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
             >
               {/* Drag Handle */}
               <div
-                className="flex-shrink-0 cursor-grab active:cursor-grabbing py-3"
+                className="flex-shrink-0 cursor-grab active:cursor-grabbing py-4"
                 onPointerDown={(e) => dragControls.start(e)}
               >
-                <div className="bottom-sheet-handle" />
+                <div className="w-12 h-1.5 bg-white/20 rounded-full mx-auto" />
               </div>
 
               {/* Header */}

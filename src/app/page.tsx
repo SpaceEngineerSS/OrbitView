@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo, useCallback, Suspense, useRef } fr
 import dynamic from "next/dynamic";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import Sidebar from "@/components/HUD/Sidebar";
-import Timeline from "@/components/HUD/Timeline";
+import TimeScrubber from "@/components/Timeline/TimeScrubber";
 import KeyboardShortcutsModal from "@/components/HUD/KeyboardShortcutsModal";
 import ModeSwitch from "@/components/HUD/ModeSwitch";
 import InfoPanel, { TelemetryData } from "@/components/HUD/InfoPanel";
@@ -16,6 +16,9 @@ import Footer from "@/components/HUD/Footer";
 import SplashScreen from "@/components/HUD/SplashScreen";
 import ScientificDashboard from "@/components/Scientific/ScientificDashboard";
 import ReferencesModal from "@/components/HUD/ReferencesModal";
+import MissionControl from "@/components/HUD/MissionControl";
+import TelemetryDeck from "@/components/HUD/TelemetryDeck";
+import { useTimelineStore } from "@/store/timelineStore";
 import { fetchActiveSatellites } from "@/lib/tle";
 import { SpaceObject, convertToSpaceObject } from "@/lib/space-objects";
 import ErrorBoundary from "@/components/Common/ErrorBoundary";
@@ -300,12 +303,19 @@ function PageContent() {
     }, [selectedObject, toggleFavorite]);
 
     return (
-        <main className="w-full h-screen bg-black overflow-hidden relative" role="main" aria-label="OrbitView Satellite Tracker">
+        <main className="w-full h-screen bg-slate-950 overflow-hidden relative" role="main" aria-label="OrbitView Satellite Tracker">
             <SplashScreen isLoading={isLoading} loadedCount={objects.length} totalCount={13000} />
+
+            {/* Mission Control - Top HUD Bar */}
+            {!isLoading && (
+                <MissionControl
+                    satelliteCount={objects.length}
+                    isLoading={isLoading}
+                />
+            )}
 
             <ErrorBoundary className="z-0">
                 <Globe
-                    currentTime={currentTime}
                     objects={objects}
                     onSelect={handleSelectObject}
                     selectedObject={selectedObject}
@@ -334,10 +344,10 @@ function PageContent() {
                         }}
                         className="z-[200] bg-slate-900/90 backdrop-blur-md border border-cyan-500/30 px-3 py-1.5 rounded-lg shadow-2xl"
                     >
-                        <div className="text-[10px] text-cyan-500 font-bold uppercase tracking-widest mb-0.5">SATELLITE</div>
-                        <div className="text-white text-sm font-bold flex items-center gap-2">
+                        <div className="text-[10px] text-cyan-500 font-heading uppercase tracking-widest mb-0.5">SATELLITE</div>
+                        <div className="text-white text-sm font-heading flex items-center gap-2">
                             {hoveredObject.name}
-                            <span className="text-[10px] text-slate-500 font-mono">#{hoveredObject.id}</span>
+                            <span className="text-[10px] text-slate-500 font-data">#{hoveredObject.id}</span>
                         </div>
                     </motion.div>
                 )}
@@ -352,6 +362,14 @@ function PageContent() {
                 onToggleFavorite={toggleFavorite}
             />
 
+            {/* Telemetry Deck - Bottom HUD Panel */}
+            <TelemetryDeck
+                selectedObject={selectedObject}
+                telemetry={telemetry}
+                onClose={handleCloseInfoPanel}
+            />
+
+            {/* Info Panel - Detailed satellite info (side panel) */}
             {selectedObject && (
                 <InfoPanel
                     object={selectedObject}
@@ -365,6 +383,7 @@ function PageContent() {
                     onOpenScientific={handleOpenScientific}
                 />
             )}
+
 
             {/* Scientific Dashboard */}
             <AnimatePresence>
@@ -392,15 +411,9 @@ function PageContent() {
                 }}
             />
 
+            {/* Time Scrubber - YouTube-style timeline */}
             {(!isMobile || !selectedObject) && (
-                <Timeline
-                    time={currentTime}
-                    onTimeChange={handleTimeChange}
-                    isPlaying={isPlaying}
-                    onTogglePlay={handleTogglePlay}
-                    multiplier={timeMultiplier}
-                    onMultiplierChange={handleMultiplierChange}
-                />
+                <TimeScrubber />
             )}
 
             {/* Top Bar with Mode Switch */}

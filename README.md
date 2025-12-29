@@ -25,6 +25,16 @@
 
 ## ✨ Features
 
+### 🎨 v2.0 UI Revolution
+- 🖥️ **Cinematic HUD & Glassmorphism UI** - Sci-Fi inspired interface with backdrop blur, neon accents, and scan-line effects
+- ⏱️ **Time Scrubber & Replay System** - YouTube-style draggable timeline with Zustand-powered state
+- 🎥 **Satellite Cockpit View (POV)** - Velocity-vector locked camera with Quaternion orientation
+
+### ⚡ v2.0 Performance
+- 🧮 **Spatial Hashing Collision Engine** - O(N) link calculation with 1000km³ grid cells
+- 📊 **Scientific Data Export** - TLE, CSV, and JSON format export for research
+
+### 🌍 Core Features
 - 🌍 **Interactive 3D Globe** - Real-time visualization of 25,000+ satellites and space objects
 - 🔬 **Scientific Analysis** - Doppler shift, orbital decay, conjunction analysis, pass prediction
 - 🛰️ **Professional TLE Hub** - Multi-source fallback (Space-Track, CelesTrak, AMSAT)
@@ -66,6 +76,8 @@ Open [http://localhost:3000](http://localhost:3000) to see the app.
 | [Next.js 16](https://nextjs.org/) | React framework with App Router |
 | [CesiumJS](https://cesium.com/) + [Resium](https://resium.reearth.io/) | 3D globe visualization |
 | [satellite.js](https://github.com/shashwatak/satellite-js) | SGP4/SDP4 orbital propagation |
+| [Zustand](https://zustand-demo.pmnd.rs/) | High-performance state management |
+| [Web Workers](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API) | Spatial Hashing physics engine |
 | [TailwindCSS](https://tailwindcss.com/) | Utility-first CSS |
 | [Framer Motion](https://www.framer.com/motion/) | Animations |
 | [Lucide React](https://lucide.dev/) | Icons |
@@ -205,5 +217,5 @@ You can test the latest stable version of OrbitView here:
 ---
 
 <div align="center">
-  Made with ❤️ for space enthusiasts | Last updated: 2025-12-20
+  Made with ❤️ for space enthusiasts | v2.1.0 | Last updated: 2025-12-29
 </div>

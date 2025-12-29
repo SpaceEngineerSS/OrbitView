@@ -10,13 +10,13 @@ import * as satellite from "satellite.js";
 import { Compass, Smartphone } from "lucide-react";
 import { SensorManager } from "@/lib/SensorManager";
 import { AppSettings } from "./HUD/SettingsPanel";
+import { useTimelineStore } from "@/store/timelineStore";
 
 if (typeof window !== "undefined") {
   (window as any).CESIUM_BASE_URL = "/cesium";
 }
 
 interface GlobeProps {
-  currentTime?: Date | null;
   objects: SpaceObject[];
   onSelect?: (obj: SpaceObject | null) => void;
   selectedObject?: SpaceObject | null;
@@ -33,10 +33,14 @@ interface GlobeProps {
   onHover?: (obj: SpaceObject | null) => void;
 }
 
-const Globe: React.FC<GlobeProps> = ({ currentTime, objects = [], onSelect, selectedObject, onTelemetryUpdate, filter, searchQuery, viewMode = 'ORBIT', settings, observerPosition, onHover }) => {
+const Globe: React.FC<GlobeProps> = ({ objects = [], onSelect, selectedObject, onTelemetryUpdate, filter, searchQuery, viewMode = 'ORBIT', settings, observerPosition, onHover }) => {
   const [mounted, setMounted] = useState(false);
   const [viewerRef, setViewerRef] = useState<Cesium.Viewer | null>(null);
   const [isCompassMode, setIsCompassMode] = useState(false);
+  const lastSyncRef = useRef<number>(0);
+
+  // Get timeline state from Zustand store
+  const { currentTime, isPlaying, multiplier, syncFromCesium } = useTimelineStore();
 
   // Create a stable reference for creditContainer to prevent Viewer recreation
   const creditContainer = useMemo(() => {
@@ -50,14 +54,59 @@ const Globe: React.FC<GlobeProps> = ({ currentTime, objects = [], onSelect, sele
     setMounted(true);
   }, []);
 
-  // Sync Time
+  // Sync Cesium Clock settings from Zustand store
   useEffect(() => {
     if (!viewerRef || viewerRef.isDestroyed()) return;
 
-    if (viewerRef.clock && currentTime) {
+    const clock = viewerRef.clock;
+    clock.multiplier = multiplier;
+    clock.shouldAnimate = isPlaying;
+  }, [viewerRef, isPlaying, multiplier]);
+
+  // Listen to Cesium Clock ticks and sync to Zustand (throttled 100ms)
+  useEffect(() => {
+    if (!viewerRef || viewerRef.isDestroyed()) return;
+
+    const clock = viewerRef.clock;
+    const THROTTLE_MS = 100;
+
+    const onTick = () => {
+      const now = performance.now();
+      if (now - lastSyncRef.current < THROTTLE_MS) return;
+      lastSyncRef.current = now;
+
+      try {
+        const cesiumTime = Cesium.JulianDate.toDate(clock.currentTime);
+        syncFromCesium(cesiumTime);
+      } catch (e) {
+        // Ignore conversion errors
+      }
+    };
+
+    const removeListener = clock.onTick.addEventListener(onTick);
+
+    return () => {
+      removeListener();
+    };
+  }, [viewerRef, syncFromCesium]);
+
+  // Track last Cesium time to detect user-initiated changes
+  const lastCesiumTimeRef = useRef<number>(Date.now());
+
+  // Sync time TO Cesium when currentTime changes (user action like seek or resetToNow)
+  useEffect(() => {
+    if (!viewerRef || viewerRef.isDestroyed()) return;
+
+    const currentMs = currentTime.getTime();
+    const cesiumMs = Cesium.JulianDate.toDate(viewerRef.clock.currentTime).getTime();
+
+    // Only update if difference > 1 second (avoids fighting with Cesium's onTick)
+    const timeDiff = Math.abs(currentMs - cesiumMs);
+    if (timeDiff > 1000) {
       try {
         const julianDate = Cesium.JulianDate.fromDate(currentTime);
         viewerRef.clock.currentTime = julianDate;
+        lastCesiumTimeRef.current = currentMs;
       } catch (e) { }
     }
   }, [viewerRef, currentTime]);

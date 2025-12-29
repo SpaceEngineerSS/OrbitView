@@ -43,7 +43,8 @@
     "resium": "^1.19.1",
     "satellite.js": "^6.0.1",
     "sonner": "^2.0.7",
-    "tailwind-merge": "^3.4.0"
+    "tailwind-merge": "^3.4.0",
+    "zustand": "^5.0.9"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
