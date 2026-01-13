@@ -18,7 +18,7 @@ interface TLELayerProps {
     filter: string;
     searchQuery: string;
     settings: AppSettings;
-    onUpdateSelectedPos: (pos: Cesium.Cartesian3 | null) => void;
+    onUpdateSelectedPos: (pos: Cesium.Cartesian3 | null, vel?: Cesium.Cartesian3) => void;
     onHover: (obj: SpaceObject | null) => void;
     onSelect: (obj: SpaceObject | null) => void;
 }
@@ -61,6 +61,7 @@ const TLELayer: React.FC<TLELayerProps> = ({
         workerRef.current.onmessage = (e) => {
             if (e.data.type === "update_complete" && pointsRef.current) {
                 const positions = e.data.positions as Float32Array;
+                const selectedVelocity = e.data.selectedVelocity as { x: number; y: number; z: number } | null;
                 const scratchCartesian = new Cesium.Cartesian3();
 
                 for (let i = 0; i < satrecsRef.current.length; i++) {
@@ -131,7 +132,10 @@ const TLELayer: React.FC<TLELayerProps> = ({
                             point.pixelSize = 12;
                             point.color = POINT_COLOR_SELECTED;
                             point.scaleByDistance = SCALE_BY_DISTANCE_SELECTED;
-                            onUpdateSelectedPos(Cesium.Cartesian3.clone(scratchCartesian));
+                            const velocity = selectedVelocity
+                                ? new Cesium.Cartesian3(selectedVelocity.x, selectedVelocity.y, selectedVelocity.z)
+                                : undefined;
+                            onUpdateSelectedPos(Cesium.Cartesian3.clone(scratchCartesian), velocity);
                         } else {
                             point.pixelSize = 5;
                             point.color = POINT_COLOR_NORMAL;

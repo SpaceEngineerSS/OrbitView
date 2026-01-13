@@ -412,7 +412,8 @@ function PageContent() {
             />
 
             {/* Time Scrubber - YouTube-style timeline */}
-            {(!isMobile || !selectedObject) && (
+            {/* Hidden when satellite selected to reduce visual clutter */}
+            {!selectedObject && (
                 <TimeScrubber />
             )}
 
@@ -425,31 +426,31 @@ function PageContent() {
                     {/* Location Button */}
                     <button
                         onClick={() => setShowLocationSelector(true)}
-                        className="p-2 bg-emerald-500/20 border border-emerald-500/40 rounded-xl text-emerald-400 hover:bg-emerald-500/30 transition-all shadow-[0_0_20px_rgba(16,185,129,0.2)]"
+                        className="p-2 glass-panel rounded-xl text-emerald-400 hover:bg-white/10 transition-all"
                         aria-label="Change observer location"
                         title={`Observer: ${observerPosition.latitude.toFixed(2)}°, ${observerPosition.longitude.toFixed(2)}°`}
                     >
-                        <MapPin size={18} aria-hidden="true" />
+                        <MapPin size={18} strokeWidth={1.5} aria-hidden="true" />
                     </button>
 
                     {/* Settings Button */}
                     <button
                         onClick={() => setShowSettings(true)}
-                        className="p-2 bg-slate-500/20 border border-slate-500/40 rounded-xl text-slate-400 hover:bg-slate-500/30 transition-all"
+                        className="p-2 glass-panel rounded-xl text-slate-400 hover:bg-white/10 hover:text-white transition-all"
                         aria-label="Open application settings"
                         title="Settings"
                     >
-                        <Settings size={18} aria-hidden="true" />
+                        <Settings size={18} strokeWidth={1.5} aria-hidden="true" />
                     </button>
 
                     {/* References Button */}
                     <button
                         onClick={() => setShowReferences(true)}
-                        className="p-2 bg-purple-500/20 border border-purple-500/40 rounded-xl text-purple-400 hover:bg-purple-500/30 transition-all"
+                        className="p-2 glass-panel rounded-xl text-violet-400 hover:bg-white/10 transition-all"
                         aria-label="View scientific references and citations"
                         title="References & Citations"
                     >
-                        <BookOpen size={18} aria-hidden="true" />
+                        <BookOpen size={18} strokeWidth={1.5} aria-hidden="true" />
                     </button>
 
                     <ModeSwitch mode={mode} onToggle={toggleMode} />
@@ -457,11 +458,11 @@ function PageContent() {
                     {isAnalystMode && (
                         <button
                             onClick={() => setShowScientific(true)}
-                            className="p-2 bg-purple-500/20 border border-purple-500/40 rounded-xl text-purple-400 hover:bg-purple-500/30 transition-all shadow-[0_0_20px_rgba(168,85,247,0.2)]"
+                            className="p-2 glass-panel rounded-xl text-violet-400 hover:bg-white/10 transition-all"
                             aria-label="Open Scientific Analysis Dashboard"
                             title="Open Scientific Dashboard"
                         >
-                            <FlaskConical size={18} aria-hidden="true" />
+                            <FlaskConical size={18} strokeWidth={1.5} aria-hidden="true" />
                         </button>
                     )}
                 </div>

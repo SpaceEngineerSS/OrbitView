@@ -2,11 +2,17 @@
 
 import React, { useState, useEffect, useRef, useMemo, memo } from "react";
 import { motion, AnimatePresence, useDragControls, PanInfo } from "framer-motion";
-import { Search, Globe, Satellite, Filter, ShieldAlert, ChevronLeft, ChevronRight, BarChart3, X, Menu, Star, Rocket, Navigation, Radio, Trash2, Sparkles, Activity } from "lucide-react";
+import { Search, Globe, Satellite, Filter, ChevronLeft, ChevronRight, BarChart3, X, Menu, Star, Rocket, Navigation, Radio, Trash2, Sparkles, Activity } from "lucide-react";
 import { clsx } from "clsx";
 import { SpaceObject } from "@/lib/space-objects";
 import StatsPanel from "./StatsPanel";
 import { useTranslations } from "@/hooks/useLocale";
+import { GlassPanel } from "@/components/UI/GlassPanel";
+
+/**
+ * Sidebar / ObjectCatalog - Satellite catalog and filtering
+ * ORBITAL GLASS 2.0 - Floating card design on desktop, bottom sheet on mobile
+ */
 
 interface SidebarProps {
   objects: SpaceObject[];
@@ -35,7 +41,6 @@ const Sidebar: React.FC<SidebarProps> = ({
   const contentRef = useRef<HTMLDivElement>(null);
   const t = useTranslations();
 
-  // Detect mobile
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768);
@@ -49,45 +54,28 @@ const Sidebar: React.FC<SidebarProps> = ({
   }, []);
 
   const filters = [
-    { id: "ALL", label: "All Objects", icon: Globe, color: "cyan", emoji: "🌍" },
-    { id: "LEO", label: "Low Earth (LEO)", icon: Satellite, color: "cyan", emoji: "🛰️" },
-    { id: "MEO", label: "Medium Earth (MEO)", icon: Activity, color: "yellow", emoji: "🌐" },
-    { id: "GEO", label: "Geostationary (GEO)", icon: Satellite, color: "orange", emoji: "🛰️" },
-    { id: "HEO", label: "High Elliptical (HEO)", icon: Sparkles, color: "purple", emoji: "☄️" },
-    { id: "STARLINK", label: "Starlink", icon: Rocket, color: "blue", emoji: "🚀" },
-    { id: "GPS", label: "GPS / GNSS", icon: Navigation, color: "green", emoji: "📡" },
-    { id: "ISS", label: "Space Stations", icon: Radio, color: "purple", emoji: "🛸" },
-    { id: "DEBRIS", label: "Debris", icon: Trash2, color: "red", emoji: "⚠️" },
+    { id: "ALL", label: "All", icon: Globe },
+    { id: "LEO", label: "LEO", icon: Satellite },
+    { id: "MEO", label: "MEO", icon: Activity },
+    { id: "GEO", label: "GEO", icon: Satellite },
+    { id: "HEO", label: "HEO", icon: Sparkles },
+    { id: "STARLINK", label: "Starlink", icon: Rocket },
+    { id: "GPS", label: "GNSS", icon: Navigation },
+    { id: "ISS", label: "Stations", icon: Radio },
+    { id: "DEBRIS", label: "Debris", icon: Trash2 },
   ];
 
-
-
-  const MISSION_METADATA: Record<string, { desc: string, type: string }> = {
-    '25544': { desc: "The International Space Station - Humanity's laboratory in orbit.", type: "Space Station" },
-    '20580': { desc: "Hubble Space Telescope - Witnessing the birth and death of stars.", type: "Telescope" },
-    '43013': { desc: "Tiangong Space Station - China's multi-module space research station.", type: "Space Station" },
-    '48274': { desc: "CSS (Tianhe-1) - The core module of the Tiangong space station.", type: "Core Module" },
-    '4022': { desc: "AMSAT-OSCAR 7 - One of the oldest active communication satellites (1974).", type: "Classic Amateur" },
-    '-31': { desc: "Voyager 1 - Currently 24 billion km from Earth in interstellar space.", type: "Interstellar Probe" },
-    '-32': { desc: "Voyager 2 - Currently 20 billion km from Earth, exploring the heliopause.", type: "Interstellar Probe" },
-    '-74': { desc: "MRO - Mapping Mars' surface in high resolution from orbit.", type: "Mars Orbiter" },
-    '-98': { desc: "New Horizons - Exploring the Kuiper Belt after its 2015 Pluto flyby.", type: "Interstellar Probe" },
-    '-96': { desc: "Parker Solar Probe - Studying the Sun's corona at record-breaking speeds.", type: "Solar Probe" }
-  };
-
-  // Helper function to highlight search matches
   const highlightMatch = (text: string, query: string) => {
     if (!query || query.length < 2) return text;
     const regex = new RegExp(`(${query})`, 'gi');
     const parts = text.split(regex);
     return parts.map((part, i) =>
       regex.test(part) ? (
-        <span key={i} className="bg-cyan-500/30 text-cyan-300 px-0.5 rounded">{part}</span>
+        <span key={i} className="bg-sky-400/30 text-sky-300 px-0.5 rounded">{part}</span>
       ) : part
     );
   };
 
-  // Memoize satellites data for StatsPanel
   const satellitesData = useMemo(() => {
     return objects.filter(o => o.type === 'TLE' && o.tle).map(o => ({
       ...o.tle!,
@@ -96,7 +84,6 @@ const Sidebar: React.FC<SidebarProps> = ({
     }));
   }, [objects]);
 
-  // Filter Logic - Memoized
   const filteredObjects = useMemo(() => {
     if (!Array.isArray(objects)) return [];
 
@@ -104,10 +91,8 @@ const Sidebar: React.FC<SidebarProps> = ({
       const name = obj.name.toUpperCase();
       const id = obj.id;
 
-      // Search Query
       if (localSearch && !name.includes(localSearch) && !id.includes(localSearch)) return false;
 
-      // Category Filter
       if (activeFilter === "ALL") return true;
       if (activeFilter === "FAVORITES") return favorites.includes(obj.id);
       if (activeFilter.startsWith("COUNTRY_")) {
@@ -134,17 +119,14 @@ const Sidebar: React.FC<SidebarProps> = ({
     });
   }, [objects, localSearch, activeFilter, favorites]);
 
-  // Handle drag for mobile bottom sheet
   const handleDragEnd = (_: any, info: PanInfo) => {
     const velocity = info.velocity.y;
     const offset = info.offset.y;
 
     if (velocity > 500 || offset > 100) {
-      // Dragging down fast
       if (sheetHeight === 'full') setSheetHeight('half');
       else if (sheetHeight === 'half') setSheetHeight('collapsed');
     } else if (velocity < -500 || offset < -100) {
-      // Dragging up fast
       if (sheetHeight === 'collapsed') setSheetHeight('half');
       else if (sheetHeight === 'half') setSheetHeight('full');
     }
@@ -158,22 +140,18 @@ const Sidebar: React.FC<SidebarProps> = ({
     }
   };
 
-  // Sidebar Content JSX (shared between desktop and mobile)
-  // Using JSX variable instead of inline component to preserve scroll position
   const sidebarContent = (
     <>
       {/* Search */}
-      <div className={clsx("p-4", isMobile ? "pb-2" : "p-5 pb-2")}>
+      <div className={clsx("p-4", isMobile ? "pb-2" : "p-4 pb-2")}>
         <div className="relative group">
-          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-500 group-focus-within:text-cyan-400 transition-colors z-10" size={18} />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500 group-focus-within:text-sky-400 transition-colors z-10" size={16} strokeWidth={1.5} />
           <input
             type="text"
             placeholder={t('sidebar.search')}
             aria-label="Search satellites by name or NORAD ID"
-            role="searchbox"
-            autoComplete="off"
             className={clsx(
-              "w-full bg-black/40 border border-white/10 rounded-xl py-3 pl-12 pr-4 text-sm text-slate-200 focus:outline-none focus:border-cyan-500/50 focus:bg-black/60 focus:shadow-[0_0_15px_rgba(6,182,212,0.15)] transition-all placeholder:text-slate-600",
+              "w-full bg-white/5 border border-white/10 rounded-xl py-2.5 pl-10 pr-4 text-sm text-slate-200 focus:outline-none focus:border-sky-500/50 focus:bg-white/10 transition-all placeholder:text-slate-600",
               isMobile && "touch-target"
             )}
             value={localSearch}
@@ -184,57 +162,54 @@ const Sidebar: React.FC<SidebarProps> = ({
             }}
           />
 
-          {/* Search Dropdown Results */}
-          {localSearch.length >= 2 && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="absolute top-full left-0 right-0 mt-2 bg-slate-900/95 backdrop-blur-xl border border-cyan-500/30 rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.5)] overflow-hidden z-50"
-            >
-              <div className="p-2 border-b border-white/5">
-                <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">
-                  {filteredObjects.length} results for "{localSearch}"
-                </span>
-              </div>
-              <div className="max-h-[300px] overflow-y-auto custom-scrollbar">
-                {filteredObjects.slice(0, 20).map(obj => (
-                  <button
-                    key={obj.id}
-                    onClick={() => {
-                      onSelect && onSelect(obj);
-                      setLocalSearch(""); // Clear search after selection
-                      if (isMobile) setSheetHeight('collapsed');
-                    }}
-                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-cyan-500/10 border-b border-white/5 last:border-b-0 transition-all group"
-                  >
-                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500/20 to-blue-500/20 flex items-center justify-center border border-cyan-500/30 flex-shrink-0">
-                      <Satellite size={14} className="text-cyan-400" />
-                    </div>
-                    <div className="flex-1 text-left overflow-hidden">
-                      <div className="text-sm text-slate-200 font-medium truncate group-hover:text-cyan-300">
-                        {highlightMatch(obj.name, localSearch)}
+          {/* Search Results Dropdown */}
+          <AnimatePresence>
+            {localSearch.length >= 2 && (
+              <motion.div
+                initial={{ opacity: 0, y: -5 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -5 }}
+                className="absolute top-full left-0 right-0 mt-2 glass-panel-elevated rounded-xl overflow-hidden z-50"
+              >
+                <div className="p-2 border-b border-white/5">
+                  <span className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">
+                    {filteredObjects.length} results
+                  </span>
+                </div>
+                <div className="max-h-[300px] overflow-y-auto custom-scrollbar">
+                  {filteredObjects.slice(0, 20).map(obj => (
+                    <button
+                      key={obj.id}
+                      onClick={() => {
+                        onSelect && onSelect(obj);
+                        setLocalSearch("");
+                        if (isMobile) setSheetHeight('collapsed');
+                      }}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-white/5 border-b border-white/5 last:border-b-0 transition-all group"
+                    >
+                      <div className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center border border-white/10 flex-shrink-0">
+                        <Satellite size={12} className="text-sky-400" strokeWidth={1.5} />
                       </div>
-                      <div className="text-[10px] text-slate-600 font-mono">
-                        NORAD ID: {highlightMatch(obj.id, localSearch)}
+                      <div className="flex-1 text-left overflow-hidden">
+                        <div className="text-sm text-slate-200 truncate group-hover:text-sky-300">
+                          {highlightMatch(obj.name, localSearch)}
+                        </div>
+                        <div className="text-[10px] text-slate-600 font-mono">
+                          {obj.id}
+                        </div>
                       </div>
+                      <ChevronRight size={14} className="text-slate-600 group-hover:text-sky-400 transition-colors" strokeWidth={1.5} />
+                    </button>
+                  ))}
+                  {filteredObjects.length === 0 && (
+                    <div className="p-4 text-center text-slate-500 text-sm">
+                      No satellites found
                     </div>
-                    <ChevronRight size={14} className="text-slate-700 group-hover:text-cyan-500 transition-colors" />
-                  </button>
-                ))}
-                {filteredObjects.length === 0 && (
-                  <div className="p-4 text-center text-slate-500 text-sm">
-                    No satellites found
-                  </div>
-                )}
-                {filteredObjects.length > 20 && (
-                  <div className="p-2 text-center text-[10px] text-cyan-500/70 border-t border-white/5">
-                    +{filteredObjects.length - 20} more results in list below
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          )}
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
 
@@ -244,19 +219,17 @@ const Sidebar: React.FC<SidebarProps> = ({
         isMobile && "hide-scrollbar"
       )} ref={contentRef}>
 
-        {/* Statistics Panel */}
+        {/* Statistics Panel (Desktop only) */}
         {!isMobile && (
           <div>
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
-                <BarChart3 size={12} aria-hidden="true" />
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="text-[10px] font-medium text-slate-500 uppercase tracking-wider flex items-center gap-2">
+                <BarChart3 size={10} strokeWidth={1.5} />
                 {t('sidebar.statistics')}
               </h2>
               <button
                 onClick={() => setShowStats(!showStats)}
-                className="text-[10px] text-slate-500 hover:text-cyan-400 transition-colors"
-                aria-label={showStats ? "Hide Statistics" : "Show Statistics"}
-                aria-expanded={showStats}
+                className="text-[10px] text-slate-500 hover:text-sky-400 transition-colors"
               >
                 {showStats ? "Hide" : "Show"}
               </button>
@@ -268,9 +241,9 @@ const Sidebar: React.FC<SidebarProps> = ({
         )}
 
         {/* Divider */}
-        {!isMobile && <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>}
+        {!isMobile && <div className="h-px bg-white/5"></div>}
 
-        {/* Quick Filters (Mobile Horizontal Scroll) */}
+        {/* Filters */}
         {isMobile ? (
           <div className="overflow-x-auto hide-scrollbar -mx-4 px-4">
             <div className="flex gap-2 pb-2">
@@ -278,29 +251,27 @@ const Sidebar: React.FC<SidebarProps> = ({
                 <button
                   onClick={() => { setActiveFilter("FAVORITES"); onFilterChange("FAVORITES"); }}
                   className={clsx(
-                    "flex-shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-bold border whitespace-nowrap touch-target",
+                    "flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium border whitespace-nowrap touch-target",
                     activeFilter === "FAVORITES"
-                      ? "bg-yellow-500/20 text-yellow-300 border-yellow-500/40"
+                      ? "bg-amber-500/15 text-amber-300 border-amber-500/30"
                       : "bg-white/5 text-slate-400 border-transparent"
                   )}
                 >
-                  <Star size={14} /> Favorites
+                  <Star size={12} strokeWidth={1.5} /> Favorites
                 </button>
               )}
               {filters.map((f) => (
                 <button
                   key={f.id}
                   onClick={() => { setActiveFilter(f.id); onFilterChange(f.id); }}
-                  aria-label={`Filter by ${f.label}`}
-                  aria-pressed={activeFilter === f.id}
                   className={clsx(
-                    "flex-shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-bold border whitespace-nowrap touch-target",
+                    "flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium border whitespace-nowrap touch-target",
                     activeFilter === f.id
-                      ? "bg-cyan-500/10 text-cyan-300 border-cyan-500/40"
+                      ? "bg-sky-500/15 text-sky-300 border-sky-500/30"
                       : "bg-white/5 text-slate-400 border-transparent"
                   )}
                 >
-                  <f.icon size={14} aria-hidden="true" />
+                  <f.icon size={12} strokeWidth={1.5} />
                   {f.label}
                 </button>
               ))}
@@ -308,117 +279,91 @@ const Sidebar: React.FC<SidebarProps> = ({
           </div>
         ) : (
           <>
-            {/* Main Filters (Desktop) */}
+            {/* Categories (Desktop) */}
             <div>
-              <h2 className="text-xs font-bold text-slate-500 uppercase mb-3 tracking-wider flex items-center gap-2">
-                <Filter size={12} />
+              <h2 className="text-[10px] font-medium text-slate-500 uppercase mb-2 tracking-wider flex items-center gap-2">
+                <Filter size={10} strokeWidth={1.5} />
                 Categories
               </h2>
-              <div className="grid grid-cols-1 gap-2" role="radiogroup" aria-label="Satellite category filter">
+              <div className="grid grid-cols-1 gap-1.5">
                 {favorites.length > 0 && (
                   <button
                     onClick={() => { setActiveFilter("FAVORITES"); onFilterChange("FAVORITES"); }}
-                    role="radio"
-                    aria-checked={activeFilter === "FAVORITES"}
                     className={clsx(
-                      "w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all text-sm font-medium border",
+                      "w-full flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all text-sm font-medium",
                       activeFilter === "FAVORITES"
-                        ? "bg-yellow-500/10 text-yellow-300 border-yellow-500/40 shadow-[0_0_10px_rgba(234,179,8,0.1)]"
-                        : "bg-white/5 text-slate-400 border-transparent hover:bg-white/10 hover:text-slate-200"
+                        ? "bg-amber-500/10 text-amber-300 border border-amber-500/20"
+                        : "bg-white/[0.02] text-slate-400 border border-transparent hover:bg-white/5 hover:text-slate-200"
                     )}
                   >
-                    <Star size={18} className={activeFilter === "FAVORITES" ? "text-yellow-400" : "text-slate-500"} />
+                    <Star size={14} className={activeFilter === "FAVORITES" ? "text-amber-400" : "text-slate-500"} strokeWidth={1.5} />
                     Favorites ({favorites.length})
-                    {activeFilter === "FAVORITES" && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-yellow-400 shadow-[0_0_5px_yellow]"></div>}
+                    {activeFilter === "FAVORITES" && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-amber-400"></div>}
                   </button>
                 )}
                 {filters.map((f) => (
                   <button
                     key={f.id}
                     onClick={() => { setActiveFilter(f.id); onFilterChange(f.id); }}
-                    role="radio"
-                    aria-checked={activeFilter === f.id}
-                    aria-label={`Filter by ${f.label}`}
                     className={clsx(
-                      "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-medium border backdrop-blur-md",
+                      "w-full flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all text-sm font-medium",
                       activeFilter === f.id
-                        ? f.id === "FEATURED"
-                          ? "bg-yellow-500/20 text-yellow-300 border-yellow-500/40 shadow-[0_0_20px_rgba(234,179,8,0.15)]"
-                          : "bg-cyan-500/10 text-cyan-300 border-cyan-500/40 shadow-[0_0_20px_rgba(6,182,212,0.15)]"
-                        : "bg-white/5 text-slate-400 border-white/5 hover:bg-white/10 hover:text-slate-200 hover:border-white/20"
+                        ? "bg-sky-500/10 text-sky-300 border border-sky-500/20"
+                        : "bg-white/[0.02] text-slate-400 border border-transparent hover:bg-white/5 hover:text-slate-200"
                     )}
                   >
-                    <f.icon size={18} className={clsx(
-                      activeFilter === f.id
-                        ? f.id === "FEATURED" ? "text-yellow-400" : "text-cyan-400"
-                        : "text-slate-500"
-                    )} aria-hidden="true" />
+                    <f.icon size={14} className={activeFilter === f.id ? "text-sky-400" : "text-slate-500"} strokeWidth={1.5} />
                     {f.label}
-                    {f.id === "FEATURED" && (
-                      <span className="ml-2 text-[8px] bg-yellow-500 text-black px-1.5 py-0.5 rounded-full font-bold animate-pulse">
-                        NEW
-                      </span>
-                    )}
-                    {activeFilter === f.id && (
-                      <div className={clsx(
-                        "ml-auto w-1.5 h-1.5 rounded-full shadow-[0_0_8px_currentColor]",
-                        f.id === "FEATURED" ? "bg-yellow-400 text-yellow-400" : "bg-cyan-400 text-cyan-400"
-                      )}></div>
-                    )}
+                    {activeFilter === f.id && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-sky-400"></div>}
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* Region Filter */}
+            {/* Regions */}
             <div>
-              <h2 className="text-xs font-bold text-slate-500 uppercase mb-3 tracking-wider flex items-center gap-2">
-                <Globe size={12} />
+              <h2 className="text-[10px] font-medium text-slate-500 uppercase mb-2 tracking-wider flex items-center gap-2">
+                <Globe size={10} strokeWidth={1.5} />
                 Regions
               </h2>
-              <div className="grid grid-cols-3 gap-2">
-                {['USA', 'RUSSIA', 'CHINA', 'EU', 'TURKEY', 'INDIA'].map(c => (
-                  <button
-                    key={c}
-                    onClick={() => {
-                      const filterId = `COUNTRY_${c}`;
-                      setActiveFilter(filterId);
-                      onFilterChange(filterId);
-                    }}
-                    className={clsx(
-                      "text-[10px] font-bold py-2 rounded-md transition-all border",
-                      activeFilter === `COUNTRY_${c}`
-                        ? "bg-cyan-500/10 text-cyan-300 border-cyan-500/40"
-                        : "bg-white/5 text-slate-500 border-transparent hover:bg-white/10 hover:text-slate-300"
-                    )}
-                  >
-                    {c}
-                  </button>
-                ))}
+              <div className="grid grid-cols-3 gap-1.5">
+                {['USA', 'RU', 'CN', 'EU', 'TR', 'IN'].map((c, i) => {
+                  const fullNames = ['USA', 'RUSSIA', 'CHINA', 'EU', 'TURKEY', 'INDIA'];
+                  return (
+                    <button
+                      key={c}
+                      onClick={() => {
+                        const filterId = `COUNTRY_${fullNames[i]}`;
+                        setActiveFilter(filterId);
+                        onFilterChange(filterId);
+                      }}
+                      className={clsx(
+                        "text-[10px] font-medium py-1.5 rounded-lg transition-all",
+                        activeFilter === `COUNTRY_${fullNames[i]}`
+                          ? "bg-sky-500/10 text-sky-300 border border-sky-500/20"
+                          : "bg-white/[0.02] text-slate-500 border border-transparent hover:bg-white/5 hover:text-slate-300"
+                      )}
+                    >
+                      {c}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
-            {/* Divider */}
-            <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
+            <div className="h-px bg-white/5"></div>
           </>
         )}
 
         {/* Results List */}
-        <div className={isMobile ? "pt-0" : "pt-2"}>
-          <h2 className="text-xs font-bold text-slate-500 uppercase mb-3 tracking-wider flex justify-between items-center">
-            {activeFilter === "FEATURED" && (
-              <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-3 mb-4">
-                <p className="text-[10px] text-yellow-300/80 leading-relaxed italic">
-                  Exploring Humanity's most significant orbital assets. These missions push the boundaries of science and communication.
-                </p>
-              </div>
-            )}
+        <div className={isMobile ? "pt-0" : "pt-1"}>
+          <h2 className="text-[10px] font-medium text-slate-500 uppercase mb-2 tracking-wider flex justify-between items-center">
             <span>Objects</span>
-            <span className="bg-cyan-900/30 text-cyan-400 px-2 py-0.5 rounded text-[10px] border border-cyan-500/20">
+            <span className="bg-sky-500/10 text-sky-400 px-1.5 py-0.5 rounded text-[10px] border border-sky-500/20">
               {filteredObjects.length}
             </span>
           </h2>
-          <div className="space-y-2" role="list" aria-label="Satellite list">
+          <div className="space-y-1.5">
             {filteredObjects.slice(0, isMobile ? 50 : 100).map(obj => {
               const isFavorite = favorites.includes(obj.id);
               const isStarlink = obj.name.toUpperCase().includes('STARLINK');
@@ -432,68 +377,55 @@ const Sidebar: React.FC<SidebarProps> = ({
                     onSelect && onSelect(obj);
                     if (isMobile) setSheetHeight('collapsed');
                   }}
-                  role="listitem"
-                  aria-label={`View details for ${obj.name}`}
                   className={clsx(
-                    "w-full group flex items-center gap-3 px-3 py-3 rounded-xl bg-white/[0.02] hover:bg-white/[0.06] border border-white/5 hover:border-cyan-500/30 transition-all",
+                    "w-full group flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-white/[0.02] hover:bg-white/[0.05] border border-white/5 hover:border-sky-500/20 transition-all",
                     isMobile && "touch-target"
                   )}
                 >
-                  {/* Satellite Icon */}
+                  {/* Icon */}
                   <div className={clsx(
-                    "w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 border",
-                    isStarlink ? "bg-gradient-to-br from-blue-500/20 to-cyan-500/20 border-blue-500/30" :
-                      isISS ? "bg-gradient-to-br from-purple-500/20 to-pink-500/20 border-purple-500/30" :
-                        isDebris ? "bg-gradient-to-br from-red-500/20 to-orange-500/20 border-red-500/30" :
-                          "bg-gradient-to-br from-cyan-500/20 to-blue-500/20 border-cyan-500/30"
+                    "w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 border",
+                    isStarlink ? "bg-blue-500/10 border-blue-500/20" :
+                      isISS ? "bg-violet-500/10 border-violet-500/20" :
+                        isDebris ? "bg-rose-500/10 border-rose-500/20" :
+                          "bg-sky-500/10 border-sky-500/20"
                   )}>
-                    <Satellite size={18} className={clsx(
+                    <Satellite size={14} className={clsx(
                       isStarlink ? "text-blue-400" :
-                        isISS ? "text-purple-400" :
-                          isDebris ? "text-red-400" :
-                            "text-cyan-400"
-                    )} aria-hidden="true" />
+                        isISS ? "text-violet-400" :
+                          isDebris ? "text-rose-400" :
+                            "text-sky-400"
+                    )} strokeWidth={1.5} />
                   </div>
 
                   {/* Info */}
                   <div className="flex-1 text-left overflow-hidden min-w-0">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5">
                       {isFavorite && (
-                        <Star size={12} className="text-yellow-400 fill-yellow-400 flex-shrink-0" aria-label="Favorited" />
+                        <Star size={10} className="text-amber-400 fill-amber-400 flex-shrink-0" strokeWidth={1.5} />
                       )}
-                      <span className="text-sm text-slate-200 font-medium truncate group-hover:text-cyan-300 transition-colors">
+                      <span className="text-sm text-slate-200 truncate group-hover:text-sky-300 transition-colors">
                         {obj.name}
                       </span>
                     </div>
                     <div className="flex items-center gap-2 mt-0.5">
-                      <span className="text-[10px] text-slate-600 font-mono group-hover:text-cyan-600">
+                      <span className="text-[10px] text-slate-600 font-mono">
                         {obj.id}
                       </span>
                       {isStarlink && (
-                        <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                        <span className="text-[8px] px-1 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20">
                           STARLINK
                         </span>
                       )}
                       {isISS && (
-                        <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-purple-500/20 text-purple-400 border border-purple-500/30">
+                        <span className="text-[8px] px-1 py-0.5 rounded bg-violet-500/10 text-violet-400 border border-violet-500/20">
                           STATION
                         </span>
                       )}
-                      {activeFilter === "FEATURED" && MISSION_METADATA[obj.id] && (
-                        <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-yellow-500/20 text-yellow-300 border border-yellow-500/30">
-                          {MISSION_METADATA[obj.id].type}
-                        </span>
-                      )}
                     </div>
-                    {activeFilter === "FEATURED" && MISSION_METADATA[obj.id] && (
-                      <p className="text-[9px] text-slate-500 mt-1 line-clamp-1 italic group-hover:text-slate-400">
-                        {MISSION_METADATA[obj.id].desc}
-                      </p>
-                    )}
                   </div>
 
-                  {/* Arrow */}
-                  <ChevronRight size={16} className="text-slate-700 group-hover:text-cyan-500 opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0 flex-shrink-0" aria-hidden="true" />
+                  <ChevronRight size={14} className="text-slate-700 group-hover:text-sky-400 opacity-0 group-hover:opacity-100 transition-all flex-shrink-0" strokeWidth={1.5} />
                 </button>
               );
             })}
@@ -507,7 +439,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   if (isMobile) {
     return (
       <>
-        {/* Mobile FAB to open sheet */}
+        {/* FAB */}
         <AnimatePresence>
           {sheetHeight === 'collapsed' && (
             <motion.button
@@ -515,9 +447,9 @@ const Sidebar: React.FC<SidebarProps> = ({
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0, opacity: 0 }}
               onClick={() => setSheetHeight('half')}
-              className="fab bottom-6 left-6 bg-slate-950/90 border border-cyan-500/30 text-cyan-400"
+              className="fab bottom-6 left-6 glass-panel-elevated text-sky-400"
             >
-              <Menu size={24} />
+              <Menu size={22} strokeWidth={1.5} />
             </motion.button>
           )}
         </AnimatePresence>
@@ -549,34 +481,33 @@ const Sidebar: React.FC<SidebarProps> = ({
               dragConstraints={{ top: 0, bottom: 0 }}
               dragElastic={0.2}
               onDragEnd={handleDragEnd}
-              className="bottom-sheet bg-slate-950/80 backdrop-blur-2xl border-t border-white/5 z-40 flex flex-col shadow-2xl shadow-cyan-500/5"
+              className="bottom-sheet glass-panel-elevated z-40 flex flex-col"
               style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
             >
               {/* Drag Handle */}
               <div
-                className="flex-shrink-0 cursor-grab active:cursor-grabbing py-4"
+                className="flex-shrink-0 cursor-grab active:cursor-grabbing py-3"
                 onPointerDown={(e) => dragControls.start(e)}
               >
-                <div className="w-12 h-1.5 bg-white/20 rounded-full mx-auto" />
+                <div className="bottom-sheet-handle" />
               </div>
 
               {/* Header */}
               <div className="flex-shrink-0 px-4 pb-3 flex items-center justify-between border-b border-white/5">
                 <div>
-                  <h1 className="font-bold text-lg tracking-widest text-white flex items-center gap-2">
-                    ORBIT<span className="text-cyan-400">VIEW</span>
+                  <h1 className="font-heading text-base tracking-widest text-white">
+                    ORBIT<span className="text-sky-400">VIEW</span>
                   </h1>
-                  <div className="text-[9px] text-cyan-500/70 tracking-[0.15em] font-mono">SATELLITE TRACKING</div>
+                  <div className="text-[9px] text-slate-500 tracking-wider font-data">SATELLITE CATALOG</div>
                 </div>
                 <button
                   onClick={() => setSheetHeight('collapsed')}
-                  className="p-2 hover:bg-white/10 rounded-lg text-slate-400 hover:text-white transition-colors touch-target"
+                  className="p-2 glass-button rounded-lg text-slate-400 hover:text-white touch-target"
                 >
-                  <X size={20} />
+                  <X size={18} strokeWidth={1.5} />
                 </button>
               </div>
 
-              {/* Content */}
               {sidebarContent}
             </motion.div>
           )}
@@ -585,49 +516,59 @@ const Sidebar: React.FC<SidebarProps> = ({
     );
   }
 
-  // Desktop Sidebar
+  // Desktop Floating Card
   return (
     <>
-      {/* Toggle Button (Visible when closed) */}
+      {/* Toggle Button */}
       <AnimatePresence>
         {!isOpen && (
           <motion.button
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
             onClick={() => setIsOpen(true)}
-            className="fixed top-6 left-6 z-30 p-3 bg-slate-950/90 text-cyan-400 border border-cyan-500/30 rounded-lg hover:bg-cyan-950/50 hover:border-cyan-400/50 transition-all shadow-[0_0_20px_rgba(6,182,212,0.2)] backdrop-blur-md group"
+            className="fixed top-20 left-4 z-20 p-3 glass-panel-elevated rounded-xl text-sky-400 hover:text-white transition-colors"
           >
-            <Filter size={20} className="group-hover:scale-110 transition-transform" />
+            <Filter size={18} strokeWidth={1.5} />
           </motion.button>
         )}
       </AnimatePresence>
 
-      <motion.div
-        initial={{ x: -350 }}
-        animate={{ x: isOpen ? 0 : -350 }}
-        transition={{ type: "spring", stiffness: 300, damping: 30 }}
-        className="fixed top-0 left-0 h-full w-[340px] bg-slate-950/80 backdrop-blur-xl border-r border-white/10 text-slate-100 z-20 flex flex-col shadow-[10px_0_30px_rgba(0,0,0,0.5)]"
-      >
-        {/* Header */}
-        <div className="p-6 border-b border-white/5 flex items-center justify-between bg-gradient-to-r from-cyan-950/30 to-transparent">
-          <div>
-            <h1 className="font-bold text-2xl tracking-widest text-white flex items-center gap-2">
-              ORBIT<span className="text-cyan-400">VIEW</span>
-            </h1>
-            <div className="text-[10px] text-cyan-500/70 tracking-[0.2em] font-mono mt-1">SATELLITE TRACKING SYSTEM</div>
-          </div>
-          <button
-            onClick={() => setIsOpen(false)}
-            className="p-2 hover:bg-white/10 rounded-lg text-slate-400 hover:text-white transition-colors"
+      {/* Floating Panel */}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ x: -20, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: -20, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 400, damping: 30 }}
+            className="fixed top-20 left-4 bottom-32 w-[320px] z-10"
           >
-            <ChevronLeft size={20} />
-          </button>
-        </div>
+            <GlassPanel
+              variant="elevated"
+              className="h-full flex flex-col"
+            >
+              {/* Header */}
+              <div className="p-4 border-b border-white/5 flex items-center justify-between flex-shrink-0">
+                <div>
+                  <h1 className="font-heading text-lg tracking-widest text-white">
+                    ORBIT<span className="text-sky-400">VIEW</span>
+                  </h1>
+                  <div className="text-[9px] text-slate-500 tracking-wider font-data">SATELLITE CATALOG</div>
+                </div>
+                <button
+                  onClick={() => setIsOpen(false)}
+                  className="p-2 glass-button rounded-lg text-slate-400 hover:text-white"
+                >
+                  <ChevronLeft size={16} strokeWidth={1.5} />
+                </button>
+              </div>
 
-        {/* Content */}
-        {sidebarContent}
-      </motion.div>
+              {sidebarContent}
+            </GlassPanel>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 };

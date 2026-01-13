@@ -17,14 +17,8 @@ import { useTimelineStore } from "@/store/timelineStore";
 import { clsx } from "clsx";
 
 /**
- * TimeScrubber - YouTube-style draggable timeline control
- * 
- * @design_reference Media player timeline (YouTube, Spotify)
- * Features:
- * - Draggable scrubber handle
- * - Time range display (past 24h to future 24h)
- * - Speed multiplier controls
- * - Play/Pause/Reset controls
+ * TimeScrubber - Timeline control
+ * ORBITAL GLASS 2.0 - Clean, functional design
  */
 
 interface TimeScrubberProps {
@@ -60,7 +54,6 @@ const formatMultiplier = (multiplier: number): string => {
 
 
 const TimeScrubber: React.FC<TimeScrubberProps> = memo(({ className }) => {
-    // Fix hydration mismatch - only render time on client
     const [mounted, setMounted] = useState(false);
     useEffect(() => setMounted(true), []);
 
@@ -81,7 +74,6 @@ const TimeScrubber: React.FC<TimeScrubberProps> = memo(({ className }) => {
     const [hoverPosition, setHoverPosition] = useState<number | null>(null);
     const scrubberRef = useRef<HTMLDivElement>(null);
 
-    // Handle scrubber drag
     const handleMouseDown = useCallback((e: React.MouseEvent) => {
         e.preventDefault();
         setIsDragging(true);
@@ -93,7 +85,6 @@ const TimeScrubber: React.FC<TimeScrubberProps> = memo(({ className }) => {
         }
     }, [seekTo]);
 
-    // Handle mouse move during drag
     useEffect(() => {
         if (!isDragging) return;
 
@@ -118,7 +109,6 @@ const TimeScrubber: React.FC<TimeScrubberProps> = memo(({ className }) => {
         };
     }, [isDragging, seekTo]);
 
-    // Handle hover preview
     const handleMouseMove = useCallback((e: React.MouseEvent) => {
         if (isDragging) return;
         if (scrubberRef.current) {
@@ -132,12 +122,10 @@ const TimeScrubber: React.FC<TimeScrubberProps> = memo(({ className }) => {
         setHoverPosition(null);
     }, []);
 
-    // Calculate hover time
     const hoverTime = hoverPosition !== null
         ? new Date(timeRangeStart.getTime() + hoverPosition * (timeRangeEnd.getTime() - timeRangeStart.getTime()))
         : null;
 
-    // Cycle through speed options
     const cycleSpeed = useCallback((direction: 'up' | 'down') => {
         const currentIndex = SPEED_OPTIONS.indexOf(multiplier);
         let newIndex: number;
@@ -156,41 +144,37 @@ const TimeScrubber: React.FC<TimeScrubberProps> = memo(({ className }) => {
 
     return (
         <motion.div
-            initial={{ y: 50, opacity: 0 }}
+            initial={{ y: 30, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.4, delay: 0.2 }}
+            transition={{ type: "spring", stiffness: 400, damping: 30, delay: 0.1 }}
             className={clsx("fixed bottom-20 left-4 right-4 z-30 pointer-events-none", className)}
         >
             <GlassPanel
                 variant="elevated"
                 className="mx-auto max-w-4xl pointer-events-auto"
-                neonColor="cyan"
             >
                 <div className="p-4">
-                    {/* Top Row: Time Display & Controls */}
+                    {/* Top Row: Time Display */}
                     <div className="flex items-center justify-between mb-3">
-                        {/* Time Range Start */}
                         <div className="text-left">
-                            <div className="font-data text-[10px] text-slate-500 uppercase tracking-wider">From</div>
+                            <div className="font-data text-[9px] text-slate-500 uppercase tracking-wider">From</div>
                             <div className="font-data text-xs text-slate-400">{formatDate(timeRangeStart)}</div>
                         </div>
 
-                        {/* Center: Current Time */}
                         <div className="flex flex-col items-center">
                             <div className="flex items-center gap-2">
-                                <Clock size={14} className="text-cyan-500" />
-                                <span className="font-data text-xl text-cyan-400 neon-text-cyan tracking-wider">
+                                <Clock size={12} className="text-sky-400" strokeWidth={1.5} />
+                                <span className="font-data text-lg text-white tracking-wider">
                                     {formatTime(currentTime)}
                                 </span>
                             </div>
-                            <span className="font-data text-[10px] text-slate-500">
+                            <span className="font-data text-[9px] text-slate-500">
                                 {formatDate(currentTime)}
                             </span>
                         </div>
 
-                        {/* Time Range End */}
                         <div className="text-right">
-                            <div className="font-data text-[10px] text-slate-500 uppercase tracking-wider">To</div>
+                            <div className="font-data text-[9px] text-slate-500 uppercase tracking-wider">To</div>
                             <div className="font-data text-xs text-slate-400">{formatDate(timeRangeEnd)}</div>
                         </div>
                     </div>
@@ -198,20 +182,20 @@ const TimeScrubber: React.FC<TimeScrubberProps> = memo(({ className }) => {
                     {/* Scrubber Track */}
                     <div
                         ref={scrubberRef}
-                        className="relative h-8 bg-slate-800/50 rounded-lg cursor-pointer group mb-3"
+                        className="relative h-8 bg-white/5 rounded-xl cursor-pointer group mb-3 border border-white/5"
                         onMouseDown={handleMouseDown}
                         onMouseMove={handleMouseMove}
                         onMouseLeave={handleMouseLeave}
                     >
                         {/* Progress Fill */}
                         <div
-                            className="absolute top-0 left-0 h-full bg-gradient-to-r from-cyan-600/40 to-cyan-500/60 rounded-lg transition-all"
+                            className="absolute top-0 left-0 h-full bg-gradient-to-r from-sky-500/30 to-sky-400/40 rounded-xl"
                             style={{ width: `${timelinePosition * 100}%` }}
                         />
 
                         {/* Center Marker (Now) */}
                         <div
-                            className="absolute top-0 h-full w-px bg-emerald-500/50"
+                            className="absolute top-0 h-full w-px bg-emerald-400/40"
                             style={{ left: '50%' }}
                         />
 
@@ -219,11 +203,11 @@ const TimeScrubber: React.FC<TimeScrubberProps> = memo(({ className }) => {
                         {hoverPosition !== null && !isDragging && (
                             <>
                                 <div
-                                    className="absolute top-0 h-full w-0.5 bg-white/30"
+                                    className="absolute top-0 h-full w-0.5 bg-white/20"
                                     style={{ left: `${hoverPosition * 100}%` }}
                                 />
                                 <div
-                                    className="absolute -top-8 transform -translate-x-1/2 bg-slate-900 px-2 py-1 rounded text-xs font-data text-white whitespace-nowrap"
+                                    className="absolute -top-8 transform -translate-x-1/2 glass-panel px-2 py-1 rounded-lg text-xs font-data text-white whitespace-nowrap"
                                     style={{ left: `${hoverPosition * 100}%` }}
                                 >
                                     {formatTime(hoverTime)}
@@ -234,13 +218,11 @@ const TimeScrubber: React.FC<TimeScrubberProps> = memo(({ className }) => {
                         {/* Scrubber Handle */}
                         <div
                             className={clsx(
-                                "absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-cyan-500 rounded-full shadow-lg transition-transform",
-                                "border-2 border-white",
+                                "absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full shadow-lg transition-transform",
                                 isDragging ? "scale-125" : "group-hover:scale-110"
                             )}
                             style={{
                                 left: `calc(${timelinePosition * 100}% - 8px)`,
-                                boxShadow: '0 0 10px rgba(6, 182, 212, 0.5)'
                             }}
                         />
                     </div>
@@ -251,35 +233,35 @@ const TimeScrubber: React.FC<TimeScrubberProps> = memo(({ className }) => {
                         <div className="flex items-center gap-1">
                             <button
                                 onClick={() => cycleSpeed('down')}
-                                className="p-1.5 rounded-lg bg-slate-800/50 hover:bg-slate-700/50 text-slate-400 hover:text-white transition-colors"
+                                className="p-1.5 rounded-lg glass-button text-slate-400 hover:text-white"
                                 aria-label="Decrease speed"
                             >
-                                <Rewind size={14} />
+                                <Rewind size={14} strokeWidth={1.5} />
                             </button>
 
-                            <div className="px-3 py-1 bg-slate-800/80 rounded-lg min-w-[60px] text-center">
-                                <span className="font-data text-sm text-cyan-400">
+                            <div className="px-3 py-1 bg-white/5 rounded-lg min-w-[60px] text-center border border-white/5">
+                                <span className="font-data text-sm text-sky-400">
                                     {formatMultiplier(multiplier)}
                                 </span>
                             </div>
 
                             <button
                                 onClick={() => cycleSpeed('up')}
-                                className="p-1.5 rounded-lg bg-slate-800/50 hover:bg-slate-700/50 text-slate-400 hover:text-white transition-colors"
+                                className="p-1.5 rounded-lg glass-button text-slate-400 hover:text-white"
                                 aria-label="Increase speed"
                             >
-                                <FastForward size={14} />
+                                <FastForward size={14} strokeWidth={1.5} />
                             </button>
                         </div>
 
-                        {/* Play/Pause & Reset */}
+                        {/* Play/Pause & Step */}
                         <div className="flex items-center gap-2">
                             <button
                                 onClick={() => seekTo(timelinePosition - 0.01)}
-                                className="p-2 rounded-lg bg-slate-800/50 hover:bg-slate-700/50 text-slate-400 hover:text-white transition-colors"
+                                className="p-2 rounded-lg glass-button text-slate-400 hover:text-white"
                                 aria-label="Step backward"
                             >
-                                <ChevronLeft size={16} />
+                                <ChevronLeft size={16} strokeWidth={1.5} />
                             </button>
 
                             <button
@@ -287,30 +269,30 @@ const TimeScrubber: React.FC<TimeScrubberProps> = memo(({ className }) => {
                                 className={clsx(
                                     "p-3 rounded-full transition-all",
                                     isPlaying
-                                        ? "bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30"
+                                        ? "bg-white/10 text-white hover:bg-white/15"
                                         : "bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30"
                                 )}
                                 aria-label={isPlaying ? "Pause" : "Play"}
                             >
-                                {isPlaying ? <Pause size={20} /> : <Play size={20} />}
+                                {isPlaying ? <Pause size={18} strokeWidth={1.5} /> : <Play size={18} strokeWidth={1.5} />}
                             </button>
 
                             <button
                                 onClick={() => seekTo(timelinePosition + 0.01)}
-                                className="p-2 rounded-lg bg-slate-800/50 hover:bg-slate-700/50 text-slate-400 hover:text-white transition-colors"
+                                className="p-2 rounded-lg glass-button text-slate-400 hover:text-white"
                                 aria-label="Step forward"
                             >
-                                <ChevronRight size={16} />
+                                <ChevronRight size={16} strokeWidth={1.5} />
                             </button>
                         </div>
 
                         {/* Reset to Now */}
                         <button
                             onClick={resetToNow}
-                            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 transition-colors"
+                            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 transition-colors border border-emerald-500/20"
                             aria-label="Reset to current time"
                         >
-                            <RotateCcw size={14} />
+                            <RotateCcw size={14} strokeWidth={1.5} />
                             <span className="font-heading text-xs tracking-wider">NOW</span>
                         </button>
                     </div>

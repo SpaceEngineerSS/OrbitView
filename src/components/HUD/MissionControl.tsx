@@ -2,21 +2,13 @@
 
 import React, { memo, useMemo, useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import {
-    Satellite,
-    Clock,
-    Activity,
-    Zap
-} from "lucide-react";
+import { Satellite, Clock } from "lucide-react";
 import { GlassPanel } from "@/components/UI/GlassPanel";
 import { useTimelineStore } from "@/store/timelineStore";
 
 /**
- * MissionControl - Top HUD bar displaying global system status
- * Shows live status, active satellite count, and system time
- * 
- * @design_reference SpaceX/NASA Mission Control HUD aesthetics
- * Uses Zustand store for time state (throttled sync from Cesium)
+ * MissionControl - Clean pill-shaped status bar
+ * ORBITAL GLASS 2.0 - Minimalist design, data density without noise
  */
 
 interface MissionControlProps {
@@ -28,11 +20,9 @@ const MissionControl: React.FC<MissionControlProps> = memo(({
     satelliteCount,
     isLoading = false,
 }) => {
-    // Fix hydration mismatch - only render time on client
     const [mounted, setMounted] = useState(false);
     useEffect(() => setMounted(true), []);
 
-    // Get time state from Zustand store
     const { currentTime, isPlaying, multiplier } = useTimelineStore();
 
     const formattedTime = useMemo(() => {
@@ -49,92 +39,74 @@ const MissionControl: React.FC<MissionControlProps> = memo(({
         if (!mounted || !currentTime) return "----/--/--";
         return currentTime.toLocaleDateString("en-US", {
             year: "numeric",
-            month: "2-digit",
+            month: "short",
             day: "2-digit",
         });
     }, [mounted, currentTime]);
 
     const statusText = useMemo(() => {
-        if (isLoading) return "INITIALIZING";
+        if (isLoading) return "INIT";
         if (!isPlaying) return "PAUSED";
-        if (multiplier > 1) return `FAST ${multiplier}×`;
-        if (multiplier < 0) return "REVERSE";
+        if (multiplier > 1) return `${multiplier}×`;
+        if (multiplier < 0) return "REV";
         return "LIVE";
     }, [isLoading, isPlaying, multiplier]);
 
-    const statusColor = useMemo(() => {
-        if (isLoading) return "text-yellow-500";
-        if (!isPlaying) return "text-orange-500";
-        if (multiplier !== 1) return "text-purple-500";
-        return "text-emerald-500";
+    const statusDotColor = useMemo(() => {
+        if (isLoading) return "bg-amber-500";
+        if (!isPlaying) return "bg-slate-400";
+        if (multiplier !== 1) return "bg-violet-500";
+        return "bg-emerald-500";
     }, [isLoading, isPlaying, multiplier]);
 
     return (
         <motion.div
-            initial={{ y: -50, opacity: 0 }}
+            initial={{ y: -20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
-            className="fixed top-0 left-0 right-0 z-40 px-4 pt-4 pointer-events-none"
+            transition={{ type: "spring", stiffness: 400, damping: 30 }}
+            className="fixed top-4 left-1/2 -translate-x-1/2 z-40 pointer-events-none"
         >
             <GlassPanel
                 variant="elevated"
-                className="mx-auto max-w-4xl pointer-events-auto"
-                withGlow
-                neonColor="cyan"
+                className="pointer-events-auto rounded-full px-1"
             >
-                <div className="flex items-center justify-between px-4 py-2">
-                    {/* Left: Status Indicator */}
-                    <div className="flex items-center gap-3">
-                        <div className="flex items-center gap-2">
-                            <span className={`relative flex h-3 w-3`}>
-                                <span className={`animate-live-pulse absolute inline-flex h-full w-full rounded-full ${statusColor.replace('text-', 'bg-')
-                                    } opacity-75`} />
-                                <span className={`relative inline-flex rounded-full h-3 w-3 ${statusColor.replace('text-', 'bg-')
-                                    }`} />
-                            </span>
-                            <span className={`font-heading text-xs tracking-widest ${statusColor}`}>
-                                {statusText}
-                            </span>
-                        </div>
-
-                        {/* Activity Indicator */}
-                        <div className="hidden sm:flex items-center gap-1.5 text-cyan-500/70">
-                            <Activity size={14} className="animate-pulse" />
-                            <span className="font-data text-[10px]">SYS OK</span>
-                        </div>
-                    </div>
-
-                    {/* Center: Time Display */}
-                    <div className="flex flex-col items-center">
-                        <div className="flex items-center gap-2 text-cyan-400">
-                            <Clock size={14} />
-                            <span className="font-data text-lg tracking-wider neon-text-cyan">
-                                {formattedTime}
-                            </span>
-                        </div>
-                        <span className="font-data text-[10px] text-slate-500 tracking-wider">
-                            {formattedDate} UTC
+                <div className="flex items-center gap-4 px-4 py-2">
+                    {/* Status Indicator */}
+                    <div className="flex items-center gap-2">
+                        <span className="relative flex h-2 w-2">
+                            <span className={`animate-live-dot absolute inline-flex h-full w-full rounded-full ${statusDotColor} opacity-75`} />
+                            <span className={`relative inline-flex rounded-full h-2 w-2 ${statusDotColor}`} />
+                        </span>
+                        <span className="font-heading text-[10px] text-slate-300 tracking-widest">
+                            {statusText}
                         </span>
                     </div>
 
-                    {/* Right: Satellite Count */}
-                    <div className="flex items-center gap-3">
-                        <div className="hidden sm:flex items-center gap-1.5 text-emerald-500/70">
-                            <Zap size={14} />
-                            <span className="font-data text-[10px]">PWR</span>
-                        </div>
+                    {/* Divider */}
+                    <div className="h-4 w-px bg-white/10" />
 
-                        <div className="flex items-center gap-2">
-                            <Satellite size={16} className="text-cyan-500" />
-                            <div className="flex flex-col items-end">
-                                <span className="font-data text-lg text-white tracking-wider">
-                                    {isLoading ? "---" : satelliteCount.toLocaleString()}
-                                </span>
-                                <span className="font-heading text-[8px] text-slate-500 tracking-widest">
-                                    ACTIVE SAT
-                                </span>
-                            </div>
+                    {/* Time Display */}
+                    <div className="flex items-center gap-2">
+                        <Clock size={12} className="text-slate-400" strokeWidth={1.5} />
+                        <div className="flex flex-col items-center">
+                            <span className="font-data text-sm text-white tracking-wider">
+                                {formattedTime}
+                            </span>
+                            <span className="font-data text-[9px] text-slate-500">
+                                {formattedDate} UTC
+                            </span>
                         </div>
+                    </div>
+
+                    {/* Divider */}
+                    <div className="h-4 w-px bg-white/10" />
+
+                    {/* Satellite Count */}
+                    <div className="flex items-center gap-2">
+                        <Satellite size={12} className="text-slate-400" strokeWidth={1.5} />
+                        <span className="font-data text-sm text-white">
+                            {isLoading ? "---" : satelliteCount.toLocaleString()}
+                        </span>
                     </div>
                 </div>
             </GlassPanel>

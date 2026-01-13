@@ -43,6 +43,7 @@ const DecayPanel: React.FC<DecayPanelProps> = ({
             .finally(() => setWeatherLoading(false));
     }, []);
 
+
     // Calculate decay prediction with space weather correction
     const prediction = useMemo<DecayPrediction | null>(() => {
         if (!tleLine1 || !altitudeKm || altitudeKm < 0) return null;
@@ -54,7 +55,7 @@ const DecayPanel: React.FC<DecayPanelProps> = ({
         const densityFactor = spaceWeather ? getDensityCorrectionFactor(spaceWeather) : 1.0;
         const adjustedBstar = bstar * densityFactor;
 
-        return predictOrbitalDecay(semiMajorAxis, eccentricity, adjustedBstar);
+        return predictOrbitalDecay(semiMajorAxis, eccentricity, adjustedBstar, new Date());
     }, [tleLine1, altitudeKm, eccentricity, spaceWeather]);
 
     if (!prediction) {

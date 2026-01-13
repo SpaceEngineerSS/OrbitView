@@ -168,122 +168,145 @@ const ScientificDashboard: React.FC<ScientificDashboardProps> = ({
         );
     }
 
-    // Desktop Floating Panel version
+    // Desktop Centered Modal Overlay version
     return (
-        <motion.div
-            initial={{ opacity: 0, x: 400 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 400 }}
-            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-            className={clsx(
-                "fixed top-24 right-6 bg-slate-950/90 backdrop-blur-xl border border-purple-500/20 rounded-2xl shadow-[0_0_60px_rgba(0,0,0,0.6)] z-30 flex flex-col overflow-hidden",
-                isExpanded ? "w-[500px] max-h-[80vh]" : "w-96 max-h-[calc(100vh-120px)]"
-            )}
-        >
-            {/* Header */}
-            <div className={`p-4 border-b border-white/10 bg-gradient-to-r from-${activeTabColor}-950/50 to-transparent flex items-center justify-between`}>
-                <div className="flex items-center gap-2">
-                    <div className={`p-2 bg-${activeTabColor}-500/10 rounded-lg border border-${activeTabColor}-500/20`}>
-                        <Orbit size={16} className={`text-${activeTabColor}-400`} />
+        <AnimatePresence>
+            {/* Backdrop */}
+            <motion.div
+                key="scientific-desktop-backdrop"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
+                onClick={onClose}
+            />
+
+            {/* Centered Modal */}
+            <motion.div
+                key="scientific-desktop-modal"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                className="fixed inset-0 z-50 flex items-center justify-center p-6 pointer-events-none"
+            >
+                <div
+                    className={clsx(
+                        "bg-slate-950/95 backdrop-blur-2xl border border-white/10 rounded-3xl shadow-[0_0_80px_rgba(0,0,0,0.8)] flex flex-col overflow-hidden pointer-events-auto",
+                        isExpanded ? "w-[900px] max-h-[85vh]" : "w-[700px] max-h-[75vh]"
+                    )}
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    {/* Header */}
+                    <div className="p-5 border-b border-white/10 bg-gradient-to-r from-purple-950/30 via-transparent to-cyan-950/30 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2.5 bg-purple-500/10 rounded-xl border border-purple-500/20 backdrop-blur-sm">
+                                <Orbit size={20} className="text-purple-400" />
+                            </div>
+                            <div>
+                                <h2 className="text-base font-bold text-white tracking-tight">Scientific Dashboard</h2>
+                                <span className="text-[10px] text-purple-400/80 font-mono uppercase tracking-widest">Analyst Mode</span>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={() => setIsExpanded(!isExpanded)}
+                                className="p-2.5 text-slate-400 hover:text-white hover:bg-white/10 rounded-xl transition-all duration-200"
+                                aria-label={isExpanded ? "Minimize" : "Maximize"}
+                            >
+                                {isExpanded ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
+                            </button>
+                            <button
+                                onClick={onClose}
+                                className="p-2.5 text-slate-400 hover:text-white hover:bg-red-500/20 rounded-xl transition-all duration-200"
+                                aria-label="Close"
+                            >
+                                <X size={18} />
+                            </button>
+                        </div>
                     </div>
-                    <div>
-                        <h2 className="text-sm font-bold text-white">Scientific Dashboard</h2>
-                        <span className="text-[10px] text-purple-400 font-mono">ANALYST MODE</span>
+
+                    {/* Tabs */}
+                    <div className="flex border-b border-white/5 bg-black/20">
+                        {tabs.map((tab) => (
+                            <button
+                                key={tab.id}
+                                onClick={() => setActiveTab(tab.id)}
+                                className={clsx(
+                                    "flex-1 flex items-center justify-center gap-2 py-4 text-xs font-semibold uppercase tracking-wider transition-all duration-200",
+                                    activeTab === tab.id
+                                        ? `text-${tab.color}-400 border-b-2 border-${tab.color}-400 bg-${tab.color}-500/10`
+                                        : "text-slate-500 hover:text-slate-300 hover:bg-white/5"
+                                )}
+                            >
+                                {tab.icon}
+                                <span>{tab.label}</span>
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* Content */}
+                    <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
+                        <AnimatePresence mode="wait">
+                            <motion.div
+                                key={activeTab}
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -10 }}
+                                transition={{ duration: 0.15 }}
+                                className="h-full"
+                            >
+                                {activeTab === 'doppler' && (
+                                    <DopplerPanel
+                                        satelliteState={satelliteState}
+                                        satelliteName={selectedObject?.name}
+                                        observerPosition={observerPosition}
+                                    />
+                                )}
+                                {activeTab === 'prediction' && (
+                                    selectedObject && selectedObject.type === 'TLE' && selectedObject.tle ? (
+                                        <PassPredictionPanel
+                                            satellite={{ ...selectedObject.tle, id: selectedObject.id, name: selectedObject.name }}
+                                            observer={observerPosition}
+                                        />
+                                    ) : (
+                                        <div className="flex flex-col items-center justify-center h-48 text-slate-500">
+                                            <AlertTriangle className="mb-3 opacity-50" size={24} />
+                                            <p className="text-sm">Select a TLE-based satellite to view predictions.</p>
+                                        </div>
+                                    )
+                                )}
+                                {activeTab === 'decay' && (
+                                    <DecayPanel
+                                        tleLine1={tleLine1}
+                                        altitudeKm={telemetry?.alt || null}
+                                        satelliteName={selectedObject?.name}
+                                    />
+                                )}
+                                {activeTab === 'conjunction' && (
+                                    <ConjunctionPanel
+                                        onSelectObject={onSelectSatellite}
+                                    />
+                                )}
+                                {activeTab === 'elements' && (
+                                    <OrbitalElementsPanel satellite={selectedObject} />
+                                )}
+                            </motion.div>
+                        </AnimatePresence>
+                    </div>
+
+                    {/* Footer */}
+                    <div className="px-5 py-3 border-t border-white/5 bg-black/30 flex items-center justify-between">
+                        <span className="text-xs text-slate-500">
+                            {selectedObject ? `Analyzing: ${selectedObject.name}` : 'Select a satellite for analysis'}
+                        </span>
+                        <span className="text-[10px] text-slate-600 font-mono">ESC to close</span>
                     </div>
                 </div>
-
-                <div className="flex items-center gap-1">
-                    <button
-                        onClick={() => setIsExpanded(!isExpanded)}
-                        className="p-2 text-slate-500 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
-                    >
-                        {isExpanded ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
-                    </button>
-                    <button
-                        onClick={onClose}
-                        className="p-2 text-slate-500 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
-                    >
-                        <X size={16} />
-                    </button>
-                </div>
-            </div>
-
-            {/* Tabs */}
-            <div className="flex border-b border-white/5">
-                {tabs.map((tab) => (
-                    <button
-                        key={tab.id}
-                        onClick={() => setActiveTab(tab.id)}
-                        className={clsx(
-                            "flex-1 flex items-center justify-center gap-2 py-3 text-xs font-bold uppercase tracking-wider transition-all",
-                            activeTab === tab.id
-                                ? `text-${tab.color}-400 border-b-2 border-${tab.color}-400 bg-${tab.color}-500/5`
-                                : "text-slate-500 hover:text-slate-300 hover:bg-white/5"
-                        )}
-                    >
-                        {tab.icon}
-                        <span className="hidden sm:inline">{tab.label}</span>
-                    </button>
-                ))}
-            </div>
-
-            {/* Content */}
-            <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
-                <AnimatePresence mode="wait">
-                    <motion.div
-                        key={activeTab}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        transition={{ duration: 0.2 }}
-                        className="h-full"
-                    >
-                        {activeTab === 'doppler' && (
-                            <DopplerPanel
-                                satelliteState={satelliteState}
-                                satelliteName={selectedObject?.name}
-                                observerPosition={observerPosition}
-                            />
-                        )}
-                        {activeTab === 'prediction' && (
-                            activeTab === 'prediction' && selectedObject && selectedObject.type === 'TLE' && selectedObject.tle ? (
-                                <PassPredictionPanel
-                                    satellite={{ ...selectedObject.tle, id: selectedObject.id, name: selectedObject.name }}
-                                    observer={observerPosition}
-                                />
-                            ) : (
-                                <div className="flex flex-col items-center justify-center h-full text-slate-500">
-                                    <AlertTriangle className="mb-2 opacity-50" />
-                                    <p className="text-xs">Select a TLE-based satellite to view predictions.</p>
-                                </div>
-                            )
-                        )}
-                        {activeTab === 'decay' && (
-                            <DecayPanel
-                                tleLine1={tleLine1}
-                                altitudeKm={telemetry?.alt || null}
-                                satelliteName={selectedObject?.name}
-                            />
-                        )}
-                        {activeTab === 'conjunction' && (
-                            <ConjunctionPanel
-                                onSelectObject={onSelectSatellite}
-                            />
-                        )}
-                        {activeTab === 'elements' && (
-                            <OrbitalElementsPanel satellite={selectedObject} />
-                        )}
-                    </motion.div>
-                </AnimatePresence>
-            </div>
-
-            {/* Footer */}
-            <div className="p-3 border-t border-white/5 bg-black/20 text-center">
-                <span className="text-[10px] text-slate-600">
-                    {selectedObject ? `Analyzing: ${selectedObject.name}` : 'Select a satellite for analysis'}
-                </span>
-            </div>
-        </motion.div>
+            </motion.div>
+        </AnimatePresence>
     );
 };
 

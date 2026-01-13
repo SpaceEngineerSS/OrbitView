@@ -1,50 +1,77 @@
 @import "tailwindcss";
 
+/* ===== ORBITAL GLASS 2.0 Design System ===== */
+/* Philosophy: "The Content is the Interface" */
+/* Clean, immersive, Apple Vision Pro-like scientific interface */
+
 :root {
+  /* Core Background */
   --background: #020617;
   --foreground: #ededed;
   
-  /* HUD Color Palette */
-  --hud-cyan: #06b6d4;
-  --hud-cyan-glow: rgba(6, 182, 212, 0.4);
-  --hud-rose: #f43f5e;
-  --hud-rose-glow: rgba(244, 63, 94, 0.4);
-  --hud-emerald: #10b981;
-  --hud-purple: #a855f7;
-  --hud-bg: #020617;
-  --hud-panel: rgba(15, 23, 42, 0.6);
+  /* Glass System */
+  --glass-bg: rgba(15, 23, 42, 0.6);
+  --glass-bg-elevated: rgba(30, 41, 59, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-highlight: rgba(255, 255, 255, 0.15);
+  --glass-blur: 20px;
+  
+  /* Accent Colors */
+  --accent-primary: #38bdf8;       /* Sky 400 - active states */
+  --accent-secondary: #22d3ee;     /* Cyan 400 - highlights */
+  --accent-success: #10b981;       /* Emerald 500 */
+  --accent-warning: #f59e0b;       /* Amber 500 */
+  --accent-danger: #f43f5e;        /* Rose 500 */
+  
+  /* Text Hierarchy */
+  --text-primary: #ffffff;
+  --text-secondary: rgba(255, 255, 255, 0.6);
+  --text-tertiary: rgba(255, 255, 255, 0.4);
+  --text-muted: rgba(255, 255, 255, 0.25);
   
   /* Font Variables */
   --font-heading: var(--font-rajdhani), 'Rajdhani', sans-serif;
+  --font-body: var(--font-inter), 'Inter', system-ui, sans-serif;
   --font-data: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  
+  /* Safe Area Support (for notch devices) */
+  --safe-area-top: env(safe-area-inset-top, 0px);
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-left: env(safe-area-inset-left, 0px);
+  --safe-area-right: env(safe-area-inset-right, 0px);
+  
+  /* Shadows */
+  --shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.3);
+  --shadow-elevated: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-rajdhani);
-  --font-mono: var(--font-jetbrains);
+  --font-sans: var(--font-body);
+  --font-mono: var(--font-data);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #020617;
-    --foreground: #ededed;
-  }
-}
-
+/* ===== Base Body Styles ===== */
 body {
-  background: var(--hud-bg);
-  color: var(--foreground);
-  font-family: var(--font-heading);
+  background: var(--background);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* HUD Typography */
+/* ===== Typography System ===== */
 .font-heading {
   font-family: var(--font-heading);
   font-weight: 600;
   letter-spacing: 0.05em;
   text-transform: uppercase;
+}
+
+.font-body {
+  font-family: var(--font-body);
+  font-weight: 400;
 }
 
 .font-data {
@@ -53,104 +80,48 @@ body {
   letter-spacing: 0.02em;
 }
 
-/* Neon Glow Effects */
-.neon-glow-cyan {
-  box-shadow: 0 0 20px var(--hud-cyan-glow), 0 0 40px rgba(6, 182, 212, 0.2);
+/* ===== Glass Panel System ===== */
+.glass-panel {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-glass);
 }
 
-.neon-glow-rose {
-  box-shadow: 0 0 20px var(--hud-rose-glow), 0 0 40px rgba(244, 63, 94, 0.2);
+.glass-panel-elevated {
+  background: var(--glass-bg-elevated);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-elevated);
 }
 
-.neon-text-cyan {
-  color: var(--hud-cyan);
-  text-shadow: 0 0 10px var(--hud-cyan-glow), 0 0 20px var(--hud-cyan-glow);
+.glass-button {
+  background: transparent;
+  border: 1px solid var(--glass-border);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.neon-text-rose {
-  color: var(--hud-rose);
-  text-shadow: 0 0 10px var(--hud-rose-glow), 0 0 20px var(--hud-rose-glow);
+.glass-button:hover {
+  background: var(--glass-highlight);
+  border-color: rgba(255, 255, 255, 0.15);
 }
 
-/* Scan Line Animation */
-@keyframes scan-line {
-  0% {
-    transform: translateY(-100%);
-  }
-  100% {
-    transform: translateY(100%);
-  }
+.glass-button:active {
+  transform: scale(0.97);
 }
 
-.animate-scan-line {
-  animation: scan-line 3s linear infinite;
+/* ===== Simple Animations ===== */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
-/* Pulse Glow Animation */
-@keyframes neon-pulse {
-  0%, 100% {
-    opacity: 1;
-    filter: brightness(1);
-  }
-  50% {
-    opacity: 0.8;
-    filter: brightness(1.2);
-  }
-}
-
-.animate-neon-pulse {
-  animation: neon-pulse 2s ease-in-out infinite;
-}
-
-/* Live Indicator Pulse */
-@keyframes live-pulse {
-  0%, 100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-  50% {
-    transform: scale(1.2);
-    opacity: 0.7;
-  }
-}
-
-.animate-live-pulse {
-  animation: live-pulse 1.5s ease-in-out infinite;
-}
-
-/* Custom Scrollbar */
-.custom-scrollbar::-webkit-scrollbar {
-  width: 8px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.2);
-  border-radius: 10px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(6, 182, 212, 0.3);
-  border-radius: 10px;
-  border: 2px solid transparent;
-  background-clip: padding-box;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(6, 182, 212, 0.5);
-  background-clip: padding-box;
-}
-
-/* Firefox scrollbar */
-.custom-scrollbar {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(6, 182, 212, 0.3) rgba(0, 0, 0, 0.2);
-}
-
-/* Smooth animations */
 @keyframes fadeInUp {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(10px);
   }
   to {
     opacity: 1;
@@ -158,51 +129,76 @@ body {
   }
 }
 
-@keyframes pulse-glow {
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.animate-pulse-soft {
+  animation: pulse-soft 2s ease-in-out infinite;
+}
+
+/* Live Indicator - Simple dot pulse */
+@keyframes live-dot {
   0%, 100% {
+    transform: scale(1);
     opacity: 1;
-    box-shadow: 0 0 15px rgba(6, 182, 212, 0.4);
   }
   50% {
+    transform: scale(1.15);
     opacity: 0.8;
-    box-shadow: 0 0 25px rgba(6, 182, 212, 0.6);
   }
 }
 
-@keyframes scan-line {
-  0% {
-    transform: translateY(-100%);
+.animate-live-dot {
+  animation: live-dot 1.5s ease-in-out infinite;
+}
+
+/* ===== Custom Scrollbar ===== */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Firefox scrollbar */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.1) rgba(255, 255, 255, 0.02);
+}
+
+/* ===== Selection ===== */
+::selection {
+  background-color: rgba(56, 189, 248, 0.3);
+  color: #ffffff;
+}
+
+::-moz-selection {
+  background-color: rgba(56, 189, 248, 0.3);
+  color: #ffffff;
+}
+
+/* ===== Smooth Transitions (Respect Reduced Motion) ===== */
+@media (prefers-reduced-motion: no-preference) {
+  * {
+    transition-property: background-color, border-color, color, opacity, transform;
+    transition-duration: 150ms;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   }
-  100% {
-    transform: translateY(100%);
-  }
 }
 
-/* Glass morphism effect */
-.glass-panel {
-  background: rgba(15, 23, 42, 0.8);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-/* Glow effect for active elements */
-.glow-cyan {
-  box-shadow: 0 0 20px rgba(6, 182, 212, 0.3);
-}
-
-.glow-cyan:hover {
-  box-shadow: 0 0 30px rgba(6, 182, 212, 0.5);
-}
-
-/* Smooth transitions */
-* {
-  transition-property: color, background-color, border-color, opacity, transform, box-shadow;
-  transition-duration: 200ms;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* Disable transitions for reduced motion */
 @media (prefers-reduced-motion: reduce) {
   * {
     transition: none !important;
@@ -210,56 +206,7 @@ body {
   }
 }
 
-/* Selection color */
-::selection {
-  background-color: rgba(6, 182, 212, 0.3);
-  color: #ffffff;
-}
-
-::-moz-selection {
-  background-color: rgba(6, 182, 212, 0.3);
-  color: #ffffff;
-}
-
 /* ===== Mobile Responsive Utilities ===== */
-
-/* Safe Area Support (for notch devices) */
-:root {
-  --safe-area-top: env(safe-area-inset-top, 0px);
-  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
-  --safe-area-left: env(safe-area-inset-left, 0px);
-  --safe-area-right: env(safe-area-inset-right, 0px);
-}
-
-/* Bottom Sheet Animations */
-@keyframes slideUp {
-  from {
-    transform: translateY(100%);
-  }
-  to {
-    transform: translateY(0);
-  }
-}
-
-@keyframes slideDown {
-  from {
-    transform: translateY(0);
-  }
-  to {
-    transform: translateY(100%);
-  }
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-/* Touch-friendly sizing */
 @media (max-width: 768px) {
   .touch-target {
     min-height: 44px;
@@ -277,7 +224,16 @@ body {
   }
 }
 
-/* Bottom Sheet styling */
+/* ===== Overlay & Modal System ===== */
+.overlay-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* ===== Bottom Sheet (Mobile) ===== */
 .bottom-sheet {
   position: fixed;
   bottom: 0;
@@ -292,29 +248,64 @@ body {
 .bottom-sheet-handle {
   width: 40px;
   height: 4px;
-  background: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.2);
   border-radius: 2px;
   margin: 12px auto;
 }
 
-/* Overlay backdrop */
-.overlay-backdrop {
+/* ===== Floating Action Button ===== */
+.fab {
   position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-elevated);
+  z-index: 50;
 }
 
-/* Mobile full screen modal */
-.mobile-modal {
+/* ===== Touch Scrolling ===== */
+.touch-scroll {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+/* ===== Hide Scrollbar on Mobile ===== */
+@media (max-width: 768px) {
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+/* ===== Loading State ===== */
+@keyframes loadingPulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+.loading-pulse {
+  animation: loadingPulse 1.5s ease-in-out infinite;
+}
+
+/* ===== Mobile Navigation ===== */
+.mobile-nav {
   position: fixed;
-  inset: 0;
-  padding-top: var(--safe-area-top);
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: calc(64px + var(--safe-area-bottom));
   padding-bottom: var(--safe-area-bottom);
+  z-index: 40;
 }
 
-/* Compact mode for panels */
+/* ===== Compact Stats Grid (Mobile) ===== */
 @media (max-width: 768px) {
   .stats-grid {
     grid-template-columns: repeat(2, 1fr) !important;
@@ -330,63 +321,14 @@ body {
   }
 }
 
-/* Hide scrollbar on mobile for cleaner look */
-@media (max-width: 768px) {
-  .hide-scrollbar::-webkit-scrollbar {
-    display: none;
-  }
-  
-  .hide-scrollbar {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-}
-
-/* Floating Action Button */
-.fab {
-  position: fixed;
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3), 0 0 20px rgba(6, 182, 212, 0.2);
-  z-index: 50;
-}
-
-/* Improved touch scrolling */
-.touch-scroll {
-  -webkit-overflow-scrolling: touch;
-  overscroll-behavior: contain;
-}
-
-/* Loading pulse animation */
-@keyframes loadingPulse {
-  0%, 100% {
-    opacity: 0.4;
-  }
-  50% {
-    opacity: 1;
-  }
-}
-
-.loading-pulse {
-  animation: loadingPulse 1.5s ease-in-out infinite;
-}
-
-/* Mobile nav bar */
-.mobile-nav {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: calc(64px + var(--safe-area-bottom));
-  padding-bottom: var(--safe-area-bottom);
-  background: rgba(15, 23, 42, 0.95);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  z-index: 40;
-}
-
+/* ===== Z-Index Hierarchy ===== */
+/* 
+  z-0:   Globe/3D Content
+  z-10:  Floating panels (ObjectCatalog, InfoPanel)
+  z-20:  Secondary UI (Footer, keyboard button)
+  z-30:  Primary UI (Dock, top toolbar)
+  z-40:  Mission Control bar
+  z-50:  Modals and overlays
+  z-100: Tooltips and popovers
+  z-200: Hover tooltips (highest)
+*/

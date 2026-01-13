@@ -127,13 +127,21 @@ const SatelliteLayer: React.FC<SatelliteLayerProps> = ({
   const handleTelemetry = useCallback(() => {
     if (!viewer || !selectedId || !selectedSatPos) return;
     const carto = Cesium.Cartographic.fromCartesian(selectedSatPos);
+
+    // Calculate velocity magnitude from velocity vector (km/s)
+    let velocityKmPerSec = 0;
+    if (selectedSatVelocity) {
+      // Velocity vector is in m/s, convert to km/s
+      velocityKmPerSec = Cesium.Cartesian3.magnitude(selectedSatVelocity) / 1000;
+    }
+
     onTelemetryUpdate?.({
       lat: Cesium.Math.toDegrees(carto.latitude),
       lon: Cesium.Math.toDegrees(carto.longitude),
       alt: carto.height / 1000,
-      velocity: 0 // Velocity calculated in component if TLE
+      velocity: velocityKmPerSec
     });
-  }, [viewer, selectedId, selectedSatPos, onTelemetryUpdate]);
+  }, [viewer, selectedId, selectedSatPos, selectedSatVelocity, onTelemetryUpdate]);
 
   useEffect(() => {
     const timer = setInterval(handleTelemetry, 1000);
@@ -148,7 +156,7 @@ const SatelliteLayer: React.FC<SatelliteLayerProps> = ({
         filter={filter}
         searchQuery={searchQuery}
         settings={settings || DEFAULT_SETTINGS}
-        onUpdateSelectedPos={setSelectedSatPos}
+        onUpdateSelectedPos={handleUpdatePosition}
         onHover={(o: SpaceObject | null) => onHover?.(o)}
         onSelect={(o: SpaceObject | null) => onSelect?.(o)}
       />

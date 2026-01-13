@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.2.0] - 2026-01-14
+
+### Added
+- **ORBITAL GLASS 2.0 Design System**
+  - Apple Vision Pro-inspired glassmorphism aesthetic
+  - Centered modal overlay for Scientific Dashboard
+  - Smart TimeScrubber auto-hide when satellite selected
+  - Refined frosted glass panels with subtle gradients
+- **Documentation**
+  - New desktop and mobile screenshots in README
+  - Updated design system documentation
+
+### Changed
+- **ScientificDashboard:** Converted from side panel to centered modal with backdrop blur
+- **TimeScrubber:** Now hides automatically when a satellite is selected, reducing visual clutter
+- **UI Polish:** Larger modal sizes (700px/900px) with improved spacing and typography
+
+### Fixed
+- Redundant condition in prediction panel render
+- Improved accessibility with ARIA labels on modal buttons
+
+---
+
 ## [2.1.0] - 2025-12-29
 
 ### Added

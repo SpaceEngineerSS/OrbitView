@@ -139,6 +139,7 @@ self.onmessage = (e: MessageEvent<WorkerMessage>) => {
         const positions = new Float32Array(satrecs.length * 3);
 
         let selectedSatPos: { x: number; y: number; z: number } | null = null;
+        let selectedSatVel: { x: number; y: number; z: number } | null = null;
         let selectedSatIndex = -1;
         let selectedBucketKey = '';
 
@@ -185,6 +186,17 @@ self.onmessage = (e: MessageEvent<WorkerMessage>) => {
                         selectedSatPos = { x, y, z };
                         selectedSatIndex = i;
                         selectedBucketKey = bucketKey;
+
+                        // Capture velocity for Doppler calculations (in m/s)
+                        if (posVel.velocity && typeof posVel.velocity !== 'boolean') {
+                            const velEci = posVel.velocity as satellite.EciVec3<number>;
+                            const velEcf = satellite.eciToEcf(velEci, gmst);
+                            selectedSatVel = {
+                                x: velEcf.x * 1000, // km/s to m/s
+                                y: velEcf.y * 1000,
+                                z: velEcf.z * 1000
+                            };
+                        }
                     }
                 } else {
                     positions[i * 3] = NaN;
@@ -291,6 +303,7 @@ self.onmessage = (e: MessageEvent<WorkerMessage>) => {
             {
                 type: "update_complete",
                 positions,
+                selectedVelocity: selectedSatVel, // For Doppler calculations
                 links,
                 conjunctions: conjunctions.length > 0 ? conjunctions : undefined,
                 gridStats: {

@@ -18,17 +18,25 @@
 
 <div align="center">
   <p><b>Scientific Satellite Tracker & Orbital Analysis</b></p>
-  <img src="public/orbitview.png" alt="OrbitView Demo" width="900">
+  <img src="public/screenshots/desktop-view.png" alt="OrbitView Desktop View" width="900">
+</div>
+
+### 📱 Mobile Experience
+
+<div align="center">
+  <img src="public/screenshots/mobile-view.png" alt="OrbitView Mobile View" width="300">
+  <p><i>Fully responsive design with touch-optimized controls</i></p>
 </div>
 
 ---
 
 ## ✨ Features
 
-### 🎨 v2.0 UI Revolution
-- 🖥️ **Cinematic HUD & Glassmorphism UI** - Sci-Fi inspired interface with backdrop blur, neon accents, and scan-line effects
-- ⏱️ **Time Scrubber & Replay System** - YouTube-style draggable timeline with Zustand-powered state
+### 🎨 v2.2 ORBITAL GLASS Design System
+- 🖥️ **Apple Vision Pro-inspired Glassmorphism UI** - Clean, modern interface with frosted glass panels, subtle gradients, and smooth animations
+- ⏱️ **Smart Timeline** - Context-aware time scrubber that auto-hides when analyzing satellites
 - 🎥 **Satellite Cockpit View (POV)** - Velocity-vector locked camera with Quaternion orientation
+- 🔬 **Centered Scientific Modal** - Full-screen analysis dashboard with backdrop blur
 
 ### ⚡ v2.0 Performance
 - 🧮 **Spatial Hashing Collision Engine** - O(N) link calculation with 1000km³ grid cells
@@ -217,5 +225,5 @@ You can test the latest stable version of OrbitView here:
 ---
 
 <div align="center">
-  Made with ❤️ for space enthusiasts | v2.1.0 | Last updated: 2025-12-29
+  Made with ❤️ for space enthusiasts | v2.2.0 | Last updated: 2026-01-14
 </div>
