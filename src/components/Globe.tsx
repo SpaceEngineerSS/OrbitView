@@ -1,9 +1,15 @@
 "use client";
 
 import React, { useEffect, useState, useRef, useMemo, memo } from "react";
-import { Viewer, Scene } from "resium";
+import { Viewer, Scene, ImageryLayer } from "resium";
 import * as Cesium from "cesium";
 import "cesium/Build/Cesium/Widgets/widgets.css";
+
+// Use OpenStreetMap instead of Cesium Ion (no API key required)
+const osmImageryProvider = new Cesium.OpenStreetMapImageryProvider({
+  url: "https://tile.openstreetmap.org/",
+  credit: "© OpenStreetMap contributors"
+});
 import SatelliteLayer from "./SatelliteLayer";
 import { SpaceObject } from "@/lib/space-objects";
 import * as satellite from "satellite.js";
@@ -53,6 +59,17 @@ const Globe: React.FC<GlobeProps> = ({ objects = [], onSelect, selectedObject, o
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Remove default Cesium Ion imagery and use OpenStreetMap
+  useEffect(() => {
+    if (viewerRef && !viewerRef.isDestroyed()) {
+      const layers = viewerRef.imageryLayers;
+      // Remove default Cesium Ion layer (first layer)
+      if (layers.length > 1) {
+        layers.remove(layers.get(0), false);
+      }
+    }
+  }, [viewerRef]);
 
   // Sync Cesium Clock settings from Zustand store
   useEffect(() => {
@@ -223,6 +240,7 @@ const Globe: React.FC<GlobeProps> = ({ objects = [], onSelect, selectedObject, o
         creditContainer={creditContainer}
       >
         <Scene highDynamicRange={true} />
+        <ImageryLayer imageryProvider={osmImageryProvider} />
 
         <SatelliteLayer
           objects={objects}
