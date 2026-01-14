@@ -43,7 +43,7 @@ export const metadata: Metadata = {
     apple: [
       { url: "/icon-192x192.png", sizes: "192x192", type: "image/png" },
     ],
-    shortcut: "/orbitview-logo.svg",
+    shortcut: "/orbitview-logo.png",
   },
   openGraph: {
     title: "OrbitView - Real-time Satellite Tracking",

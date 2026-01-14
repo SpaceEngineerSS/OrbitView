@@ -165,11 +165,11 @@ const TimeScrubber: React.FC<TimeScrubberProps> = memo(({ className }) => {
                             <div className="flex items-center gap-2">
                                 <Clock size={12} className="text-sky-400" strokeWidth={1.5} />
                                 <span className="font-data text-lg text-white tracking-wider">
-                                    {formatTime(currentTime)}
+                                    {mounted ? formatTime(currentTime) : "--:--:--"}
                                 </span>
                             </div>
                             <span className="font-data text-[9px] text-slate-500">
-                                {formatDate(currentTime)}
+                                {mounted ? formatDate(currentTime) : "----/--/--"}
                             </span>
                         </div>
 

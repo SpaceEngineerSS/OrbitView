@@ -105,6 +105,10 @@ let satrecs: SatelliteRecord[] = [];
 let spatialGrid: Map<string, SpatialBucket> = new Map();
 let bucketAssignments: string[] = []; // bucketAssignments[i] = bucket key for satellite i
 
+// Pre-allocated buffer for positions (reused each frame to avoid GC)
+let positionsBuffer: Float32Array | null = null;
+let lastBufferSize = 0;
+
 // ============================================================================
 // MESSAGE HANDLER
 // ============================================================================
@@ -123,6 +127,14 @@ self.onmessage = (e: MessageEvent<WorkerMessage>) => {
         // Pre-allocate bucket assignments array
         bucketAssignments = new Array(satrecs.length).fill('');
 
+        // Pre-allocate positions buffer (avoids GC pressure at 60fps)
+        const requiredSize = satrecs.length * 3;
+        if (positionsBuffer === null || lastBufferSize !== requiredSize) {
+            positionsBuffer = new Float32Array(requiredSize);
+            lastBufferSize = requiredSize;
+            console.log(`[Worker] Allocated positions buffer: ${requiredSize} floats (${(requiredSize * 4 / 1024).toFixed(1)} KB)`);
+        }
+
         self.postMessage({ type: "init_complete", count: satrecs.length });
     }
     else if (type === "RESET_TIME") {
@@ -135,8 +147,15 @@ self.onmessage = (e: MessageEvent<WorkerMessage>) => {
         const date = new Date(time);
         const gmst = satellite.gstime(date);
 
-        // Float32Array for positions: [x, y, z, x, y, z, ...]
-        const positions = new Float32Array(satrecs.length * 3);
+        // Reuse pre-allocated buffer or create new if needed
+        // CRITICAL: Check if buffer was detached after previous transfer (byteLength === 0)
+        const requiredSize = satrecs.length * 3;
+        const isDetached = positionsBuffer !== null && positionsBuffer.byteLength === 0;
+        if (positionsBuffer === null || lastBufferSize !== requiredSize || isDetached) {
+            positionsBuffer = new Float32Array(requiredSize);
+            lastBufferSize = requiredSize;
+        }
+        const positions = positionsBuffer;
 
         let selectedSatPos: { x: number; y: number; z: number } | null = null;
         let selectedSatVel: { x: number; y: number; z: number } | null = null;

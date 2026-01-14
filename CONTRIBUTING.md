@@ -4,72 +4,73 @@ Thank you for your interest in contributing to OrbitView! 🛰️
 
 ## Getting Started
 
-1. **Fork the repository** ([OrbitVieW](https://github.com/SpaceEngineerSS/OrbitVieW)) and clone it locally
-2. **Install dependencies**: `npm install`
-3. **Start development server**: `npm run dev`
-4. **Create a branch**: `git checkout -b feature/your-feature-name`
+1. Fork the repository
+2. Clone your fork: `git clone https://github.com/YOUR_USERNAME/OrbitView.git`
+3. Create a feature branch: `git checkout -b feature/your-feature-name`
+4. Make your changes
+5. Submit a Pull Request
 
-## Development Guidelines
+## Development Setup
 
-### Code Style
+```bash
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+
+# Run tests
+npm test
+
+# Type checking
+npm run type-check
+```
+
+## Before Submitting a Pull Request
+
+> ⚠️ **Important:** Please ensure ALL tests pass before opening a PR.
+
+```bash
+# Run the full test suite
+npm test
+
+# Verify type safety
+npm run type-check
+
+# Build check
+npm run build
+```
+
+## Code Style Guidelines
 
 - Use TypeScript for all new code
-- Follow the existing code patterns
-- Use meaningful variable and function names
-- Add JSDoc comments for complex functions
+- Follow existing code patterns and naming conventions
+- Add JSDoc comments for public functions
+- Keep components focused and reusable
 
-### Commit Messages
+## Commit Messages
 
-Follow conventional commits format:
-- `feat:` New feature
-- `fix:` Bug fix
-- `docs:` Documentation changes
-- `style:` Code style changes (formatting, etc.)
-- `refactor:` Code refactoring
-- `test:` Adding or updating tests
-- `chore:` Maintenance tasks
+Use clear, descriptive commit messages:
 
-Example: `feat: add observer location selector`
+- `feat: add doppler shift visualization`
+- `fix: correct orbit path rendering for GEO satellites`
+- `docs: update README with new features`
+- `refactor: optimize worker batch processing`
 
-### Pull Request Process
-
-1. Ensure your code passes linting: `npm run lint`
-2. Update documentation if needed
-3. Add tests for new features
-4. Create a clear PR description explaining the changes
-5. Link any related issues
-
-## Project Structure
-
-```
-src/
-├── app/            # Next.js pages
-├── components/     # React components
-│   ├── HUD/       # User interface panels
-│   └── Scientific/ # Analysis tools
-├── lib/           # Core calculations
-├── hooks/         # Custom React hooks
-└── types/         # TypeScript definitions
-```
-
-## Reporting Bugs
+## Reporting Issues
 
 When reporting bugs, please include:
-- Steps to reproduce
-- Expected behavior
-- Actual behavior
-- Browser/OS information
-- Screenshots if applicable
 
-## Feature Requests
-
-We welcome feature suggestions! Please open an issue with:
-- Clear description of the feature
-- Use case / why it would be useful
-- Any implementation ideas
+1. Browser and version
+2. Steps to reproduce
+3. Expected behavior
+4. Actual behavior
+5. Console errors (if any)
 
 ## Questions?
 
-Feel free to open a discussion or issue if you have questions.
+Feel free to open an issue for any questions or suggestions!
 
-Thank you for contributing! 🚀
+---
+
+Thank you for helping make OrbitView better! 🚀

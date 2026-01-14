@@ -25,6 +25,7 @@ import ErrorBoundary from "@/components/Common/ErrorBoundary";
 import { useFavorites } from "@/hooks/useFavorites";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { useAnalystMode } from "@/hooks/useAnalystMode";
+import useSatelliteTelemetry from "@/hooks/useSatelliteTelemetry";
 import { SatelliteState, ObserverPosition, geodeticToECF } from "@/lib/DopplerCalculator";
 import { Loader2, Keyboard, FlaskConical, MapPin, Settings, BookOpen } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -54,8 +55,6 @@ function PageContent() {
 
     const [objects, setObjects] = useState<SpaceObject[]>([]);
     const [selectedObject, setSelectedObject] = useState<SpaceObject | null>(null);
-    const [telemetry, setTelemetry] = useState<any>(null);
-    const [currentTime, setCurrentTime] = useState<Date | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const initialDeepLinkRef = useRef(false);
 
@@ -83,6 +82,23 @@ function PageContent() {
 
     const { favorites, isFavorite, toggleFavorite } = useFavorites();
     const { mode, isAnalystMode, toggleMode } = useAnalystMode();
+
+    // Get current simulation time from timeline store
+    const { currentTime } = useTimelineStore();
+
+    // Convert selectedObject to TLE format for hook
+    const selectedTLE = useMemo(() => {
+        if (!selectedObject?.tle) return null;
+        return {
+            id: selectedObject.id,
+            name: selectedObject.name,
+            line1: selectedObject.tle.line1,
+            line2: selectedObject.tle.line2
+        };
+    }, [selectedObject]);
+
+    // Real-time telemetry calculation on main thread (for selected satellite only)
+    const telemetry = useSatelliteTelemetry(selectedTLE, currentTime, { updateIntervalMs: 200 });
 
     const [isMobile, setIsMobile] = useState(false);
     const [showShortcuts, setShowShortcuts] = useState(false);
@@ -194,7 +210,6 @@ function PageContent() {
     }, []);
 
     useEffect(() => {
-        setCurrentTime(new Date());
         const loadData = async () => {
             setIsLoading(true);
             try {
@@ -235,25 +250,11 @@ function PageContent() {
         }
     }, [satId, objects, isLoading, selectedObject?.id]);
 
-    useEffect(() => {
-        const timer = setInterval(() => {
-            if (isPlaying) {
-                setCurrentTime(prev => {
-                    if (!prev) return new Date();
-                    return new Date(prev.getTime() + 1000 * timeMultiplier);
-                });
-            }
-        }, 1000);
-        return () => clearInterval(timer);
-    }, [isPlaying, timeMultiplier]);
+    // Note: Time is now managed by useTimelineStore, no local timer needed
 
     // Memoized callbacks to prevent child re-renders
     const handleMountCamera = useCallback(() => {
         setViewMode(v => v === 'ORBIT' ? 'SATELLITE_POV' : 'ORBIT');
-    }, []);
-
-    const handleTimeChange = useCallback((newTime: Date) => {
-        setCurrentTime(newTime);
     }, []);
 
     const handleTogglePlay = useCallback(() => {
@@ -271,9 +272,7 @@ function PageContent() {
         });
     }, [objects]);
 
-    const handleTelemetryUpdate = useCallback((data: any) => {
-        setTelemetry(data);
-    }, []);
+    // Note: Telemetry is now computed by useSatelliteTelemetry hook, no callback needed
 
     const handleHover = useCallback((obj: SpaceObject | null) => {
         setHoveredObject(obj);
@@ -319,7 +318,6 @@ function PageContent() {
                     objects={objects}
                     onSelect={handleSelectObject}
                     selectedObject={selectedObject}
-                    onTelemetryUpdate={handleTelemetryUpdate}
                     filter={filter}
                     searchQuery={searchQuery}
                     viewMode={viewMode}

@@ -1,33 +1,161 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
-// Server-side In-Memory Cache
-let serverCache: {
+/**
+ * TLE API Route - Multi-Group Support
+ * 
+ * Supports fetching specific satellite groups:
+ * - ?group=stations (ISS, Tiangong - Priority 1)
+ * - ?group=starlink (Starlink constellation)
+ * - ?group=cubesat (CubeSats including Connecta/Plan-S)
+ * - ?group=active (General active satellites)
+ * - ?group=all (Combined: stations + starlink + cubesat)
+ * - No param (Default: Space-Track full catalog or fallback)
+ */
+
+// Server-side In-Memory Cache (per group)
+const serverCache: Map<string, {
     data: string;
     timestamp: number;
-} | null = null;
+}> = new Map();
 
 const CACHE_TTL = 7200 * 1000; // 2 hours
 
-export async function GET() {
+// CelesTrak group endpoints
+const CELESTRAK_GROUPS: Record<string, string> = {
+    stations: 'https://celestrak.org/NORAD/elements/gp.php?GROUP=stations&FORMAT=tle',
+    starlink: 'https://celestrak.org/NORAD/elements/gp.php?GROUP=starlink&FORMAT=tle',
+    cubesat: 'https://celestrak.org/NORAD/elements/gp.php?GROUP=cubesat&FORMAT=tle',
+    active: 'https://celestrak.org/NORAD/elements/gp.php?GROUP=active&FORMAT=tle',
+    oneweb: 'https://celestrak.org/NORAD/elements/gp.php?GROUP=oneweb&FORMAT=tle',
+    iridium: 'https://celestrak.org/NORAD/elements/gp.php?GROUP=iridium-NEXT&FORMAT=tle',
+};
+
+export async function GET(request: NextRequest) {
+    const { searchParams } = new URL(request.url);
+    const group = searchParams.get('group') || 'default';
     const now = Date.now();
 
-    // 1. Check Server-side In-Memory Cache
-    if (serverCache && (now - serverCache.timestamp) < CACHE_TTL) {
-        console.log('[TLE HUB] Serving from server-side in-memory cache');
-        return new NextResponse(serverCache.data, {
+    // 1. Check Server-side Cache for this group
+    const cached = serverCache.get(group);
+    if (cached && (now - cached.timestamp) < CACHE_TTL) {
+        console.log(`[TLE HUB] Cache HIT for group: ${group}`);
+        return new NextResponse(cached.data, {
             status: 200,
             headers: {
                 'Content-Type': 'text/plain',
                 'X-Cache-Status': 'HIT_SERVER',
+                'X-Group': group,
                 'Cache-Control': 'public, s-maxage=7200'
             }
         });
     }
 
+    // 2. Handle multi-group "all" request
+    if (group === 'all') {
+        return await fetchMultipleGroups(['stations', 'starlink', 'cubesat'], now);
+    }
+
+    // 3. Handle specific CelesTrak group
+    if (group in CELESTRAK_GROUPS) {
+        return await fetchCelesTrakGroup(group, now);
+    }
+
+    // 4. Default: Use Space-Track (full catalog) or fallback
+    return await fetchDefaultCatalog(now);
+}
+
+/**
+ * Fetch multiple groups in parallel and merge results
+ */
+async function fetchMultipleGroups(groups: string[], now: number): Promise<NextResponse> {
+    console.log(`[TLE HUB] Fetching multiple groups: ${groups.join(', ')}`);
+
+    const results = await Promise.allSettled(
+        groups.map(async (grp) => {
+            const url = CELESTRAK_GROUPS[grp];
+            if (!url) return '';
+
+            const response = await fetch(url, {
+                headers: { 'User-Agent': 'OrbitView-SatTracker/1.0' }
+            });
+
+            if (response.ok) {
+                return response.text();
+            }
+            return '';
+        })
+    );
+
+    // Merge all successful results
+    const allTLE = results
+        .filter((r): r is PromiseFulfilledResult<string> => r.status === 'fulfilled' && r.value.length > 0)
+        .map(r => r.value)
+        .join('\n');
+
+    if (allTLE.length > 100) {
+        console.log(`[TLE HUB] Multi-group fetch success, total chars: ${allTLE.length}`);
+        serverCache.set('all', { data: allTLE, timestamp: now });
+
+        return new NextResponse(allTLE, {
+            status: 200,
+            headers: {
+                'Content-Type': 'text/plain',
+                'X-Source': 'CelesTrak-Multi',
+                'X-Groups': groups.join(','),
+                'Cache-Control': 'public, s-maxage=7200'
+            }
+        });
+    }
+
+    // Fallback if multi-fetch failed
+    return await fetchDefaultCatalog(now);
+}
+
+/**
+ * Fetch a specific CelesTrak group
+ */
+async function fetchCelesTrakGroup(group: string, now: number): Promise<NextResponse> {
+    const url = CELESTRAK_GROUPS[group];
+    console.log(`[TLE HUB] Fetching CelesTrak group: ${group}`);
+
+    try {
+        const response = await fetch(url, {
+            headers: { 'User-Agent': 'OrbitView-SatTracker/1.0' }
+        });
+
+        if (response.ok) {
+            const text = await response.text();
+            if (text.includes('\n1 ') || text.includes('\r\n1 ')) {
+                console.log(`[TLE HUB] CelesTrak ${group} success, ${text.length} chars`);
+                serverCache.set(group, { data: text, timestamp: now });
+
+                return new NextResponse(text, {
+                    status: 200,
+                    headers: {
+                        'Content-Type': 'text/plain',
+                        'X-Source': `CelesTrak-${group}`,
+                        'X-Group': group,
+                        'Cache-Control': 'public, s-maxage=7200'
+                    }
+                });
+            }
+        }
+    } catch (error) {
+        console.error(`[TLE HUB] CelesTrak ${group} error:`, error);
+    }
+
+    // Fallback
+    return await fetchDefaultCatalog(now);
+}
+
+/**
+ * Default catalog fetch (Space-Track or fallback mirrors)
+ */
+async function fetchDefaultCatalog(now: number): Promise<NextResponse> {
     const SPACETRACK_USER = process.env.SPACETRACK_USER;
     const SPACETRACK_PASS = process.env.SPACETRACK_PASS;
 
-    // 2. Try Space-Track.org (Official Source) if credentials exist
+    // Try Space-Track.org first
     if (SPACETRACK_USER && SPACETRACK_PASS) {
         try {
             console.log('[TLE HUB] Attempting Space-Track.org authentication...');
@@ -41,7 +169,6 @@ export async function GET() {
                 const cookie = authResponse.headers.get('set-cookie');
                 console.log('[TLE HUB] Space-Track Auth Success. Fetching data...');
 
-                // Fetch Full Satellite Catalog (Including Debris/Rocket Bodies for completeness)
                 const queryUrl = 'https://www.space-track.org/basicspacedata/query/class/gp/orderby/NORAD_CAT_ID asc/limit/20000/format/3le';
                 const dataResponse = await fetch(queryUrl, {
                     headers: { 'Cookie': cookie || '' }
@@ -49,11 +176,9 @@ export async function GET() {
 
                 if (dataResponse.ok) {
                     const text = await dataResponse.text();
-
-                    // Verify we actually got TLE data and not an empty response
                     if (text.length > 1000) {
                         console.log(`[TLE HUB] Space-Track Success, received ${text.length} chars (Full Catalog)`);
-                        serverCache = { data: text, timestamp: now };
+                        serverCache.set('default', { data: text, timestamp: now });
                         return new NextResponse(text, {
                             status: 200,
                             headers: {
@@ -63,7 +188,6 @@ export async function GET() {
                             }
                         });
                     }
-                    console.warn('[TLE HUB] Space-Track returned empty or too short data');
                 }
             }
             console.warn('[TLE HUB] Space-Track attempt failed, falling back...');
@@ -72,77 +196,46 @@ export async function GET() {
         }
     }
 
-    // 3. Fallback to Mirrors (CelesTrak & AMSAT)
-    const MIRROR_URLS = [
-        'https://celestrak.org/NORAD/elements/gp.php?GROUP=active&FORMAT=tle',
-        'https://www.amsat.org/tle/current/nasabare.txt', // AMSAT high-reliability mirror
-        'https://celestrak.org/NORAD/elements/gp.php?GROUP=stations&FORMAT=tle',
-    ];
+    // Fallback to CelesTrak active satellites
+    try {
+        const response = await fetch(CELESTRAK_GROUPS.active, {
+            headers: { 'User-Agent': 'OrbitView-SatTracker/1.0' },
+            next: { revalidate: 7200 }
+        });
 
-    for (const url of MIRROR_URLS) {
-        try {
-            console.log(`[TLE HUB] Trying Mirror: ${url}`);
-            const response = await fetch(url, {
-                headers: { 'User-Agent': 'OrbitView-SatTracker/1.0 (Professional-Caching)' },
-                next: { revalidate: 7200 }
-            });
-
-            if (response.ok) {
-                const text = await response.text();
-                // Basic validation: TLE files should contain lines starting with 1 or 2
-                if (text.includes('\n1 ') || text.includes('\r\n1 ')) {
-                    console.log(`[TLE HUB] Mirror Success from ${url}, length: ${text.length}`);
-                    serverCache = { data: text, timestamp: now };
-                    return new NextResponse(text, {
-                        status: 200,
-                        headers: {
-                            'Content-Type': 'text/plain',
-                            'X-Source': url.includes('amsat') ? 'AMSAT-Mirror' : 'CelesTrak',
-                            'Cache-Control': 'public, s-maxage=7200'
-                        }
-                    });
-                }
+        if (response.ok) {
+            const text = await response.text();
+            if (text.includes('\n1 ')) {
+                console.log(`[TLE HUB] CelesTrak active fallback success, ${text.length} chars`);
+                serverCache.set('default', { data: text, timestamp: now });
+                return new NextResponse(text, {
+                    status: 200,
+                    headers: {
+                        'Content-Type': 'text/plain',
+                        'X-Source': 'CelesTrak-Active',
+                        'Cache-Control': 'public, s-maxage=7200'
+                    }
+                });
             }
-        } catch (error) {
-            console.error(`[TLE HUB] Error fetching ${url}:`, error);
         }
+    } catch (error) {
+        console.error('[TLE HUB] CelesTrak fallback error:', error);
     }
 
-    // 4. Final Fallback: Embedded Data (Top ~100 Satellites)
-    console.log('[TLE HUB] All real-time sources failed, returning expanded embedded fallback');
+    // Final fallback: embedded data
+    console.log('[TLE HUB] All sources failed, returning embedded fallback');
     const fallbackTLE = `ISS (ZARYA)
 1 25544U 98067A   24355.50000000  .00020000  00000-0  36000-3 0  9999
 2 25544  51.6400 200.0000 0007000  90.0000 270.0000 15.50000000400000
+TIANHE (CSS)
+1 48274U 21035A   24355.50000000  .00015000  00000-0  25000-3 0  9999
+2 48274  41.4700 180.0000 0005000 120.0000 240.0000 15.60000000100000
 STARLINK-1007
 1 44713U 19074A   24355.50000000  .00010000  00000-0  70000-4 0  9999
 2 44713  53.0000 150.0000 0001500  80.0000 280.0000 15.06000000200000
 HUBBLE SPACE TELESCOPE
 1 20580U 90037B   24355.50000000  .00002000  00000-0  10000-4 0  9999
-2 20580  28.4700 100.0000 0002800  50.0000 310.0000 15.09000000500000
-TIANHE (CSS)
-1 48274U 21035A   24355.50000000  .00015000  00000-0  25000-3 0  9999
-2 48274  41.4700 180.0000 0005000 120.0000 240.0000 15.60000000100000
-GPS BIIR-2
-1 24876U 97035A   24355.50000000  .00000100  00000-0  10000-6 0  9999
-2 24876  55.5000  60.0000 0050000 200.0000 160.0000  2.00570000300000
-GPS BIIR-3
-1 24877U 97036A   24355.50000000  .00000100  00000-0  10000-6 0  9999
-2 24877  55.5000  70.0000 0050000 210.0000 150.0000  2.00570000300000
-IRIDIUM 100
-1 42737U 17036A   24355.50000000  .00000200  00000-0  15000-4 0  9999
-2 42737  86.4000  75.0000 0001500  45.0000 315.0000 14.34000000200000
-ONEWEB-0010
-1 44057U 19010A   24355.50000000  .00000150  00000-0  12000-4 0  9999
-2 44057  87.4100  40.0000 0002500 110.0000 250.0000 13.15000000300000
-GALILEO 1 (GSAT0101)
-1 37846U 11060A   24355.50000000  .00000050  00000-0  10000-6 0  9999
-2 37846  56.0000 120.0000 0001200 200.0000 160.0000  1.70470000200000
-GLONASS-K (COSMOS 2471)
-1 37372U 11009A   24355.50000000  .00000070  00000-0  10000-6 0  9999
-2 37372  64.8400  55.0000 0001500 150.0000 210.0000  2.13100000250000
-NOAA 19
-1 33591U 09005A   24355.50000000  .00000200  00000-0  15000-4 0  9999
-2 33591  99.1900  80.0000 0014000 300.0000  60.0000 14.12000000400000`;
+2 20580  28.4700 100.0000 0002800  50.0000 310.0000 15.09000000500000`;
 
     return new NextResponse(fallbackTLE, {
         status: 200,

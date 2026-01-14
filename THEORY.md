@@ -14,7 +14,8 @@ A comprehensive guide to the astrodynamics and physics behind OrbitView satellit
 8. [Ground Track Calculation](#8-ground-track-calculation)
 9. [Conjunction Analysis](#9-conjunction-analysis)
 10. [Lagrange Point Orbits (JWST)](#10-lagrange-point-orbits-jwst)
-11. [References](#11-references)
+11. [Orbit Rendering Methodology](#12-orbit-rendering-methodology)
+12. [References](#references)
 
 ---
 
@@ -386,6 +387,83 @@ $$x_{L2} \approx L \left(1 + \left(\frac{\mu}{3}\right)^{1/3}\right)$$
 ### Halo & Lissajous Orbits
 JWST does not sit *at* $L_2$ but orbits it. We use **NASA Horizons Ephemerides** to visualize the complex Halo orbit path, which is defined by a 3rd-order Richardson expansion or higher-fidelity numerical integration:
 $$\delta \mathbf{r}(t) = \mathbf{A}_x \sin(\omega t + \phi)$$
+
+---
+
+## 12. Orbit Rendering Methodology
+
+OrbitView uses a specialized rendering technique to display satellite orbits accurately in 3D space.
+
+### Ground Track vs. Inertial Orbit
+
+There are two fundamentally different ways to visualize a satellite's path:
+
+| Approach | What It Shows | Use Case |
+|----------|---------------|----------|
+| **Ground Track** | Path traced on Earth's surface (subsatellite points) | Showing where satellite "covers" on Earth |
+| **Inertial Orbit** | True orbital shape in 3D space (Kepler ellipse) | Showing the actual orbit ring in space |
+
+### The Problem with GEO Satellites
+
+Geostationary satellites (GEO) orbit at the same rate as Earth rotates. If we calculate each orbit point using that point's GMST (Ground Track approach), GEO satellites appear as:
+- A single dot
+- A broken line near the equator
+- An incomplete path
+
+This is because the satellite's *ground track* is indeed a single point—it hovers over one location on Earth.
+
+### The Solution: Fixed GMST (Inertial Frame Rendering)
+
+To display the **true Kepler orbit ring** in space, we "freeze" Earth's rotation at the current moment:
+
+```javascript
+// Calculate GMST once at the current time (epoch)
+const fixedGmst = satellite.gstime(currentTime);
+
+// For ALL orbit points, use the SAME GMST
+for (let i = 0; i <= pointsPerPeriod; i++) {
+    const time = new Date(now.getTime() + i * stepSeconds * 1000);
+    const posEci = propagateToECI(satrec, time);
+    
+    // Use fixedGmst, NOT satellite.gstime(time)
+    const posEcf = satellite.eciToEcf(posEci, fixedGmst);
+    positions.push(toCartesian3(posEcf));
+}
+```
+
+### Visual Result
+
+| Satellite Type | Ground Track | Inertial (Fixed GMST) |
+|----------------|--------------|----------------------|
+| **LEO (ISS)** | Sinusoidal ground path | Inclined elliptical ring |
+| **MEO (GPS)** | Looping ground path | Circular ring at 20,200 km |
+| **GEO (TURKSAT)** | Single point | Perfect circular ring at 35,786 km |
+
+### Mathematical Explanation
+
+The transformation from ECI to ECF is:
+
+$$\mathbf{r}_{ECF} = R_z(-\theta_{GMST}(t)) \cdot \mathbf{r}_{ECI}(t)$$
+
+Where $R_z$ is the rotation matrix around the Z-axis.
+
+**Ground Track:** Each point uses $\theta_{GMST}(t)$ — time-varying rotation.  
+**Inertial Ring:** All points use $\theta_{GMST}(t_0)$ — fixed rotation at epoch.
+
+### Implementation in OrbitView
+
+```mermaid
+graph TD
+    A[SGP4 Propagation] --> B[ECI Position at time t]
+    B --> C{Rendering Mode}
+    C -->|Ground Track| D[GMST_t = gstime_t]
+    C -->|Inertial Orbit| E[GMST_t = gstime_epoch]
+    D --> F[ECF Position]
+    E --> F
+    F --> G[Cesium Cartesian3]
+```
+
+This technique is consistent with how NASA/GMAT and other professional orbit visualization tools render satellite trajectories.
 
 ---
 
