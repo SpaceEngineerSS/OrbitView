@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="/orbitview-logo.png" alt="OrbitView Logo" width="120" height="120">
+  <img src="public/orbitview-logo-full.png" alt="OrbitView Logo" width="120" height="120">
   
   # OrbitView
   
