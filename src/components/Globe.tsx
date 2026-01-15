@@ -20,6 +20,26 @@ import { useTimelineStore } from "@/store/timelineStore";
 
 if (typeof window !== "undefined") {
   (window as any).CESIUM_BASE_URL = "/cesium";
+  // Disable Cesium Ion to prevent 401 errors (we use OSM instead)
+  Cesium.Ion.defaultAccessToken = "";
+
+  // Suppress Cesium Ion 401 errors in console (expected behavior when not using Ion)
+  const originalConsoleError = console.error;
+  console.error = (...args: unknown[]) => {
+    const message = args[0];
+    // Suppress Ion-related errors
+    if (typeof message === 'string' && message.includes('api.cesium.com')) {
+      return; // Silently ignore Ion errors
+    }
+    // Check for RequestErrorEvent from Cesium
+    if (args[0] && typeof args[0] === 'object' && 'statusCode' in (args[0] as object)) {
+      const errorObj = args[0] as { statusCode?: number };
+      if (errorObj.statusCode === 401) {
+        return; // Silently ignore 401 errors
+      }
+    }
+    originalConsoleError.apply(console, args);
+  };
 }
 
 interface GlobeProps {
@@ -238,6 +258,7 @@ const Globe: React.FC<GlobeProps> = ({ objects = [], onSelect, selectedObject, o
         requestRenderMode={true}
         maximumRenderTimeChange={Infinity}
         creditContainer={creditContainer}
+        terrainProvider={new Cesium.EllipsoidTerrainProvider()}
       >
         <Scene highDynamicRange={true} />
         <ImageryLayer imageryProvider={osmImageryProvider} />

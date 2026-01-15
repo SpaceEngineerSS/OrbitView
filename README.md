@@ -20,16 +20,13 @@
 
 ## 📸 Showcase
 
+| Desktop Dashboard | Mobile Pocket Lab |
+|:---:|:---:|
+| ![Desktop](public/screenshots/desktop-preview.png) | ![Mobile](public/screenshots/mobile-preview.png) |
+
 <div align="center">
-  <img src="public/screenshots/desktop-view.png" alt="OrbitView Desktop View" width="900">
   <p><b>Scientific Satellite Tracker & Orbital Analysis</b></p>
-</div>
-
-### 📱 Mobile Experience
-
-<div align="center">
-  <img src="public/screenshots/mobile-view.png" alt="OrbitView Mobile View" width="300">
-  <p><i>Fully responsive design with touch-optimized controls</i></p>
+  <p><i>Native-like mobile app with haptic feedback</i></p>
 </div>
 
 ---
@@ -56,7 +53,8 @@
 - ☀️ **Eclipse Detection** — Real-time sunlight/shadow status for all objects
 - ⛓️ **Deep Linking** — Share specific satellites via URL (e.g., `?sat=25544`)
 - ⏱️ **Time Travel** — Simulate orbits at any point in history or future
-- 📱 **Mobile-Friendly** — Responsive design with touch-optimized bottom sheet UI
+- 📱 **Native-Like Mobile Experience** — 5-tab navigation, haptic feedback, draggable bottom sheet & GPS location
+- 🔭 **Scientific Tool Suite** — Pass prediction, Skyplot polar view, Orbital decay analysis & Doppler calculator
 - 🧭 **AR Compass Mode** — Use device orientation to spot satellites in the sky
 - ⌨️ **Power User Tools** — Keyboard shortcuts, analyst mode, and TLE exporting
 - ⭐ **Favorites System** — Save and quickly access your favorite satellites
@@ -261,5 +259,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ---
 
 <div align="center">
-  Made with ❤️ for space enthusiasts | v2.2.0 | Last updated: 2026-01-14
+  Made with ❤️ for space enthusiasts | v2.3.0 | Last updated: 2026-01-16
 </div>

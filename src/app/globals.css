@@ -332,3 +332,89 @@ body {
   z-100: Tooltips and popovers
   z-200: Hover tooltips (highest)
 */
+
+/* ===== Mobile Native App Utilities ===== */
+/* Safe Area Insets for notch devices (iPhone X+) */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  
+  .pt-safe {
+    padding-top: env(safe-area-inset-top);
+  }
+  
+  .pl-safe {
+    padding-left: env(safe-area-inset-left);
+  }
+  
+  .pr-safe {
+    padding-right: env(safe-area-inset-right);
+  }
+  
+  /* Dynamic viewport height (accounts for mobile browser chrome) */
+  .h-dvh {
+    height: 100dvh;
+  }
+  
+  .min-h-dvh {
+    min-height: 100dvh;
+  }
+}
+
+/* Prevent pull-to-refresh and overscroll bounce on mobile */
+body {
+  overscroll-behavior-y: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Mobile Bottom Tab Bar */
+.mobile-tab-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Mobile Bottom Sheet */
+.mobile-bottom-sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  z-index: 45;
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-top-left-radius: 20px;
+  border-top-right-radius: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  transition: transform 300ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* Mobile Search Overlay */
+.mobile-search-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(0, 0, 0, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+/* Touch-friendly tap targets */
+@media (max-width: 768px) {
+  .touch-action-none {
+    touch-action: none;
+  }
+  
+  .tap-target {
+    min-height: 48px;
+    min-width: 48px;
+  }
+}

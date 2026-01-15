@@ -18,6 +18,12 @@ import ScientificDashboard from "@/components/Scientific/ScientificDashboard";
 import ReferencesModal from "@/components/HUD/ReferencesModal";
 import MissionControl from "@/components/HUD/MissionControl";
 import TelemetryDeck from "@/components/HUD/TelemetryDeck";
+import {
+    BottomTabBar, MobileBottomSheet, MobileSearchOverlay, MobileTelemetryView,
+    MobileScienceMenu, MobilePassPrediction, MobileDoppler, MobileSkyplot,
+    MobileOrbitalDecay, MobileLocationSelector,
+    type MobileTab, type ScienceTool
+} from "@/components/HUD/Mobile";
 import { useTimelineStore } from "@/store/timelineStore";
 import { fetchActiveSatellites } from "@/lib/tle";
 import { SpaceObject, convertToSpaceObject } from "@/lib/space-objects";
@@ -110,6 +116,12 @@ function PageContent() {
     const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
     const [showReferences, setShowReferences] = useState(false);
     const [appSettings, setAppSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
+
+    // Mobile Native App State
+    const [mobileActiveTab, setMobileActiveTab] = useState<MobileTab>('explore');
+    const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
+    const [activeScienceTool, setActiveScienceTool] = useState<ScienceTool>(null);
+    const [showMobileLocationSelector, setShowMobileLocationSelector] = useState(false);
 
     // Observer position (default: Istanbul, now editable)
     const [observerPosition, setObserverPosition] = useState<ObserverPosition>({
@@ -301,6 +313,77 @@ function PageContent() {
         }
     }, [selectedObject, toggleFavorite]);
 
+    // Mobile tab change handler
+    const handleMobileTabChange = useCallback((tab: MobileTab) => {
+        setMobileActiveTab(tab);
+        setActiveScienceTool(null); // Reset science tool when changing tabs
+
+        // Handle special tab actions
+        switch (tab) {
+            case 'explore':
+                // Close search overlay and return to map view
+                setIsMobileSearchOpen(false);
+                break;
+            case 'search':
+                setIsMobileSearchOpen(true);
+                break;
+            case 'science':
+                // Close search overlay - MobileScienceMenu will be shown
+                setIsMobileSearchOpen(false);
+                break;
+            case 'data':
+                // Close search overlay - MobileTelemetryView will be shown
+                setIsMobileSearchOpen(false);
+                break;
+            case 'settings':
+                setIsMobileSearchOpen(false);
+                setShowSettings(true);
+                // Reset to explore after opening settings
+                setMobileActiveTab('explore');
+                break;
+        }
+    }, []);
+
+    // Close mobile telemetry view
+    const handleMobileTelemetryClose = useCallback(() => {
+        setMobileActiveTab('explore');
+    }, []);
+
+    // Close mobile science menu
+    const handleMobileScienceClose = useCallback(() => {
+        setMobileActiveTab('explore');
+        setActiveScienceTool(null);
+    }, []);
+
+    // Handle science tool selection
+    const handleSelectScienceTool = useCallback((tool: ScienceTool) => {
+        setActiveScienceTool(tool);
+    }, []);
+
+    // Go back from science tool to menu
+    const handleScienceToolBack = useCallback(() => {
+        setActiveScienceTool(null);
+    }, []);
+
+    // Open search from science menu
+    const handleScienceOpenSearch = useCallback(() => {
+        setMobileActiveTab('search');
+        setIsMobileSearchOpen(true);
+    }, []);
+
+    // Close mobile search when not on search tab or when satellite selected
+    const handleMobileSearchClose = useCallback(() => {
+        setIsMobileSearchOpen(false);
+        setMobileActiveTab('explore');
+    }, []);
+
+    // Handle satellite selection from mobile search
+    const handleMobileSearchSelect = useCallback((obj: SpaceObject) => {
+        setSelectedObject(obj);
+        setIsMobileSearchOpen(false);
+        setMobileActiveTab('explore');
+    }, []);
+
     return (
         <main className="w-full h-screen bg-slate-950 overflow-hidden relative" role="main" aria-label="OrbitView Satellite Tracker">
             <SplashScreen isLoading={isLoading} loadedCount={objects.length} totalCount={13000} />
@@ -351,36 +434,128 @@ function PageContent() {
                 )}
             </AnimatePresence>
 
-            <Sidebar
-                objects={objects}
-                onSearch={setSearchQuery}
-                onFilterChange={setFilter}
-                onSelect={handleSelectObject}
-                favorites={favorites}
-                onToggleFavorite={toggleFavorite}
-            />
-
-            {/* Telemetry Deck - Bottom HUD Panel */}
-            <TelemetryDeck
-                selectedObject={selectedObject}
-                telemetry={telemetry}
-                onClose={handleCloseInfoPanel}
-            />
-
-            {/* Info Panel - Detailed satellite info (side panel) */}
-            {selectedObject && (
-                <InfoPanel
-                    object={selectedObject}
-                    onClose={handleCloseInfoPanel}
-                    telemetry={telemetry}
-                    onMountCamera={handleMountCamera}
-                    isCameraMounted={viewMode === 'SATELLITE_POV'}
-                    isFavorite={isFavorite(selectedObject.id)}
-                    onToggleFavorite={handleToggleCurrentFavorite}
-                    isAnalystMode={isAnalystMode}
-                    onOpenScientific={handleOpenScientific}
+            {/* ===== DESKTOP UI (hidden on mobile) ===== */}
+            <div className="hidden md:block">
+                <Sidebar
+                    objects={objects}
+                    onSearch={setSearchQuery}
+                    onFilterChange={setFilter}
+                    onSelect={handleSelectObject}
+                    favorites={favorites}
+                    onToggleFavorite={toggleFavorite}
                 />
-            )}
+
+                {/* Telemetry Deck - Bottom HUD Panel */}
+                <TelemetryDeck
+                    selectedObject={selectedObject}
+                    telemetry={telemetry}
+                    onClose={handleCloseInfoPanel}
+                />
+
+                {/* Info Panel - Detailed satellite info (side panel) */}
+                {selectedObject && (
+                    <InfoPanel
+                        object={selectedObject}
+                        onClose={handleCloseInfoPanel}
+                        telemetry={telemetry}
+                        onMountCamera={handleMountCamera}
+                        isCameraMounted={viewMode === 'SATELLITE_POV'}
+                        isFavorite={isFavorite(selectedObject.id)}
+                        onToggleFavorite={handleToggleCurrentFavorite}
+                        isAnalystMode={isAnalystMode}
+                        onOpenScientific={handleOpenScientific}
+                    />
+                )}
+            </div>
+
+            {/* ===== MOBILE UI (hidden on desktop) ===== */}
+            <div className="block md:hidden">
+                {/* Mobile Search Overlay */}
+                <MobileSearchOverlay
+                    isOpen={isMobileSearchOpen}
+                    onClose={handleMobileSearchClose}
+                    objects={objects}
+                    favorites={favorites}
+                    onSelect={handleMobileSearchSelect}
+                />
+
+                {/* Mobile Bottom Sheet (shows when satellite selected AND on explore tab) */}
+                {mobileActiveTab === 'explore' && (
+                    <MobileBottomSheet
+                        satellite={selectedObject}
+                        telemetry={telemetry}
+                        onClose={handleCloseInfoPanel}
+                        onTrack={handleMountCamera}
+                    />
+                )}
+
+                {/* Mobile Telemetry View (Data Tab) */}
+                <MobileTelemetryView
+                    isOpen={mobileActiveTab === 'data'}
+                    onClose={handleMobileTelemetryClose}
+                    satellite={selectedObject}
+                    telemetry={telemetry}
+                />
+
+                {/* Mobile Science Menu (Science Tab) */}
+                <MobileScienceMenu
+                    isOpen={mobileActiveTab === 'science' && !activeScienceTool}
+                    onClose={handleMobileScienceClose}
+                    satellite={selectedObject}
+                    onSelectTool={handleSelectScienceTool}
+                    onOpenSearch={handleScienceOpenSearch}
+                />
+
+                {/* Mobile Pass Prediction Tool */}
+                <MobilePassPrediction
+                    isOpen={mobileActiveTab === 'science' && activeScienceTool === 'pass'}
+                    onBack={handleScienceToolBack}
+                    satellite={selectedObject}
+                    observerPosition={observerPosition}
+                    onOpenLocation={() => setShowMobileLocationSelector(true)}
+                />
+
+                {/* Mobile Doppler Tool */}
+                <MobileDoppler
+                    isOpen={mobileActiveTab === 'science' && activeScienceTool === 'doppler'}
+                    onBack={handleScienceToolBack}
+                    satellite={selectedObject}
+                    telemetry={telemetry}
+                    satelliteState={satelliteState}
+                    observerPosition={observerPosition}
+                />
+
+                {/* Mobile Skyplot Tool */}
+                <MobileSkyplot
+                    isOpen={mobileActiveTab === 'science' && activeScienceTool === 'skyplot'}
+                    onBack={handleScienceToolBack}
+                    satellite={selectedObject}
+                    telemetry={telemetry}
+                />
+
+                {/* Mobile Orbital Decay Tool */}
+                <MobileOrbitalDecay
+                    isOpen={mobileActiveTab === 'science' && activeScienceTool === 'decay'}
+                    onBack={handleScienceToolBack}
+                    satellite={selectedObject}
+                    telemetry={telemetry}
+                />
+
+                {/* Mobile Location Selector */}
+                <MobileLocationSelector
+                    isOpen={showMobileLocationSelector}
+                    onClose={() => setShowMobileLocationSelector(false)}
+                    currentPosition={observerPosition}
+                    onPositionChange={setObserverPosition}
+                />
+
+                {/* Mobile Bottom Tab Bar */}
+                <BottomTabBar
+                    activeTab={mobileActiveTab}
+                    onTabChange={handleMobileTabChange}
+                    hasSelectedSatellite={!!selectedObject}
+                />
+            </div>
 
 
             {/* Scientific Dashboard */}
@@ -417,7 +592,7 @@ function PageContent() {
 
             {/* Top Bar with Mode Switch */}
             {!isLoading && (
-                <div className="fixed top-6 right-6 z-30 flex items-center gap-2" role="toolbar" aria-label="Application controls">
+                <div className="hidden md:flex fixed top-6 right-6 z-30 items-center gap-2" role="toolbar" aria-label="Application controls">
                     {/* Language Switcher */}
                     <LanguageSwitcher />
 
@@ -500,8 +675,10 @@ function PageContent() {
                 onClose={() => setShowReferences(false)}
             />
 
-            {/* Footer */}
-            <Footer />
+            {/* Footer - Desktop only */}
+            <div className="hidden md:block">
+                <Footer />
+            </div>
 
             {/* Toast Notifications */}
             <Toaster
