@@ -1,7 +1,7 @@
 # OrbitView 🛰️
 
 <div align="center">
-  <img src="public/orbitview-logo-full.png" alt="OrbitView Logo" width="600">
+  <img src="public/og-image.png" alt="OrbitView - Satellite Tracking" width="800">
   
   > **Advanced 3D Satellite Tracking & Orbital Mechanics Platform**  
   > Real-time visualization, pass prediction, and conjunction analysis powered by CesiumJS and SGP4.
