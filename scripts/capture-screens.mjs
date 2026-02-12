@@ -7,7 +7,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const OUTPUT_DIR = path.resolve(__dirname, '../public/screenshots');
-const URL = 'http://localhost:3000'; // Make sure the app is running!
+const URL = 'http://localhost:3001'; // Make sure the app is running!
 
 if (!fs.existsSync(OUTPUT_DIR)) {
     fs.mkdirSync(OUTPUT_DIR, { recursive: true });
@@ -17,7 +17,12 @@ async function capture() {
     console.log('🚀 Launching browser for screenshot capture...');
     const browser = await puppeteer.launch({
         headless: "new",
-        args: ['--no-sandbox', '--disable-setuid-sandbox'],
+        args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-web-security',
+            '--window-size=1920,1080'
+        ],
         defaultViewport: null,
     });
 
@@ -29,15 +34,23 @@ async function capture() {
     try {
         console.log(`🌐 Navigating to ${URL}...`);
         // Wait until network is idle to ensure assets are loaded
-        await page.goto(URL, { waitUntil: 'networkidle0', timeout: 60000 });
+        const response = await page.goto(URL, { waitUntil: 'networkidle0', timeout: 90000 });
+
+        if (response?.status() !== 200) {
+            console.warn(`⚠️ Page loaded with status ${response?.status()}`);
+        }
 
         // --- 1. Desktop Capture ---
         console.log('📸 Capturing Desktop View...');
         await page.setViewport({ width: 1920, height: 1080 });
 
-        // Wait for Globe or critical UI to be visible
-        // We'll wait a bit extra for Cesium to render tiles
-        await new Promise(r => setTimeout(r, 10000));
+        // Wait for Cesium Canvas explicitly
+        await page.waitForSelector('canvas', { timeout: 30000 });
+        console.log('   - Canvas detected');
+
+        // Wait for Fly-in Animation (Start + 4s duration) + Tile Loading
+        console.log('   - Waiting for cinematic fly-in & tiles...');
+        await new Promise(r => setTimeout(r, 12000));
 
         await page.screenshot({
             path: path.join(OUTPUT_DIR, 'desktop-preview.png'),
@@ -51,7 +64,12 @@ async function capture() {
 
         // Reload to trigger mobile-specific logic (e.g. Globe resolution reduction)
         await page.reload({ waitUntil: 'networkidle0' });
-        await new Promise(r => setTimeout(r, 10000)); // Wait for render
+
+        await page.waitForSelector('canvas', { timeout: 30000 });
+        console.log('   - Mobile Canvas detected');
+
+        // Wait again for mobile reload + animation
+        await new Promise(r => setTimeout(r, 12000));
 
         await page.screenshot({
             path: path.join(OUTPUT_DIR, 'mobile-preview.png'),
@@ -61,6 +79,17 @@ async function capture() {
 
     } catch (error) {
         console.error('❌ Error capturing screenshots:', error);
+
+        // Take an error screenshot to see what's happening
+        try {
+            await page.screenshot({
+                path: path.join(OUTPUT_DIR, 'debug-error.png'),
+                fullPage: true
+            });
+            console.log('📸 Saved debug-error.png');
+        } catch (e) {
+            console.error('Could not save debug screenshot');
+        }
     } finally {
         await browser.close();
         console.log('✨ Done.');
