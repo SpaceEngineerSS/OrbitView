@@ -54,14 +54,14 @@ const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
                 setSheetState('expanded');
             }
         }
-    }, [sheetState, onClose]);
+    }, [sheetState, onClose, trigger]);
 
     // Reset state when satellite changes
     React.useEffect(() => {
         if (satellite) {
             setSheetState('peek');
         }
-    }, [satellite?.id]);
+    }, [satellite]);
 
     // Handle forceExpanded prop (for Data tab)
     React.useEffect(() => {

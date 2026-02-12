@@ -37,7 +37,7 @@ async function capture() {
 
         // Wait for Globe or critical UI to be visible
         // We'll wait a bit extra for Cesium to render tiles
-        await new Promise(r => setTimeout(r, 5000));
+        await new Promise(r => setTimeout(r, 10000));
 
         await page.screenshot({
             path: path.join(OUTPUT_DIR, 'desktop-preview.png'),
@@ -51,7 +51,7 @@ async function capture() {
 
         // Reload to trigger mobile-specific logic (e.g. Globe resolution reduction)
         await page.reload({ waitUntil: 'networkidle0' });
-        await new Promise(r => setTimeout(r, 5000)); // Wait for render
+        await new Promise(r => setTimeout(r, 10000)); // Wait for render
 
         await page.screenshot({
             path: path.join(OUTPUT_DIR, 'mobile-preview.png'),

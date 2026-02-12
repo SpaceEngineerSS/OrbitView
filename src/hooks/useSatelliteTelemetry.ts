@@ -52,7 +52,7 @@ export function useSatelliteTelemetry(
             console.error('[Telemetry] Failed to parse TLE:', e);
             return null;
         }
-    }, [selectedSatellite?.line1, selectedSatellite?.line2]);
+    }, [selectedSatellite]);
 
     // Calculate orbital period from mean motion
     const orbitalPeriod = useMemo(() => {
