@@ -11,7 +11,7 @@ import {
     X,
     Signal
 } from "lucide-react";
-import { GlassPanel } from "@/components/UI/GlassPanel";
+import GlassPanel from "@/components/UI/GlassPanel";
 import { SpaceObject } from "@/lib/space-objects";
 
 /**
@@ -114,7 +114,8 @@ const TelemetryDeck: React.FC<TelemetryDeckProps> = memo(({
                     className="fixed bottom-4 left-4 right-4 z-30 pointer-events-none"
                 >
                     <GlassPanel
-                        variant="elevated"
+                        intensity="medium"
+                        borderGlow={true}
                         className="mx-auto max-w-5xl pointer-events-auto"
                     >
                         <div className="p-4">
@@ -203,8 +204,8 @@ const TelemetryDeck: React.FC<TelemetryDeckProps> = memo(({
                                             <div
                                                 key={bar}
                                                 className={`w-1 rounded-sm ${telemetry && telemetry.alt < 2000
-                                                        ? bar <= 4 ? "bg-emerald-400" : "bg-white/10"
-                                                        : bar <= 3 ? "bg-emerald-400" : "bg-white/10"
+                                                    ? bar <= 4 ? "bg-emerald-400" : "bg-white/10"
+                                                    : bar <= 3 ? "bg-emerald-400" : "bg-white/10"
                                                     }`}
                                                 style={{ height: `${bar * 3 + 4}px` }}
                                             />

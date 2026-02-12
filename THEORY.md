@@ -529,4 +529,4 @@ This theoretical framework was compiled and verified by **Mehmet Gümüş**.
 ---
 
 *This document is part of OrbitView, an open-source satellite tracking application.*  
-*Last Reviewed: 2025-12-20*
+*Last Reviewed: 2026-02-12*

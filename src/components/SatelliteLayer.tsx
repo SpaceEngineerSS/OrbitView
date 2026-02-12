@@ -118,21 +118,32 @@ const SatelliteLayer: React.FC<SatelliteLayerProps> = ({
     }
   }, [viewer, selectedId, selectedSatPos, selectedSatVelocity, viewMode]);
 
+  // Use Refs for high-frequency updates to avoid re-rendering/resetting intervals
+  const selectedSatPosRef = useRef<Cesium.Cartesian3 | null>(null);
+  const selectedSatVelRef = useRef<Cesium.Cartesian3 | null>(null);
+
   // Update position and velocity from TLELayer callback
   const handleUpdatePosition = useCallback((pos: Cesium.Cartesian3 | null, vel?: Cesium.Cartesian3) => {
-    setSelectedSatPos(pos);
-    if (vel) setSelectedSatVelocity(vel);
+    setSelectedSatPos(pos); // Keep state for Camera integration (re-renders needed for view updates)
+    selectedSatPosRef.current = pos;
+
+    if (vel) {
+      setSelectedSatVelocity(vel);
+      selectedSatVelRef.current = vel;
+    }
   }, []);
 
   const handleTelemetry = useCallback(() => {
-    if (!viewer || !selectedId || !selectedSatPos) return;
-    const carto = Cesium.Cartographic.fromCartesian(selectedSatPos);
+    if (!viewer || !selectedId || !selectedSatPosRef.current) return;
+
+    const carto = Cesium.Cartographic.fromCartesian(selectedSatPosRef.current);
+    const vel = selectedSatVelRef.current;
 
     // Calculate velocity magnitude from velocity vector (km/s)
     let velocityKmPerSec = 0;
-    if (selectedSatVelocity) {
+    if (vel) {
       // Velocity vector is in m/s, convert to km/s
-      velocityKmPerSec = Cesium.Cartesian3.magnitude(selectedSatVelocity) / 1000;
+      velocityKmPerSec = Cesium.Cartesian3.magnitude(vel) / 1000;
     }
 
     onTelemetryUpdate?.({
@@ -141,7 +152,7 @@ const SatelliteLayer: React.FC<SatelliteLayerProps> = ({
       alt: carto.height / 1000,
       velocity: velocityKmPerSec
     });
-  }, [viewer, selectedId, selectedSatPos, selectedSatVelocity, onTelemetryUpdate]);
+  }, [viewer, selectedId, onTelemetryUpdate]);
 
   useEffect(() => {
     const timer = setInterval(handleTelemetry, 1000);

@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.3.0] - 2026-02-12
+
+### Added
+- **Mobile Experience & PWA**
+  - Designed "Pocket Lab" interface with bottom-sheet Inspector and gesture controls
+  - Implemented haptic feedback for tactile interactions
+  - Added "Adaptive Performance" mode for mobile GPUs (auto-resolution scaling)
+  - Created specific `MobileNavBar` replacing the sidebar on small screens
+- **Documentation & Automation**
+  - Automated screenshot generation via Puppeteer (`npm run docs:snap`)
+  - Comprehensive `CONTRIBUTING.md` with scientific verification standards
+  - GitHub Action (`docs.yml`) for documentation integrity checks
+  - Updated `README.md` with fresh assets and scientific roadmap
+
+### Fixed
+- Navigation glitches on mobile where "Mission" button was unresponsive
+- Dashboard tabs hidden on mobile screens (now scrollable)
+- Syntax errors in `MissionDashboard.tsx` causing build warnings
+
+---
+
 ## [2.2.0] - 2026-01-14
 
 ### Added

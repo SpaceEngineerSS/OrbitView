@@ -1,89 +1,59 @@
 "use client";
 
-import React, { forwardRef, ReactNode } from "react";
+import React from "react";
 import { motion, HTMLMotionProps } from "framer-motion";
-import { clsx } from "clsx";
+import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
-/**
- * GlassPanel - Base container component for all UI elements
- * Implements clean Glassmorphism design following ORBITAL GLASS 2.0
- * 
- * @design_reference Apple Vision Pro spatial interface aesthetic
- * Uses backdrop blur, semi-transparent backgrounds, subtle borders
- */
-
-export type GlassPanelVariant = "default" | "elevated";
-
-interface GlassPanelProps extends Omit<HTMLMotionProps<"div">, "children"> {
-    children: ReactNode;
-    variant?: GlassPanelVariant;
-    className?: string;
-    /** Disable default enter/exit animations */
-    noAnimation?: boolean;
-    /** Use as a static div instead of motion.div */
-    asStatic?: boolean;
+// Utility for merging tailwind classes
+function cn(...inputs: ClassValue[]) {
+    return twMerge(clsx(inputs));
 }
 
-const variantStyles: Record<GlassPanelVariant, string> = {
-    default: "glass-panel",
-    elevated: "glass-panel-elevated",
-};
+interface GlassPanelProps extends HTMLMotionProps<"div"> {
+    children: React.ReactNode;
+    className?: string;
+    intensity?: "low" | "medium" | "high";
+    borderGlow?: boolean;
+}
 
-// Smooth spring animation config
-const springTransition = {
-    type: "spring" as const,
-    stiffness: 400,
-    damping: 30,
-    mass: 1,
-};
+const GlassPanel: React.FC<GlassPanelProps> = ({
+    children,
+    className,
+    intensity = "medium",
+    borderGlow = true,
+    ...props
+}) => {
+    // Performance optimization: lower blur for stability if requested, but default is 16px per user spec
+    const blurAmount = intensity === "low" ? "8px" : intensity === "medium" ? "16px" : "24px";
 
-export const GlassPanel = forwardRef<HTMLDivElement, GlassPanelProps>(
-    (
-        {
-            children,
-            variant = "default",
-            className,
-            noAnimation = false,
-            asStatic = false,
-            ...motionProps
-        },
-        ref
-    ) => {
-        const baseClasses = twMerge(
-            clsx(
-                "relative overflow-hidden rounded-2xl",
-                variantStyles[variant],
+    return (
+        <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }} // Cubic-bezier for "Spring-like" feel without heavy spring calc
+            style={{
+                backdropFilter: `blur(${blurAmount})`,
+                WebkitBackdropFilter: `blur(${blurAmount})`,
+                willChange: "transform, opacity", // GPU Acceleration hint
+            }}
+            className={cn(
+                "relative overflow-hidden rounded-xl bg-slate-900/40 border border-white/10 md:backdrop-blur-md backdrop-blur-none", // Mobile: No blur, rely on dark bg
+                borderGlow && "shadow-[0_0_15px_rgba(0,0,0,0.3)] hover:border-white/20 hover:shadow-[0_0_20px_rgba(0,243,255,0.1)] transition-colors duration-300",
                 className
-            )
-        );
+            )}
+            {...props}
+        >
+            {/* Subtle Gradient Overlay */}
+            <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none" />
 
-        // Static version (no animations)
-        if (asStatic) {
-            return (
-                <div ref={ref} className={baseClasses}>
-                    {children}
-                </div>
-            );
-        }
-
-        // Animated version
-        return (
-            <motion.div
-                ref={ref}
-                className={baseClasses}
-                initial={noAnimation ? false : { opacity: 0, scale: 0.98, y: 8 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={noAnimation ? undefined : { opacity: 0, scale: 0.98, y: -8 }}
-                transition={springTransition}
-                {...motionProps}
-            >
+            {/* Content */}
+            <div className="relative z-10">
                 {children}
-            </motion.div>
-        );
-    }
-);
-
-GlassPanel.displayName = "GlassPanel";
+            </div>
+        </motion.div>
+    );
+};
 
 export default GlassPanel;

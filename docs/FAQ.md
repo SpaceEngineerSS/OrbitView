@@ -41,4 +41,4 @@ Check our [Contributing Guide](../CONTRIBUTING.md) on GitHub.
 🌐 [spacegumus.com.tr](https://spacegumus.com.tr)  
 🐙 [@SpaceEngineerSS](https://github.com/SpaceEngineerSS)
 
-*Last Updated: 2025-12-20*
+*Last Updated: 2026-02-12*

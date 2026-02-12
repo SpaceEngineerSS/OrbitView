@@ -1,89 +1,70 @@
-/**
- * Screenshot Capture Script for OrbitView Documentation
- * Captures desktop and mobile previews using Puppeteer
- * 
- * Usage: npm run docs:snap
- */
-
 import puppeteer from 'puppeteer';
-import { mkdir } from 'fs/promises';
-import { existsSync } from 'fs';
-import { dirname, join } from 'path';
+import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const ROOT_DIR = join(__dirname, '..');
-const SCREENSHOTS_DIR = join(ROOT_DIR, 'public', 'screenshots');
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-// Configuration
-const BASE_URL = 'http://localhost:3001';
-const WAIT_TIME = 5000; // Wait for globe to render
+const OUTPUT_DIR = path.resolve(__dirname, '../public/screenshots');
+const URL = 'http://localhost:3000'; // Make sure the app is running!
 
-const VIEWPORTS = {
-    desktop: { width: 1920, height: 1080 },
-    mobile: { width: 390, height: 844, isMobile: true, hasTouch: true }
-};
-
-// Helper function for delay (replaces deprecated waitForTimeout)
-const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-
-async function ensureDirectoryExists(dir) {
-    if (!existsSync(dir)) {
-        await mkdir(dir, { recursive: true });
-        console.log(`📁 Created directory: ${dir}`);
-    }
+if (!fs.existsSync(OUTPUT_DIR)) {
+    fs.mkdirSync(OUTPUT_DIR, { recursive: true });
 }
 
-async function captureScreenshots() {
-    console.log('🚀 Starting OrbitView screenshot capture...\n');
-
-    // Ensure screenshots directory exists
-    await ensureDirectoryExists(SCREENSHOTS_DIR);
-
+async function capture() {
+    console.log('🚀 Launching browser for screenshot capture...');
     const browser = await puppeteer.launch({
-        headless: 'new',
-        args: ['--no-sandbox', '--disable-setuid-sandbox']
+        headless: "new",
+        args: ['--no-sandbox', '--disable-setuid-sandbox'],
+        defaultViewport: null,
     });
 
+    const page = await browser.newPage();
+
+    // Set a user agent to avoid bot detection if necessary, though localhost is fine
+    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+
     try {
-        // Desktop Screenshot
-        console.log('🖥️  Capturing desktop view (1920x1080)...');
-        const desktopPage = await browser.newPage();
-        await desktopPage.setViewport(VIEWPORTS.desktop);
-        await desktopPage.goto(BASE_URL, { waitUntil: 'networkidle2', timeout: 30000 });
-        await delay(WAIT_TIME);
+        console.log(`🌐 Navigating to ${URL}...`);
+        // Wait until network is idle to ensure assets are loaded
+        await page.goto(URL, { waitUntil: 'networkidle0', timeout: 60000 });
 
-        const desktopPath = join(SCREENSHOTS_DIR, 'desktop-preview.png');
-        await desktopPage.screenshot({ path: desktopPath, fullPage: false });
-        console.log(`   ✅ Saved: ${desktopPath}\n`);
-        await desktopPage.close();
+        // --- 1. Desktop Capture ---
+        console.log('📸 Capturing Desktop View...');
+        await page.setViewport({ width: 1920, height: 1080 });
 
-        // Mobile Screenshot (iPhone 12 Pro dimensions)
-        console.log('📱 Capturing mobile view (390x844)...');
-        const mobilePage = await browser.newPage();
-        await mobilePage.setViewport(VIEWPORTS.mobile);
-        await mobilePage.emulate({
-            viewport: VIEWPORTS.mobile,
-            userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Mobile/15E148 Safari/604.1'
+        // Wait for Globe or critical UI to be visible
+        // We'll wait a bit extra for Cesium to render tiles
+        await new Promise(r => setTimeout(r, 5000));
+
+        await page.screenshot({
+            path: path.join(OUTPUT_DIR, 'desktop-preview.png'),
+            fullPage: false
         });
-        await mobilePage.goto(BASE_URL, { waitUntil: 'networkidle2', timeout: 30000 });
-        await delay(WAIT_TIME);
+        console.log('✅ Desktop screenshot saved.');
 
-        const mobilePath = join(SCREENSHOTS_DIR, 'mobile-preview.png');
-        await mobilePage.screenshot({ path: mobilePath, fullPage: false });
-        console.log(`   ✅ Saved: ${mobilePath}\n`);
-        await mobilePage.close();
+        // --- 2. Mobile Capture (iPhone 14 Pro dims) ---
+        console.log('📱 Capturing Mobile View...');
+        await page.setViewport({ width: 393, height: 852, isMobile: true, hasTouch: true });
 
-        console.log('🎉 Screenshot capture complete!');
-        console.log('   Files saved to: public/screenshots/');
+        // Reload to trigger mobile-specific logic (e.g. Globe resolution reduction)
+        await page.reload({ waitUntil: 'networkidle0' });
+        await new Promise(r => setTimeout(r, 5000)); // Wait for render
+
+        await page.screenshot({
+            path: path.join(OUTPUT_DIR, 'mobile-preview.png'),
+            fullPage: false
+        });
+        console.log('✅ Mobile screenshot saved.');
 
     } catch (error) {
-        console.error('❌ Error capturing screenshots:', error.message);
-        process.exit(1);
+        console.error('❌ Error capturing screenshots:', error);
     } finally {
         await browser.close();
+        console.log('✨ Done.');
     }
 }
 
-// Run
-captureScreenshots();
+capture();

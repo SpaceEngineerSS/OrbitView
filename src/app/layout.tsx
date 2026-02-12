@@ -17,13 +17,13 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "OrbitView - Real-time Satellite Tracking",
-  description: "Track 5000+ satellites in real-time on an interactive 3D globe. Analyze orbits, predict passes, and explore space with scientific tools.",
+  title: "OrbitView | Next-Gen Satellite Tracker",
+  description: "Advanced orbital visualization platform.",
   metadataBase: new URL("https://orbitview.vercel.app"),
   manifest: "/manifest.json",
   keywords: ["satellite tracking", "space", "orbit visualization", "ISS tracker", "starlink", "real-time", "3D globe", "orbital mechanics", "pass prediction", "astronomy"],
-  authors: [{ name: "Mehmet Gümüş", url: "https://spacegumus.com.tr" }],
-  creator: "@persesmg",
+  authors: [{ name: "Mehmet Gümüş", url: "https://github.com/SpaceEngineerSS" }],
+  creator: "Mehmet Gümüş",
   publisher: "OrbitView",
   applicationName: "OrbitView",
   category: "science",

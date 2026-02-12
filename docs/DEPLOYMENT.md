@@ -54,4 +54,4 @@ docker run -p 3000:3000 \
 Developed by **Mehmet Gümüş**.
 For custom deployment assistance, visit [spacegumus.com.tr](https://spacegumus.com.tr).
 
-*Last Updated: 2025-12-20*
+*Last Updated: 2026-02-12*

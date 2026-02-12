@@ -1,0 +1,43 @@
+name: Documentation & Assets
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'src/**'
+      - 'README.md'
+      - 'docs/**'
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  validate-docs:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        
+    - name: Install Dependencies
+      run: npm ci
+
+    - name: Check Documentation Links
+      run: |
+        # Simple check to ensure key docs exist
+        if [ ! -f README.md ]; then echo "README.md missing"; exit 1; fi
+        if [ ! -f CONTRIBUTING.md ]; then echo "CONTRIBUTING.md missing"; exit 1; fi
+        if [ ! -f THEORY.md ]; then echo "THEORY.md missing"; exit 1; fi
+
+    # Note: Full screenshot generation requires a running server and browser stack.
+    # We skip the actual visual capture in CI for now to avoid flakes, but we
+    # verify the script syntax and dependencies are correct.
+    - name: Verify Screenshot Script Syntax
+      run: node --check scripts/capture-screens.mjs
+
+    - name: Lint Codebase (Docs Standard)
+      run: npm run lint

@@ -72,4 +72,4 @@ If deploying OrbitView yourself:
 
 ---
 
-*This security policy was last updated on 2025-12-20.*
+*This security policy was last updated on 2026-02-12.*

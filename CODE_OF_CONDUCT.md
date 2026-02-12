@@ -79,4 +79,4 @@ Community Impact Guidelines were inspired by [Mozilla's code of conduct enforcem
 [homepage]: https://www.contributor-covenant.org
 [v2.1]: https://www.contributor-covenant.org/version/2/1/code_of_conduct.html
 
-*Last updated: 2025-12-20*
+*Last updated: 2026-02-12*

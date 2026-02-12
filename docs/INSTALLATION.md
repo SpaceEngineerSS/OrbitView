@@ -67,4 +67,4 @@ If you prefer using Docker:
 Developed by **Mehmet Gümüş**.
 For installation issues, contact [contact@spacegumus.com.tr](mailto:contact@spacegumus.com.tr) or visit [spacegumus.com.tr](https://spacegumus.com.tr).
 
-*Last Updated: 2025-12-20*
+*Last Updated: 2026-02-12*

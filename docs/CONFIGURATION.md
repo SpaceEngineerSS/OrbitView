@@ -46,4 +46,4 @@ Parameters for scientific models are located in `src/lib/`:
 Configured and documented by **Mehmet Gümüş**.
 🌐 [spacegumus.com.tr](https://spacegumus.com.tr)
 
-*Last Updated: 2025-12-20*
+*Last Updated: 2026-02-12*

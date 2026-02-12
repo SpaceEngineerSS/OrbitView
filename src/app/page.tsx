@@ -1,714 +1,191 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useCallback, Suspense, useRef } from "react";
 import dynamic from "next/dynamic";
-import { useSearchParams, useRouter, usePathname } from "next/navigation";
-import Sidebar from "@/components/HUD/Sidebar";
-import TimeScrubber from "@/components/Timeline/TimeScrubber";
-import KeyboardShortcutsModal from "@/components/HUD/KeyboardShortcutsModal";
-import ModeSwitch from "@/components/HUD/ModeSwitch";
-import InfoPanel, { TelemetryData } from "@/components/HUD/InfoPanel";
-import ObserverLocationSelector from "@/components/HUD/ObserverLocationSelector";
-import LanguageSwitcher from "@/components/HUD/LanguageSwitcher";
-import SettingsPanel, { AppSettings, DEFAULT_SETTINGS } from "@/components/HUD/SettingsPanel";
-import OnboardingModal from "@/components/HUD/OnboardingModal";
-import Footer from "@/components/HUD/Footer";
-import SplashScreen from "@/components/HUD/SplashScreen";
-import ScientificDashboard from "@/components/Scientific/ScientificDashboard";
-import ReferencesModal from "@/components/HUD/ReferencesModal";
-import MissionControl from "@/components/HUD/MissionControl";
-import TelemetryDeck from "@/components/HUD/TelemetryDeck";
-import {
-    BottomTabBar, MobileBottomSheet, MobileSearchOverlay, MobileTelemetryView,
-    MobileScienceMenu, MobilePassPrediction, MobileDoppler, MobileSkyplot,
-    MobileOrbitalDecay, MobileLocationSelector,
-    type MobileTab, type ScienceTool
-} from "@/components/HUD/Mobile";
-import { useTimelineStore } from "@/store/timelineStore";
+import { Toaster } from "sonner";
+import { AnimatePresence, motion } from "framer-motion";
+import ModernSidebar from "@/components/layout/ModernSidebar";
+import MobileNavBar from "@/components/layout/MobileNavBar";
+import TopBar from "@/components/layout/TopBar";
+import BottomPanel from "@/components/layout/BottomPanel";
+import InspectorPanel from "@/components/layout/InspectorPanel";
+import MissionDashboard from "@/components/Scientific/MissionDashboard";
+import SettingsPanel, { DEFAULT_SETTINGS, AppSettings } from "@/components/HUD/SettingsPanel";
+import { useEffect, useState } from "react";
 import { fetchActiveSatellites } from "@/lib/tle";
 import { SpaceObject, convertToSpaceObject } from "@/lib/space-objects";
-import ErrorBoundary from "@/components/Common/ErrorBoundary";
-import { useFavorites } from "@/hooks/useFavorites";
-import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
-import { useAnalystMode } from "@/hooks/useAnalystMode";
-import useSatelliteTelemetry from "@/hooks/useSatelliteTelemetry";
-import { SatelliteState, ObserverPosition, geodeticToECF } from "@/lib/DopplerCalculator";
-import { Loader2, Keyboard, FlaskConical, MapPin, Settings, BookOpen } from "lucide-react";
-import { AnimatePresence, motion } from "framer-motion";
-import { Toaster, toast } from "sonner";
 
+// Dynamic import for Globe to avoid SSR issues with Cesium
 const Globe = dynamic(() => import("@/components/Globe"), {
     ssr: false,
     loading: () => (
-        <div className="absolute inset-0 flex items-center justify-center bg-black">
-            <div className="flex flex-col items-center gap-4">
-                <Loader2 size={48} className="text-cyan-400 animate-spin" />
-                <span className="text-cyan-500 text-sm font-mono tracking-wider animate-pulse">
-                    INITIALIZING ORBIT VIEWER...
-                </span>
-            </div>
+        <div className="absolute inset-0 flex items-center justify-center bg-black text-cyan-400 font-rajdhani animate-pulse tracking-widest">
+            INITIALIZING ORBITAL SYSTEMS...
         </div>
-    )
+    ),
 });
 
-// Main Page Component
-// Internal component to handle search params
-function PageContent() {
-    const searchParams = useSearchParams();
-    const router = useRouter();
-    const pathname = usePathname();
-    const satId = searchParams.get('sat');
-
+export default function Home() {
     const [objects, setObjects] = useState<SpaceObject[]>([]);
-    const [selectedObject, setSelectedObject] = useState<SpaceObject | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
-    const initialDeepLinkRef = useRef(false);
+    const [loading, setLoading] = useState(true);
 
-    // Sync selected satellite with URL
-    useEffect(() => {
-        const params = new URLSearchParams(searchParams.toString());
-        if (selectedObject) {
-            if (params.get('sat') !== selectedObject.id) {
-                params.set('sat', selectedObject.id);
-                router.replace(`${pathname}?${params.toString()}`, { scroll: false });
-            }
-        } else {
-            if (params.has('sat') && !isLoading) { // Don't clear on initial load before objects are ready
-                params.delete('sat');
-                router.replace(`${pathname}`, { scroll: false });
-            }
-        }
-    }, [selectedObject, pathname, router, searchParams, isLoading]);
-
-    const [filter, setFilter] = useState("ALL");
+    // UI & Interaction State
+    const [selectedSatellite, setSelectedSatellite] = useState<SpaceObject | null>(null);
+    const [telemetry, setTelemetry] = useState<{ lat: number; lon: number; alt: number; velocity: number } | null>(null);
+    const [activeView, setActiveView] = useState<'globe' | 'analytics' | 'settings'>('globe');
     const [searchQuery, setSearchQuery] = useState("");
-    const [viewMode, setViewMode] = useState<'ORBIT' | 'SATELLITE_POV'>('ORBIT');
-    const [isPlaying, setIsPlaying] = useState(true);
-    const [timeMultiplier, setTimeMultiplier] = useState(1);
+    const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
 
-    const { favorites, isFavorite, toggleFavorite } = useFavorites();
-    const { mode, isAnalystMode, toggleMode } = useAnalystMode();
-
-    // Get current simulation time from timeline store
-    const { currentTime } = useTimelineStore();
-
-    // Convert selectedObject to TLE format for hook
-    const selectedTLE = useMemo(() => {
-        if (!selectedObject?.tle) return null;
-        return {
-            id: selectedObject.id,
-            name: selectedObject.name,
-            line1: selectedObject.tle.line1,
-            line2: selectedObject.tle.line2
-        };
-    }, [selectedObject]);
-
-    // Real-time telemetry calculation on main thread (for selected satellite only)
-    const telemetry = useSatelliteTelemetry(selectedTLE, currentTime, { updateIntervalMs: 200 });
-
-    const [isMobile, setIsMobile] = useState(false);
-    const [showShortcuts, setShowShortcuts] = useState(false);
-    const [showScientific, setShowScientific] = useState(false);
-    const [showLocationSelector, setShowLocationSelector] = useState(false);
-    const [showSettings, setShowSettings] = useState(false);
-    const [showOnboarding, setShowOnboarding] = useState(false);
-    const [hoveredObject, setHoveredObject] = useState<SpaceObject | null>(null);
-    const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
-    const [showReferences, setShowReferences] = useState(false);
-    const [appSettings, setAppSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
-
-    // Mobile Native App State
-    const [mobileActiveTab, setMobileActiveTab] = useState<MobileTab>('explore');
-    const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
-    const [activeScienceTool, setActiveScienceTool] = useState<ScienceTool>(null);
-    const [showMobileLocationSelector, setShowMobileLocationSelector] = useState(false);
-
-    // Observer position (default: Istanbul, now editable)
-    const [observerPosition, setObserverPosition] = useState<ObserverPosition>({
-        latitude: 41.0082,
-        longitude: 28.9784,
-        altitude: 0
-    });
-
-    // Calculate satellite state for Doppler
-    const satelliteState = useMemo<SatelliteState | null>(() => {
-        if (!telemetry) return null;
-
-        // Convert telemetry to ECF position (approximate)
-        const pos = geodeticToECF(telemetry.lat, telemetry.lon, telemetry.alt * 1000);
-
-        // Approximate velocity in ECF (simplified - assumes circular orbit)
-        const orbitalVel = telemetry.velocity * 1000; // km/s to m/s
-        const latRad = telemetry.lat * (Math.PI / 180);
-        const lonRad = telemetry.lon * (Math.PI / 180);
-
-        // Velocity roughly tangent to orbit (simplified)
-        const vel = {
-            x: -orbitalVel * Math.sin(lonRad),
-            y: orbitalVel * Math.cos(lonRad),
-            z: 0
-        };
-
-        return { position: pos, velocity: vel };
-    }, [telemetry]);
-
-    useKeyboardShortcuts({
-        onSearch: () => {
-            const searchInput = document.querySelector('input[placeholder*="Search"]') as HTMLInputElement;
-            searchInput?.focus();
-        },
-        onToggleFavorite: () => {
-            if (selectedObject) toggleFavorite(selectedObject.id);
-        },
-        onRandomSatellite: () => {
-            if (objects.length > 0) {
-                const randomIndex = Math.floor(Math.random() * objects.length);
-                setSelectedObject(objects[randomIndex]);
-            }
-        },
-        onTogglePlay: () => setIsPlaying(!isPlaying),
-        onEscape: () => {
-            setSelectedObject(null);
-            setViewMode('ORBIT');
-            setShowShortcuts(false);
-            setShowScientific(false);
-        },
-        onHelp: () => setShowShortcuts(true)
-    });
-
-    // Add 'A' key for toggling analyst mode
+    // Fetch Satellite Data on Load
     useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.target instanceof HTMLInputElement) return;
-            if (e.key.toLowerCase() === 'a') {
-                e.preventDefault();
-                toggleMode();
-            }
-        };
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [toggleMode]);
-
-    useEffect(() => {
-        const handleMouseMove = (e: MouseEvent) => {
-            setMousePos({ x: e.clientX, y: e.clientY });
-        };
-        window.addEventListener('mousemove', handleMouseMove);
-        return () => window.removeEventListener('mousemove', handleMouseMove);
-    }, []);
-
-    useEffect(() => {
-        const checkMobile = () => setIsMobile(window.innerWidth < 768);
-        checkMobile();
-        window.addEventListener('resize', checkMobile);
-        return () => window.removeEventListener('resize', checkMobile);
-    }, []);
-
-    // Check for first-time visitor and load settings
-    useEffect(() => {
-        const onboardingComplete = localStorage.getItem('orbitview-onboarding-complete');
-        if (!onboardingComplete) {
-            setShowOnboarding(true);
-        }
-
-        const savedSettings = localStorage.getItem('orbitview-settings');
-        if (savedSettings) {
+        const loadSatellites = async () => {
             try {
-                setAppSettings(JSON.parse(savedSettings));
-            } catch (e) {
-                // Invalid settings, use defaults
-            }
-        }
-    }, []);
-
-    useEffect(() => {
-        const loadData = async () => {
-            setIsLoading(true);
-            try {
-                const tles = await fetchActiveSatellites();
-                const tleObjects = tles.map(convertToSpaceObject);
-                setObjects(tleObjects);
-                toast.success(`${tleObjects.length} satellites loaded`);
-
+                const data = await fetchActiveSatellites();
+                // Convert SatelliteData to SpaceObject using helper
+                const spaceObjects: SpaceObject[] = data.map(convertToSpaceObject);
+                setObjects(spaceObjects);
             } catch (error) {
-                toast.error('Failed to load satellite data. Please try again.');
+                console.error("Failed to load satellite data:", error);
             } finally {
-                setIsLoading(false);
+                setLoading(false);
             }
         };
-        loadData();
+
+        loadSatellites();
     }, []);
 
-    // Deep Linking: Auto-select satellite from URL
-    useEffect(() => {
-        if (!initialDeepLinkRef.current && objects.length > 0 && !isLoading) {
-            initialDeepLinkRef.current = true;
-            if (satId) {
-                const currentId = selectedObject?.id;
-                if (satId !== currentId) {
-                    const sat = objects.find(o => o.id === satId);
-                    if (sat) {
-                        setSelectedObject(sat);
-                        // Only toast on initial track or if triggered by link
-                        if (!currentId) {
-                            toast.info(`Tracking: ${sat.name}`, {
-                                icon: '🛰️',
-                                duration: 5000
-                            });
-                        }
-                    }
-                }
-            }
+    const handleSatelliteSelect = (sat: SpaceObject | null) => {
+        setSelectedSatellite(sat);
+        if (!sat) setTelemetry(null);
+    };
+
+    const handleTelemetryUpdate = (data: any) => {
+        if (selectedSatellite && data) {
+            setTelemetry(data);
         }
-    }, [satId, objects, isLoading, selectedObject?.id]);
-
-    // Note: Time is now managed by useTimelineStore, no local timer needed
-
-    // Memoized callbacks to prevent child re-renders
-    const handleMountCamera = useCallback(() => {
-        setViewMode(v => v === 'ORBIT' ? 'SATELLITE_POV' : 'ORBIT');
-    }, []);
-
-    const handleTogglePlay = useCallback(() => {
-        setIsPlaying(p => !p);
-    }, []);
-
-    const handleMultiplierChange = useCallback((multiplier: number) => {
-        setTimeMultiplier(multiplier);
-    }, []);
-
-    const handleSelectSatelliteById = useCallback((noradId: string) => {
-        setSelectedObject(prev => {
-            const sat = objects.find(o => o.id === noradId);
-            return sat || prev;
-        });
-    }, [objects]);
-
-    // Note: Telemetry is now computed by useSatelliteTelemetry hook, no callback needed
-
-    const handleHover = useCallback((obj: SpaceObject | null) => {
-        setHoveredObject(obj);
-    }, []);
-
-    const handleCloseInfoPanel = useCallback(() => {
-        setSelectedObject(null);
-        setViewMode('ORBIT');
-    }, []);
-
-    const handleCloseScientific = useCallback(() => {
-        setShowScientific(false);
-    }, []);
-
-    const handleOpenScientific = useCallback(() => {
-        setShowScientific(true);
-    }, []);
-
-    const handleSelectObject = useCallback((obj: SpaceObject | null) => {
-        setSelectedObject(obj);
-    }, []);
-
-    const handleToggleCurrentFavorite = useCallback(() => {
-        if (selectedObject) {
-            toggleFavorite(selectedObject.id);
-        }
-    }, [selectedObject, toggleFavorite]);
-
-    // Mobile tab change handler
-    const handleMobileTabChange = useCallback((tab: MobileTab) => {
-        setMobileActiveTab(tab);
-        setActiveScienceTool(null); // Reset science tool when changing tabs
-
-        // Handle special tab actions
-        switch (tab) {
-            case 'explore':
-                // Close search overlay and return to map view
-                setIsMobileSearchOpen(false);
-                break;
-            case 'search':
-                setIsMobileSearchOpen(true);
-                break;
-            case 'science':
-                // Close search overlay - MobileScienceMenu will be shown
-                setIsMobileSearchOpen(false);
-                break;
-            case 'data':
-                // Close search overlay - MobileTelemetryView will be shown
-                setIsMobileSearchOpen(false);
-                break;
-            case 'settings':
-                setIsMobileSearchOpen(false);
-                setShowSettings(true);
-                // Reset to explore after opening settings
-                setMobileActiveTab('explore');
-                break;
-        }
-    }, []);
-
-    // Close mobile telemetry view
-    const handleMobileTelemetryClose = useCallback(() => {
-        setMobileActiveTab('explore');
-    }, []);
-
-    // Close mobile science menu
-    const handleMobileScienceClose = useCallback(() => {
-        setMobileActiveTab('explore');
-        setActiveScienceTool(null);
-    }, []);
-
-    // Handle science tool selection
-    const handleSelectScienceTool = useCallback((tool: ScienceTool) => {
-        setActiveScienceTool(tool);
-    }, []);
-
-    // Go back from science tool to menu
-    const handleScienceToolBack = useCallback(() => {
-        setActiveScienceTool(null);
-    }, []);
-
-    // Open search from science menu
-    const handleScienceOpenSearch = useCallback(() => {
-        setMobileActiveTab('search');
-        setIsMobileSearchOpen(true);
-    }, []);
-
-    // Close mobile search when not on search tab or when satellite selected
-    const handleMobileSearchClose = useCallback(() => {
-        setIsMobileSearchOpen(false);
-        setMobileActiveTab('explore');
-    }, []);
-
-    // Handle satellite selection from mobile search
-    const handleMobileSearchSelect = useCallback((obj: SpaceObject) => {
-        setSelectedObject(obj);
-        setIsMobileSearchOpen(false);
-        setMobileActiveTab('explore');
-    }, []);
+    };
 
     return (
-        <main className="w-full h-screen bg-slate-950 overflow-hidden relative" role="main" aria-label="OrbitView Satellite Tracker">
-            <SplashScreen isLoading={isLoading} loadedCount={objects.length} totalCount={13000} />
-
-            {/* Mission Control - Top HUD Bar */}
-            {!isLoading && (
-                <MissionControl
-                    satelliteCount={objects.length}
-                    isLoading={isLoading}
-                />
-            )}
-
-            <ErrorBoundary className="z-0">
+        <main className="relative h-screen w-screen overflow-hidden bg-[#050507]">
+            {/* 3D Space Layer (Z-0) */}
+            <div className="absolute inset-0 z-0">
                 <Globe
                     objects={objects}
-                    onSelect={handleSelectObject}
-                    selectedObject={selectedObject}
-                    filter={filter}
+                    selectedObject={selectedSatellite}
+                    onSelect={handleSatelliteSelect}
+                    onTelemetryUpdate={handleTelemetryUpdate}
                     searchQuery={searchQuery}
-                    viewMode={viewMode}
-                    settings={appSettings}
-                    onHover={handleHover}
-                />
-            </ErrorBoundary>
-
-            {/* Hover Tooltip */}
-            <AnimatePresence>
-                {hoveredObject && (
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.9 }}
-                        transition={{ duration: 0.1 }}
-                        style={{
-                            position: 'fixed',
-                            left: mousePos.x + 15,
-                            top: mousePos.y - 15,
-                            pointerEvents: 'none'
-                        }}
-                        className="z-[200] bg-slate-900/90 backdrop-blur-md border border-cyan-500/30 px-3 py-1.5 rounded-lg shadow-2xl"
-                    >
-                        <div className="text-[10px] text-cyan-500 font-heading uppercase tracking-widest mb-0.5">SATELLITE</div>
-                        <div className="text-white text-sm font-heading flex items-center gap-2">
-                            {hoveredObject.name}
-                            <span className="text-[10px] text-slate-500 font-data">#{hoveredObject.id}</span>
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-
-            {/* ===== DESKTOP UI (hidden on mobile) ===== */}
-            <div className="hidden md:block">
-                <Sidebar
-                    objects={objects}
-                    onSearch={setSearchQuery}
-                    onFilterChange={setFilter}
-                    onSelect={handleSelectObject}
-                    favorites={favorites}
-                    onToggleFavorite={toggleFavorite}
-                />
-
-                {/* Telemetry Deck - Bottom HUD Panel */}
-                <TelemetryDeck
-                    selectedObject={selectedObject}
-                    telemetry={telemetry}
-                    onClose={handleCloseInfoPanel}
-                />
-
-                {/* Info Panel - Detailed satellite info (side panel) */}
-                {selectedObject && (
-                    <InfoPanel
-                        object={selectedObject}
-                        onClose={handleCloseInfoPanel}
-                        telemetry={telemetry}
-                        onMountCamera={handleMountCamera}
-                        isCameraMounted={viewMode === 'SATELLITE_POV'}
-                        isFavorite={isFavorite(selectedObject.id)}
-                        onToggleFavorite={handleToggleCurrentFavorite}
-                        isAnalystMode={isAnalystMode}
-                        onOpenScientific={handleOpenScientific}
-                    />
-                )}
-            </div>
-
-            {/* ===== MOBILE UI (hidden on desktop) ===== */}
-            <div className="block md:hidden">
-                {/* Mobile Search Overlay */}
-                <MobileSearchOverlay
-                    isOpen={isMobileSearchOpen}
-                    onClose={handleMobileSearchClose}
-                    objects={objects}
-                    favorites={favorites}
-                    onSelect={handleMobileSearchSelect}
-                />
-
-                {/* Mobile Bottom Sheet (shows when satellite selected AND on explore tab) */}
-                {mobileActiveTab === 'explore' && (
-                    <MobileBottomSheet
-                        satellite={selectedObject}
-                        telemetry={telemetry}
-                        onClose={handleCloseInfoPanel}
-                        onTrack={handleMountCamera}
-                    />
-                )}
-
-                {/* Mobile Telemetry View (Data Tab) */}
-                <MobileTelemetryView
-                    isOpen={mobileActiveTab === 'data'}
-                    onClose={handleMobileTelemetryClose}
-                    satellite={selectedObject}
-                    telemetry={telemetry}
-                />
-
-                {/* Mobile Science Menu (Science Tab) */}
-                <MobileScienceMenu
-                    isOpen={mobileActiveTab === 'science' && !activeScienceTool}
-                    onClose={handleMobileScienceClose}
-                    satellite={selectedObject}
-                    onSelectTool={handleSelectScienceTool}
-                    onOpenSearch={handleScienceOpenSearch}
-                />
-
-                {/* Mobile Pass Prediction Tool */}
-                <MobilePassPrediction
-                    isOpen={mobileActiveTab === 'science' && activeScienceTool === 'pass'}
-                    onBack={handleScienceToolBack}
-                    satellite={selectedObject}
-                    observerPosition={observerPosition}
-                    onOpenLocation={() => setShowMobileLocationSelector(true)}
-                />
-
-                {/* Mobile Doppler Tool */}
-                <MobileDoppler
-                    isOpen={mobileActiveTab === 'science' && activeScienceTool === 'doppler'}
-                    onBack={handleScienceToolBack}
-                    satellite={selectedObject}
-                    telemetry={telemetry}
-                    satelliteState={satelliteState}
-                    observerPosition={observerPosition}
-                />
-
-                {/* Mobile Skyplot Tool */}
-                <MobileSkyplot
-                    isOpen={mobileActiveTab === 'science' && activeScienceTool === 'skyplot'}
-                    onBack={handleScienceToolBack}
-                    satellite={selectedObject}
-                    telemetry={telemetry}
-                />
-
-                {/* Mobile Orbital Decay Tool */}
-                <MobileOrbitalDecay
-                    isOpen={mobileActiveTab === 'science' && activeScienceTool === 'decay'}
-                    onBack={handleScienceToolBack}
-                    satellite={selectedObject}
-                    telemetry={telemetry}
-                />
-
-                {/* Mobile Location Selector */}
-                <MobileLocationSelector
-                    isOpen={showMobileLocationSelector}
-                    onClose={() => setShowMobileLocationSelector(false)}
-                    currentPosition={observerPosition}
-                    onPositionChange={setObserverPosition}
-                />
-
-                {/* Mobile Bottom Tab Bar */}
-                <BottomTabBar
-                    activeTab={mobileActiveTab}
-                    onTabChange={handleMobileTabChange}
-                    hasSelectedSatellite={!!selectedObject}
+                    settings={settings}
                 />
             </div>
 
+            {/* UI Layer (Z-10+) */}
+            {/* Pointer events NONE on wrapper to let clicks pass to Globe */}
+            <div className="relative z-10 h-full w-full pointer-events-none">
 
-            {/* Scientific Dashboard */}
-            <AnimatePresence>
-                {showScientific && (
-                    <ScientificDashboard
-                        isOpen={showScientific}
-                        onClose={handleCloseScientific}
-                        selectedObject={selectedObject}
-                        satelliteState={satelliteState}
-                        observerPosition={observerPosition}
-                        telemetry={telemetry}
-                        onSelectSatellite={handleSelectSatelliteById}
+                {/* Pointer events AUTO on interactive HUD elements */}
+                <div className="pointer-events-auto">
+                    <TopBar onSearch={setSearchQuery} />
+                </div>
+
+                {/* Desktop Sidebar */}
+                <div className="hidden md:block pointer-events-auto">
+                    <ModernSidebar
+                        activeView={activeView}
+                        onViewChange={setActiveView}
                     />
-                )}
-            </AnimatePresence>
+                </div>
 
-            {/* Observer Location Selector */}
-            <ObserverLocationSelector
-                isOpen={showLocationSelector}
-                onClose={() => setShowLocationSelector(false)}
-                currentPosition={observerPosition}
-                onPositionChange={(pos) => {
-                    setObserverPosition(pos);
-                    toast.success(`Location updated to ${pos.latitude.toFixed(4)}°, ${pos.longitude.toFixed(4)}°`);
-                }}
-            />
+                {/* Mobile Bottom Navigation */}
+                <div className="block md:hidden pointer-events-auto">
+                    <MobileNavBar
+                        activeView={activeView}
+                        onViewChange={setActiveView}
+                    />
+                </div>
 
-            {/* Time Scrubber - YouTube-style timeline */}
-            {/* Hidden when satellite selected to reduce visual clutter */}
-            {!selectedObject && (
-                <TimeScrubber />
-            )}
+                {/* Desktop Bottom Panel - Modified to hide on mobile to save space if needed, or keep it. User asked for responsive layout. Let's keep it but maybe it overlaps with nav? 
+                    Actually, making it hidden on mobile might be better for now to avoid clutter, OR adapting it.
+                    User request didn't explicitly say hide BottomPanel, but implied MobileNavBar takes precedence.
+                    Let's hide BottomPanel on MOBILE to respect the "clean" requested look and let Inspector/NavBar handle things.
+                */}
+                <div className="hidden md:block pointer-events-auto">
+                    <BottomPanel telemetry={telemetry} />
+                </div>
+                {/* Mobile Telemetry could be integrated into the InspectorPanel or a smaller simplified view. 
+                    For now, I'll hide the big BottomPanel on mobile as it conflicts with the new BottomNavBar.
+                */}
 
-            {/* Top Bar with Mode Switch */}
-            {!isLoading && (
-                <div className="hidden md:flex fixed top-6 right-6 z-30 items-center gap-2" role="toolbar" aria-label="Application controls">
-                    {/* Language Switcher */}
-                    <LanguageSwitcher />
-
-                    {/* Location Button */}
-                    <button
-                        onClick={() => setShowLocationSelector(true)}
-                        className="p-2 glass-panel rounded-xl text-emerald-400 hover:bg-white/10 transition-all"
-                        aria-label="Change observer location"
-                        title={`Observer: ${observerPosition.latitude.toFixed(2)}°, ${observerPosition.longitude.toFixed(2)}°`}
-                    >
-                        <MapPin size={18} strokeWidth={1.5} aria-hidden="true" />
-                    </button>
-
-                    {/* Settings Button */}
-                    <button
-                        onClick={() => setShowSettings(true)}
-                        className="p-2 glass-panel rounded-xl text-slate-400 hover:bg-white/10 hover:text-white transition-all"
-                        aria-label="Open application settings"
-                        title="Settings"
-                    >
-                        <Settings size={18} strokeWidth={1.5} aria-hidden="true" />
-                    </button>
-
-                    {/* References Button */}
-                    <button
-                        onClick={() => setShowReferences(true)}
-                        className="p-2 glass-panel rounded-xl text-violet-400 hover:bg-white/10 transition-all"
-                        aria-label="View scientific references and citations"
-                        title="References & Citations"
-                    >
-                        <BookOpen size={18} strokeWidth={1.5} aria-hidden="true" />
-                    </button>
-
-                    <ModeSwitch mode={mode} onToggle={toggleMode} />
-
-                    {isAnalystMode && (
-                        <button
-                            onClick={() => setShowScientific(true)}
-                            className="p-2 glass-panel rounded-xl text-violet-400 hover:bg-white/10 transition-all"
-                            aria-label="Open Scientific Analysis Dashboard"
-                            title="Open Scientific Dashboard"
+                {/* Main Scientific Dashboard (Analytics View) */}
+                <AnimatePresence mode="wait">
+                    {activeView === 'analytics' && (
+                        <motion.div
+                            key="dashboard-container"
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            transition={{ duration: 0.2 }}
+                            className="absolute inset-0 z-50 flex items-center justify-center pointer-events-none p-4 pl-0 md:pl-20 pb-20 md:pb-20" // Adjusted padding for mobile
                         >
-                            <FlaskConical size={18} strokeWidth={1.5} aria-hidden="true" />
-                        </button>
+                            <div className="pointer-events-auto w-full max-w-5xl relative">
+                                <button
+                                    onClick={() => setActiveView('globe')}
+                                    className="absolute -top-12 right-0 p-2 text-slate-400 hover:text-white transition-colors pointer-events-auto flex items-center gap-2"
+                                >
+                                    <span className="text-xs uppercase font-bold tracking-widest">Close Dashboard</span>
+                                </button>
+                                <MissionDashboard
+                                    selectedObject={selectedSatellite}
+                                    telemetry={telemetry}
+                                    className="shadow-2xl"
+                                    onClose={() => setActiveView('globe')}
+                                />
+                            </div>
+                        </motion.div>
                     )}
-                </div>
-            )}
+                </AnimatePresence>
 
-            {/* Keyboard Shortcut Button */}
-            {!isMobile && !isLoading && (
-                <button
-                    onClick={() => setShowShortcuts(true)}
-                    className="fixed bottom-8 right-8 z-20 p-3 bg-slate-950/80 backdrop-blur-xl border border-white/10 rounded-xl text-slate-400 hover:text-cyan-400 hover:border-cyan-500/30 transition-all group"
-                >
-                    <Keyboard size={18} />
-                    <span className="absolute bottom-full right-0 mb-2 px-2 py-1 bg-slate-900 text-[10px] text-slate-300 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">Press ? for shortcuts</span>
-                </button>
-            )}
+                {/* Settings Panel - Handles its own internal AnimatePresence */}
+                <SettingsPanel
+                    isOpen={activeView === 'settings'}
+                    settings={settings}
+                    onSettingsChange={setSettings}
+                    onClose={() => setActiveView('globe')}
+                />
 
-            <KeyboardShortcutsModal isOpen={showShortcuts} onClose={() => setShowShortcuts(false)} />
+                {/* Inspector Panel (Only show in Globe view when sat is selected) */}
+                <AnimatePresence>
+                    {activeView === 'globe' && selectedSatellite && (
+                        <motion.div
+                            key="inspector-panel"
+                            className="pointer-events-auto"
+                        >
+                            <InspectorPanel
+                                selectedObject={selectedSatellite}
+                                telemetry={telemetry}
+                                onClose={() => setSelectedSatellite(null)}
+                            />
+                        </motion.div>
+                    )}
+                </AnimatePresence>
 
-            {/* Settings Panel */}
-            <SettingsPanel
-                isOpen={showSettings}
-                onClose={() => setShowSettings(false)}
-                settings={appSettings}
-                onSettingsChange={setAppSettings}
-            />
+                {/* Loading Indicator Overlay */}
+                {loading && (
+                    <div className="absolute top-24 md:top-20 right-6 glass-panel px-4 py-2 border-l-2 border-cyan-400 flex items-center gap-3 pointer-events-auto">
+                        <div className="w-4 h-4 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin" />
+                        <span className="text-xs font-mono text-cyan-400">ESTABLISHING UPLINK...</span>
+                    </div>
+                )}
 
-            {/* Onboarding Modal */}
-            <OnboardingModal
-                isOpen={showOnboarding}
-                onClose={() => setShowOnboarding(false)}
-                onComplete={() => setShowOnboarding(false)}
-            />
-
-            {/* References Modal */}
-            <ReferencesModal
-                isOpen={showReferences}
-                onClose={() => setShowReferences(false)}
-            />
-
-            {/* Footer - Desktop only */}
-            <div className="hidden md:block">
-                <Footer />
+                {/* Notifications */}
+                <Toaster
+                    position="top-right"
+                    theme="dark"
+                    toastOptions={{
+                        className: "glass-panel text-white border-cyan-500/30",
+                        style: { fontFamily: "var(--font-rajdhani)" }
+                    }}
+                />
             </div>
-
-            {/* Toast Notifications */}
-            <Toaster
-                position="top-center"
-                toastOptions={{
-                    style: {
-                        background: 'rgba(15, 23, 42, 0.95)',
-                        border: '1px solid rgba(255, 255, 255, 0.1)',
-                        color: '#fff',
-                        backdropFilter: 'blur(20px)'
-                    }
-                }}
-            />
         </main>
-    );
-}
-
-export default function Page() {
-    return (
-        <Suspense fallback={
-            <div className="absolute inset-0 flex items-center justify-center bg-black">
-                <div className="flex flex-col items-center gap-4">
-                    <Loader2 size={48} className="text-cyan-400 animate-spin" />
-                    <span className="text-cyan-500 text-sm font-mono tracking-wider animate-pulse uppercase">
-                        Loading Satellites...
-                    </span>
-                </div>
-            </div>
-        }>
-            <PageContent />
-        </Suspense>
     );
 }

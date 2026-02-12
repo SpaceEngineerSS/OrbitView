@@ -20,18 +20,24 @@
 
 ## 📸 Showcase
 
-| Desktop Dashboard | Mobile Pocket Lab |
+| Desktop Command Center | Mobile Pocket Lab |
 |:---:|:---:|
 | ![Desktop](public/screenshots/desktop-preview.png) | ![Mobile](public/screenshots/mobile-preview.png) |
 
 <div align="center">
   <p><b>Scientific Satellite Tracker & Orbital Analysis</b></p>
-  <p><i>Native-like mobile app with haptic feedback</i></p>
+  <p><i>Responsive, High-Performance, and Mobile-First</i></p>
 </div>
 
 ---
 
 ## ✨ Features
+
+### 📱 v2.3 Mobile & PWA Experience (NEW)
+- **Pocket Lab Interface**: A completely redesigned mobile UX with a bottom-sheet Inspector and gesture controls.
+- **Haptic Feedback**: Tactile responses for interactions (selection, time scrubbing) on supported devices.
+- **Adaptive Performance**: Automatic resolution scaling and bloom disabling on mobile for smooth 60fps tracking.
+- **Touch-Optimized Controls**: Pinch-to-zoom, two-finger tilt, and swipe gestures for the 3D globe.
 
 ### 🎨 v2.2 ORBITAL GLASS Design System
 - 🖥️ **Apple Vision Pro-inspired Glassmorphism UI** — Clean, modern interface with frosted glass panels and smooth animations
@@ -40,7 +46,7 @@
 - 🔬 **Centered Scientific Modal** — Full-screen analysis dashboard with backdrop blur
 
 ### ⚡ v2.0 Performance
-- 🛰️ **Real-time SGP4 Propagation** — Web Worker-driven batch processing for 10,000+ satellites at 60 FPS
+- 🛰️ **Real-time SGP4 Propagation** — Web Worker-driven batch processing for 25,000+ satellites at 60 FPS
 - 🧮 **Spatial Hashing Collision Engine** — O(N) link calculation with 1000km³ grid cells
 - 🌍 **High-Fidelity Inertial Orbit Rendering** — Fixed GMST algorithm shows true Kepler rings
 - ⚡ **Offline-First Architecture** — IndexedDB caching with Stale-While-Revalidate
@@ -53,7 +59,6 @@
 - ☀️ **Eclipse Detection** — Real-time sunlight/shadow status for all objects
 - ⛓️ **Deep Linking** — Share specific satellites via URL (e.g., `?sat=25544`)
 - ⏱️ **Time Travel** — Simulate orbits at any point in history or future
-- 📱 **Native-Like Mobile Experience** — 5-tab navigation, haptic feedback, draggable bottom sheet & GPS location
 - 🔭 **Scientific Tool Suite** — Pass prediction, Skyplot polar view, Orbital decay analysis & Doppler calculator
 - 🧭 **AR Compass Mode** — Use device orientation to spot satellites in the sky
 - ⌨️ **Power User Tools** — Keyboard shortcuts, analyst mode, and TLE exporting
@@ -110,6 +115,7 @@ Get your free Cesium Ion token at [cesium.com/ion](https://cesium.com/ion/).
 | [TailwindCSS](https://tailwindcss.com/) | Utility-first CSS |
 | [Framer Motion](https://www.framer.com/motion/) | Animations |
 | [Native IndexedDB](https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API) | Offline caching |
+| [Puppeteer](https://pptr.dev/) | Automated Documentation Screenshots |
 
 ---
 
@@ -123,7 +129,8 @@ src/
 ├── components/
 │   ├── Globe/          # Cesium globe & satellite rendering
 │   ├── HUD/            # Heads-up display components
-│   └── Scientific/     # Analysis dashboards
+│   ├── Scientific/     # Analysis dashboards
+│   └── layout/         # Responsive layouts (MobileNavBar, InspectorPanel)
 ├── lib/                # Core calculations
 │   ├── DopplerCalculator.ts
 │   ├── OrbitalDecay.ts
@@ -213,6 +220,9 @@ npm run test:coverage
 
 # Type checking
 npm run type-check
+
+# Generate Documentation Screenshots
+node scripts/capture-screens.mjs
 ```
 
 ---
@@ -259,5 +269,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ---
 
 <div align="center">
-  Made with ❤️ for space enthusiasts | v2.3.0 | Last updated: 2026-01-16
+  Made with ❤️ for space enthusiasts | v2.3.0 | Last updated: 2026-02-12
 </div>

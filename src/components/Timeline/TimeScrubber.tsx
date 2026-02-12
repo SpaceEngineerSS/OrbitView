@@ -12,7 +12,7 @@ import {
     ChevronLeft,
     ChevronRight
 } from "lucide-react";
-import { GlassPanel } from "@/components/UI/GlassPanel";
+import GlassPanel from "@/components/UI/GlassPanel";
 import { useTimelineStore } from "@/store/timelineStore";
 import { clsx } from "clsx";
 
@@ -150,7 +150,8 @@ const TimeScrubber: React.FC<TimeScrubberProps> = memo(({ className }) => {
             className={clsx("fixed bottom-20 left-4 right-4 z-30 pointer-events-none", className)}
         >
             <GlassPanel
-                variant="elevated"
+                intensity="medium"
+                borderGlow={true}
                 className="mx-auto max-w-4xl pointer-events-auto"
             >
                 <div className="p-4">
