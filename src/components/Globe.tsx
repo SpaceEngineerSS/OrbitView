@@ -5,10 +5,10 @@ import { Viewer, Scene, ImageryLayer } from "resium";
 import * as Cesium from "cesium";
 import "cesium/Build/Cesium/Widgets/widgets.css";
 
-// Use OpenStreetMap instead of Cesium Ion (no API key required)
-const osmImageryProvider = new Cesium.OpenStreetMapImageryProvider({
-  url: "https://tile.openstreetmap.org/",
-  credit: "© OpenStreetMap contributors"
+// Use ArcGIS World Imagery (Satellite) - high quality, no API token required
+const satelliteImageryProvider = new Cesium.UrlTemplateImageryProvider({
+  url: "https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+  credit: "Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community"
 });
 import SatelliteLayer from "./SatelliteLayer";
 import { SpaceObject } from "@/lib/space-objects";
@@ -23,7 +23,7 @@ if (typeof window !== "undefined") {
 
   // Initialize Cesium Token (Use env var or empty string for offline/OSM mode)
   // Fix for 401: Even if we use OSM, some default widgets might try to access Ion assets
-  Cesium.Ion.defaultAccessToken = process.env.NEXT_PUBLIC_CESIUM_TOKEN || "";
+  Cesium.Ion.defaultAccessToken = process.env.NEXT_PUBLIC_CESIUM_ION_TOKEN || "";
 
   // Suppress Cesium Ion 401 errors in console (expected behavior when not using Ion)
   const originalConsoleError = console.error;
@@ -192,20 +192,20 @@ const Globe: React.FC<GlobeProps> = ({ objects = [], onSelect, selectedObject, o
     };
   }, [isCompassMode, viewerRef]);
 
-  // Auto-Rotation Logic (Disabled in Compass Mode)
+  // Auto-Rotation Logic (Disabled in Compass Mode or when settings specify false)
   useEffect(() => {
     if (!viewerRef || viewerRef.isDestroyed()) return;
     const scene = viewerRef.scene;
 
     const rotateGlobe = () => {
-      if (!selectedObject && viewMode === 'ORBIT' && !isCompassMode) {
+      if (!selectedObject && viewMode === 'ORBIT' && !isCompassMode && settings?.autoRotateGlobe !== false) {
         viewerRef.camera.rotateLeft(0.0005);
       }
     };
 
     const removeListener = scene.preRender.addEventListener(rotateGlobe);
     return () => removeListener();
-  }, [viewerRef, selectedObject, viewMode, isCompassMode]);
+  }, [viewerRef, selectedObject, viewMode, isCompassMode, settings]);
 
   // Scene Configuration (Lighting & Atmosphere & Post-Process)
   useEffect(() => {
@@ -306,13 +306,12 @@ const Globe: React.FC<GlobeProps> = ({ objects = [], onSelect, selectedObject, o
         navigationHelpButton={false}
         selectionIndicator={false}
         infoBox={false}
-        requestRenderMode={true}
-        maximumRenderTimeChange={Infinity}
+        requestRenderMode={false}
         creditContainer={creditContainer}
         terrainProvider={new Cesium.EllipsoidTerrainProvider()}
       >
         <Scene highDynamicRange={true} />
-        <ImageryLayer imageryProvider={osmImageryProvider} />
+        <ImageryLayer imageryProvider={satelliteImageryProvider} />
 
         <SatelliteLayer
           objects={objects}

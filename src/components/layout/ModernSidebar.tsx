@@ -4,7 +4,6 @@ import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Home, Globe, Settings, Crosshair, Radio, Database, Menu } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { clsx } from "clsx";
 import GlassPanel from "../UI/GlassPanel";
 
@@ -23,7 +22,6 @@ interface ModernSidebarProps {
 }
 
 const ModernSidebar: React.FC<ModernSidebarProps> = ({ activeView = 'globe', onViewChange }) => {
-    const pathname = usePathname();
     const [hoveredItem, setHoveredItem] = useState<string | null>(null);
 
     const handleNavigation = (href: string, label: string, e: React.MouseEvent) => {
@@ -31,7 +29,7 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({ activeView = 'globe', onV
         if (href === '/orbit') {
             e.preventDefault();
             onViewChange?.('globe');
-        } else if (href === '/analytics' || href === '/targeting' || href === '/comms' || href === '/archive') {
+        } else if (href === '/' || href === '/analytics' || href === '/targeting' || href === '/comms' || href === '/archive') {
             e.preventDefault();
             onViewChange?.('analytics');
         } else if (href === '/settings') {
@@ -55,7 +53,9 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({ activeView = 'globe', onV
                 {/* Menu Items */}
                 <nav className="flex-1 w-full flex flex-col items-center gap-4">
                     {MENU_ITEMS.map((item) => {
-                        const isActive = pathname === item.href;
+                        const isActive = (item.href === '/orbit' && activeView === 'globe') ||
+                            (item.href === '/' && activeView === 'analytics') ||
+                            (item.href === '/settings' && activeView === 'settings');
                         const isHovered = hoveredItem === item.label;
 
                         return (

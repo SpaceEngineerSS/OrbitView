@@ -39,8 +39,8 @@ const GlassPanel: React.FC<GlassPanelProps> = ({
                 willChange: "transform, opacity", // GPU Acceleration hint
             }}
             className={cn(
-                "relative overflow-hidden rounded-xl bg-slate-900/40 border border-white/10 md:backdrop-blur-md backdrop-blur-none", // Mobile: No blur, rely on dark bg
-                borderGlow && "shadow-[0_0_15px_rgba(0,0,0,0.3)] hover:border-white/20 hover:shadow-[0_0_20px_rgba(0,243,255,0.1)] transition-colors duration-300",
+                "relative overflow-hidden rounded-xl bg-[#090d16]/90 border border-white/10 backdrop-blur-md",
+                borderGlow && "shadow-[0_0_20px_rgba(0,0,0,0.5)] hover:border-white/20 hover:shadow-[0_0_25px_rgba(0,243,255,0.15)] transition-all duration-300",
                 className
             )}
             {...props}

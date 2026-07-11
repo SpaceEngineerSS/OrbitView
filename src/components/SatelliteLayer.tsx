@@ -122,6 +122,11 @@ const SatelliteLayer: React.FC<SatelliteLayerProps> = ({
   const selectedSatPosRef = useRef<Cesium.Cartesian3 | null>(null);
   const selectedSatVelRef = useRef<Cesium.Cartesian3 | null>(null);
 
+  const onTelemetryUpdateRef = useRef(onTelemetryUpdate);
+  useEffect(() => {
+    onTelemetryUpdateRef.current = onTelemetryUpdate;
+  }, [onTelemetryUpdate]);
+
   // Update position and velocity from TLELayer callback
   const handleUpdatePosition = useCallback((pos: Cesium.Cartesian3 | null, vel?: Cesium.Cartesian3) => {
     setSelectedSatPos(pos); // Keep state for Camera integration (re-renders needed for view updates)
@@ -146,13 +151,13 @@ const SatelliteLayer: React.FC<SatelliteLayerProps> = ({
       velocityKmPerSec = Cesium.Cartesian3.magnitude(vel) / 1000;
     }
 
-    onTelemetryUpdate?.({
+    onTelemetryUpdateRef.current?.({
       lat: Cesium.Math.toDegrees(carto.latitude),
       lon: Cesium.Math.toDegrees(carto.longitude),
       alt: carto.height / 1000,
       velocity: velocityKmPerSec
     });
-  }, [viewer, selectedId, onTelemetryUpdate]);
+  }, [viewer, selectedId]);
 
   useEffect(() => {
     const timer = setInterval(handleTelemetry, 1000);

@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 import { Toaster } from "sonner";
 import { AnimatePresence, motion } from "framer-motion";
+import { Search } from "lucide-react";
 import ModernSidebar from "@/components/layout/ModernSidebar";
 import MobileNavBar from "@/components/layout/MobileNavBar";
 import TopBar from "@/components/layout/TopBar";
@@ -10,7 +11,10 @@ import BottomPanel from "@/components/layout/BottomPanel";
 import InspectorPanel from "@/components/layout/InspectorPanel";
 import MissionDashboard from "@/components/Scientific/MissionDashboard";
 import SettingsPanel, { DEFAULT_SETTINGS, AppSettings } from "@/components/HUD/SettingsPanel";
-import { useEffect, useState } from "react";
+import MobileSearchOverlay from "@/components/HUD/Mobile/MobileSearchOverlay";
+import Timeline from "@/components/HUD/Timeline";
+import { useTimelineStore } from "@/store/timelineStore";
+import { useEffect, useState, useCallback } from "react";
 import { fetchActiveSatellites } from "@/lib/tle";
 import { SpaceObject, convertToSpaceObject } from "@/lib/space-objects";
 
@@ -34,6 +38,11 @@ export default function Home() {
     const [activeView, setActiveView] = useState<'globe' | 'analytics' | 'settings'>('globe');
     const [searchQuery, setSearchQuery] = useState("");
     const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
+    const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
+    const [isTelemetryExpanded, setIsTelemetryExpanded] = useState(false);
+
+    // Timeline state from Zustand
+    const { currentTime, isPlaying, multiplier, setTime, togglePlay, setMultiplier } = useTimelineStore();
 
     // Fetch Satellite Data on Load
     useEffect(() => {
@@ -53,16 +62,19 @@ export default function Home() {
         loadSatellites();
     }, []);
 
-    const handleSatelliteSelect = (sat: SpaceObject | null) => {
+    const handleSatelliteSelect = useCallback((sat: SpaceObject | null) => {
         setSelectedSatellite(sat);
-        if (!sat) setTelemetry(null);
-    };
+        if (!sat) {
+            setTelemetry(null);
+            setSearchQuery("");
+        }
+    }, []);
 
-    const handleTelemetryUpdate = (data: any) => {
+    const handleTelemetryUpdate = useCallback((data: any) => {
         if (selectedSatellite && data) {
             setTelemetry(data);
         }
-    };
+    }, [selectedSatellite]);
 
     return (
         <main className="relative h-screen w-screen overflow-hidden bg-[#050507]">
@@ -83,8 +95,24 @@ export default function Home() {
             <div className="relative z-10 h-full w-full pointer-events-none">
 
                 {/* Pointer events AUTO on interactive HUD elements */}
-                <div className="pointer-events-auto">
-                    <TopBar onSearch={setSearchQuery} />
+                <div className="pointer-events-auto hidden md:block">
+                    <TopBar
+                        onSearch={setSearchQuery}
+                        objects={objects}
+                        onSelect={handleSatelliteSelect}
+                        searchQuery={searchQuery}
+                    />
+                </div>
+
+                {/* Mobile Search Button (Floating) */}
+                <div className="block md:hidden fixed top-4 right-4 z-40 pointer-events-auto">
+                    <button
+                        onClick={() => setIsMobileSearchOpen(true)}
+                        className="p-3 bg-black/60 backdrop-blur-md border border-white/10 rounded-xl text-cyan-400 hover:text-white shadow-[0_4px_20px_rgba(0,0,0,0.4)] flex items-center justify-center transition-all duration-300 hover:border-cyan-500/50"
+                        aria-label="Search Satellites"
+                    >
+                        <Search size={20} />
+                    </button>
                 </div>
 
                 {/* Desktop Sidebar */}
@@ -103,17 +131,27 @@ export default function Home() {
                     />
                 </div>
 
-                {/* Desktop Bottom Panel - Modified to hide on mobile to save space if needed, or keep it. User asked for responsive layout. Let's keep it but maybe it overlaps with nav? 
-                    Actually, making it hidden on mobile might be better for now to avoid clutter, OR adapting it.
-                    User request didn't explicitly say hide BottomPanel, but implied MobileNavBar takes precedence.
-                    Let's hide BottomPanel on MOBILE to respect the "clean" requested look and let Inspector/NavBar handle things.
-                */}
+                {/* Desktop Bottom Panel */}
                 <div className="hidden md:block pointer-events-auto">
-                    <BottomPanel telemetry={telemetry} />
+                    <BottomPanel
+                        telemetry={telemetry}
+                        isExpanded={isTelemetryExpanded}
+                        onToggle={() => setIsTelemetryExpanded(!isTelemetryExpanded)}
+                    />
                 </div>
-                {/* Mobile Telemetry could be integrated into the InspectorPanel or a smaller simplified view. 
-                    For now, I'll hide the big BottomPanel on mobile as it conflicts with the new BottomNavBar.
-                */}
+
+                {/* Simulation Timeline Controls */}
+                <div className="pointer-events-auto">
+                    <Timeline
+                        time={currentTime}
+                        onTimeChange={setTime}
+                        isPlaying={isPlaying}
+                        onTogglePlay={togglePlay}
+                        multiplier={multiplier}
+                        onMultiplierChange={setMultiplier}
+                        className={isTelemetryExpanded ? "bottom-[204px]" : "bottom-[84px]"}
+                    />
+                </div>
 
                 {/* Main Scientific Dashboard (Analytics View) */}
                 <AnimatePresence mode="wait">
@@ -124,15 +162,9 @@ export default function Home() {
                             animate={{ opacity: 1, scale: 1 }}
                             exit={{ opacity: 0, scale: 0.95 }}
                             transition={{ duration: 0.2 }}
-                            className="absolute inset-0 z-50 flex items-center justify-center pointer-events-none p-4 pl-0 md:pl-20 pb-20 md:pb-20" // Adjusted padding for mobile
+                            className="absolute inset-0 z-50 flex items-center justify-center pointer-events-none p-4 md:pl-20 md:pr-4 pb-24 md:pb-20"
                         >
                             <div className="pointer-events-auto w-full max-w-5xl relative">
-                                <button
-                                    onClick={() => setActiveView('globe')}
-                                    className="absolute -top-12 right-0 p-2 text-slate-400 hover:text-white transition-colors pointer-events-auto flex items-center gap-2"
-                                >
-                                    <span className="text-xs uppercase font-bold tracking-widest">Close Dashboard</span>
-                                </button>
                                 <MissionDashboard
                                     selectedObject={selectedSatellite}
                                     telemetry={telemetry}
@@ -144,7 +176,7 @@ export default function Home() {
                     )}
                 </AnimatePresence>
 
-                {/* Settings Panel - Handles its own internal AnimatePresence */}
+                {/* Settings Panel */}
                 <SettingsPanel
                     isOpen={activeView === 'settings'}
                     settings={settings}
@@ -170,11 +202,19 @@ export default function Home() {
 
                 {/* Loading Indicator Overlay */}
                 {loading && (
-                    <div className="absolute top-24 md:top-20 right-6 glass-panel px-4 py-2 border-l-2 border-cyan-400 flex items-center gap-3 pointer-events-auto">
+                    <div className="absolute top-4 left-6 md:top-20 md:right-6 md:left-auto glass-panel px-4 py-2 border-l-2 border-cyan-400 flex items-center gap-3 pointer-events-auto">
                         <div className="w-4 h-4 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin" />
                         <span className="text-xs font-mono text-cyan-400">ESTABLISHING UPLINK...</span>
                     </div>
                 )}
+
+                {/* Mobile Search Overlay */}
+                <MobileSearchOverlay
+                    isOpen={isMobileSearchOpen}
+                    onClose={() => setIsMobileSearchOpen(false)}
+                    objects={objects}
+                    onSelect={(sat) => handleSatelliteSelect(sat)}
+                />
 
                 {/* Notifications */}
                 <Toaster

@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.4.0] - 2026-07-11
+
+### Added
+- **Interactive Desktop Search Autocomplete**
+  - Autocomplete search suggestions dropdown in `TopBar` for desktop viewports
+  - Support for real-time name/NORAD ID filtering and mouse/keyboard navigation (Arrow keys/Enter/Escape)
+  - Auto-reset search filters when a satellite is selected or deselected
+- **Globe Performance & Texture Loading**
+  - Swapped default tile source to high-resolution ArcGIS World Imagery (Satellite) for realistic photographic globe textures
+  - Pre-computed satellite visibility caching in `TLELayer.tsx` (O(1) lookups instead of 60fps string comparisons)
+  - Throttled Web Worker propagation loop to 20fps and guarded primitive writes to save CPU/GPU overhead
+- **Usability & UX Enhancements**
+  - Integrated header close buttons directly inside `MissionDashboard` and `SettingsPanel` with smooth exit animations
+  - Redesigned "No Target Selected" view inside a beautiful red-alert themed card with clear close actions
+  - Dynamic positioning to prevent HUD panels from overlapping with the timeline scrubber on desktop
+  - Auto-Rotate Globe toggle switch in Settings Panel to stop/start globe spinning
+
+### Fixed
+- Cesium Ion 401 Unauthorized API responses by correcting token environment variable mapping
+- Next.js hydration mismatches on the clock controls by adding client-side mounting guards
+- Repaint freeze on the 3D globe where loaded map tiles remained white when panning (disabled `requestRenderMode`)
+
 ## [2.3.0] - 2026-02-12
 
 ### Added

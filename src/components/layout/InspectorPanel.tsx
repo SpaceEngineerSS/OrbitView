@@ -78,15 +78,12 @@ const InspectorPanel: React.FC<InspectorPanelProps> = memo(({ selectedObject, te
                 animate={{ y: 0, x: 0, opacity: 1 }}
                 exit={{ y: "100%", opacity: 0 }}
                 transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                className="fixed inset-x-0 bottom-[90px] md:bottom-0 md:top-16 md:right-0 md:left-auto z-40 w-full md:w-96 h-[60vh] md:h-auto pointer-events-none"
-                style={{
-                    // Override transform for desktop slide-in if needed, but managing layout prop handles basic position
-                }}
+                className="fixed bottom-[96px] md:bottom-0 md:top-16 md:right-0 md:left-auto z-40 inset-x-4 md:inset-x-auto w-auto md:w-96 h-[45vh] md:h-auto pointer-events-none pb-[env(safe-area-inset-bottom)] md:pb-0"
             >
                 <GlassPanel
                     intensity="high"
                     borderGlow={true}
-                    className="h-full w-full pointer-events-auto rounded-t-2xl md:rounded-l-xl md:rounded-r-none md:border-r-0 flex flex-col shadow-[0_-10px_40px_rgba(0,0,0,0.5)] md:shadow-none"
+                    className="h-full w-full pointer-events-auto rounded-2xl md:rounded-l-xl md:rounded-r-none md:border-r-0 flex flex-col shadow-[0_12px_40px_rgba(0,0,0,0.6)] border-white/10"
                 >
                     {/* Mobile Drag Handle */}
                     <div className="md:hidden w-full flex justify-center pt-3 pb-1">

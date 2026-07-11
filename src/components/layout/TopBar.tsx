@@ -1,17 +1,34 @@
 "use client";
-
-import React, { useState, useEffect } from "react";
-import { motion } from "framer-motion";
-import { User, Bell, Search } from "lucide-react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { User, Bell, Search, Satellite, X } from "lucide-react";
+import { SpaceObject } from "@/lib/space-objects";
 
 interface TopBarProps {
     onSearch?: (query: string) => void;
+    objects?: SpaceObject[];
+    onSelect?: (obj: SpaceObject) => void;
+    searchQuery?: string;
 }
 
-const TopBar: React.FC<TopBarProps> = ({ onSearch }) => {
+const TopBar: React.FC<TopBarProps> = ({ onSearch, objects = [], onSelect, searchQuery = "" }) => {
     const [time, setTime] = useState("");
     const [isSearchOpen, setIsSearchOpen] = useState(false);
-    const [searchValue, setSearchValue] = useState("");
+    const [searchValue, setSearchValue] = useState(searchQuery);
+    const [showDropdown, setShowDropdown] = useState(false);
+    const [highlightedIndex, setHighlightedIndex] = useState(-1);
+    
+    const searchContainerRef = useRef<HTMLDivElement>(null);
+
+    // Sync input with external searchQuery prop
+    useEffect(() => {
+        setSearchValue(searchQuery);
+        if (!searchQuery) {
+            setIsSearchOpen(false);
+        } else {
+            setIsSearchOpen(true);
+        }
+    }, [searchQuery]);
 
     useEffect(() => {
         const updateTime = () => {
@@ -23,9 +40,62 @@ const TopBar: React.FC<TopBarProps> = ({ onSearch }) => {
         return () => clearInterval(interval);
     }, []);
 
+    // Close dropdown on click outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
+                setShowDropdown(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
+
+    // Filtered suggestions list
+    const suggestions = useMemo(() => {
+        if (!searchValue || searchValue.length < 2 || !objects) return [];
+        const upperQuery = searchValue.toUpperCase();
+        return objects
+            .filter(obj =>
+                obj.name.toUpperCase().includes(upperQuery) ||
+                obj.id.includes(upperQuery)
+            )
+            .slice(0, 8);
+    }, [searchValue, objects]);
+
+    // Reset highlight when suggestions change
+    useEffect(() => {
+        setHighlightedIndex(-1);
+    }, [suggestions]);
+
     const handleSearchSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        onSearch?.(searchValue);
+        if (highlightedIndex >= 0 && highlightedIndex < suggestions.length) {
+            handleSelect(suggestions[highlightedIndex]);
+        } else {
+            onSearch?.(searchValue);
+            setShowDropdown(false);
+        }
+    };
+
+    const handleSelect = (obj: SpaceObject) => {
+        onSelect?.(obj);
+        setSearchValue("");
+        onSearch?.("");
+        setIsSearchOpen(false);
+        setShowDropdown(false);
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === "ArrowDown") {
+            e.preventDefault();
+            setHighlightedIndex(prev => (prev + 1) % suggestions.length);
+        } else if (e.key === "ArrowUp") {
+            e.preventDefault();
+            setHighlightedIndex(prev => (prev - 1 + suggestions.length) % suggestions.length);
+        } else if (e.key === "Escape") {
+            setShowDropdown(false);
+        }
     };
 
     return (
@@ -75,25 +145,91 @@ const TopBar: React.FC<TopBarProps> = ({ onSearch }) => {
 
                 <div className="flex items-center gap-4">
                     {/* Search Bar */}
-                    <div className={`flex items-center transition-all duration-300 ${isSearchOpen ? 'w-64 bg-slate-900/80 border-cyan-500/50' : 'w-8 bg-transparent border-transparent'} border rounded-full overflow-hidden`}>
-                        <button
-                            onClick={() => setIsSearchOpen(!isSearchOpen)}
-                            className="p-2 text-slate-400 hover:text-cyan-400 transition-colors"
-                        >
-                            <Search size={18} />
-                        </button>
-                        {isSearchOpen && (
-                            <form onSubmit={handleSearchSubmit} className="flex-1">
-                                <input
-                                    type="text"
-                                    value={searchValue}
-                                    onChange={(e) => setSearchValue(e.target.value)}
-                                    placeholder="SEARCH SATELLITE ID..."
-                                    className="w-full bg-transparent text-white font-mono text-sm outline-none placeholder:text-slate-600 uppercase"
-                                    autoFocus
-                                />
-                            </form>
-                        )}
+                    <div ref={searchContainerRef} className="relative z-50">
+                        <div className={`flex items-center transition-all duration-300 ${isSearchOpen ? 'w-64 bg-slate-900/80 border-cyan-500/50' : 'w-8 bg-transparent border-transparent'} border rounded-full overflow-hidden`}>
+                            <button
+                                onClick={() => {
+                                    setIsSearchOpen(!isSearchOpen);
+                                    if (!isSearchOpen) {
+                                        setShowDropdown(true);
+                                    }
+                                }}
+                                className="p-2 text-slate-400 hover:text-cyan-400 transition-colors"
+                            >
+                                <Search size={18} />
+                            </button>
+                            {isSearchOpen && (
+                                <form onSubmit={handleSearchSubmit} className="flex-1 flex items-center pr-2">
+                                    <input
+                                        type="text"
+                                        value={searchValue}
+                                        onChange={(e) => {
+                                            setSearchValue(e.target.value);
+                                            setShowDropdown(true);
+                                        }}
+                                        onFocus={() => setShowDropdown(true)}
+                                        onKeyDown={handleKeyDown}
+                                        placeholder="SEARCH TARGET OR ID..."
+                                        className="w-full bg-transparent text-white font-mono text-sm outline-none placeholder:text-slate-600 uppercase pr-1"
+                                        autoFocus
+                                    />
+                                    {searchValue && (
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setSearchValue("");
+                                                onSearch?.("");
+                                            }}
+                                            className="text-slate-500 hover:text-white"
+                                        >
+                                            <X size={14} />
+                                        </button>
+                                    )}
+                                </form>
+                            )}
+                        </div>
+
+                        {/* Suggestions Dropdown */}
+                        <AnimatePresence>
+                            {isSearchOpen && showDropdown && suggestions.length > 0 && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: 10 }}
+                                    transition={{ duration: 0.15 }}
+                                    className="absolute top-12 right-0 w-72 bg-slate-950/95 backdrop-blur-xl border border-white/10 rounded-xl overflow-hidden shadow-2xl flex flex-col z-50 divide-y divide-white/5"
+                                >
+                                    <div className="px-3 py-1.5 bg-black/40 text-[9px] text-slate-500 uppercase tracking-widest font-mono">
+                                        Matching Targets
+                                    </div>
+                                    <div className="max-h-60 overflow-y-auto custom-scrollbar">
+                                        {suggestions.map((obj, index) => {
+                                            const isHighlighted = index === highlightedIndex;
+                                            return (
+                                                <button
+                                                    key={obj.id}
+                                                    onClick={() => handleSelect(obj)}
+                                                    onMouseEnter={() => setHighlightedIndex(index)}
+                                                    className={`w-full text-left px-3 py-2 flex items-center gap-2 transition-colors ${
+                                                        isHighlighted ? 'bg-cyan-500/10 text-cyan-400' : 'text-slate-300 hover:bg-white/5'
+                                                    }`}
+                                                >
+                                                    <Satellite size={14} className="text-cyan-400 flex-shrink-0" />
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="text-xs font-rajdhani font-bold truncate uppercase">
+                                                            {obj.name}
+                                                        </div>
+                                                        <div className="text-[10px] font-mono text-slate-500">
+                                                            ID: {obj.id} {obj.category && `| ${obj.category}`}
+                                                        </div>
+                                                    </div>
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                     </div>
 
                     <button className="text-slate-400 hover:text-cyan-400 transition-colors relative">

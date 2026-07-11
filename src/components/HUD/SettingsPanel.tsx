@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Settings, X, Globe, Palette, Clock, Monitor, Volume2, Bell, Map, Save } from "lucide-react";
+import { Settings, X, Globe, Palette, Clock, Monitor, Volume2, Bell, Map, Save, Activity } from "lucide-react";
 import { useLocale } from "@/hooks/useLocale";
 
 interface SettingsPanelProps {
@@ -34,6 +34,7 @@ export interface AppSettings {
     groundTrackOrbits: number; // 1 to 5
     showFootprint: boolean;
     showNightShadow: boolean;
+    autoRotateGlobe: boolean;
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -51,6 +52,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
     groundTrackOrbits: 1,
     showFootprint: true,
     showNightShadow: true,
+    autoRotateGlobe: true,
 };
 
 const SettingsPanel: React.FC<SettingsPanelProps> = ({
@@ -96,8 +98,6 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
     const updateSetting = <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => {
         setLocalSettings(prev => ({ ...prev, [key]: value }));
     };
-
-    if (!isOpen) return null;
 
     const content = (
         <div className="flex flex-col h-full overflow-hidden">
@@ -192,20 +192,23 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
                 {/* Performance Section */}
                 <section>
                     <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2 mb-3">
-                        <Clock size={12} /> Performance
+                        <Activity size={12} /> Performance
                     </h3>
-                    <div className="space-y-3">
-                        <div className="flex justify-between items-center">
-                            <span className="text-sm text-slate-300">Max Satellites</span>
-                            <select
+                    <div className="space-y-4">
+                        <div>
+                            <div className="flex justify-between items-center mb-1">
+                                <span className="text-sm text-slate-300">Max Rendered Satellites</span>
+                                <span className="text-xs font-mono text-cyan-400">{localSettings.maxSatellites}</span>
+                            </div>
+                            <input
+                                type="range"
+                                min="500"
+                                max="15000"
+                                step="500"
                                 value={localSettings.maxSatellites}
                                 onChange={(e) => updateSetting('maxSatellites', parseInt(e.target.value))}
-                                className="bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-cyan-500/50"
-                            >
-                                <option value={1000}>1000</option>
-                                <option value={2500}>2500</option>
-                                <option value={5000}>5000 (All)</option>
-                            </select>
+                                className="w-full accent-cyan-500 h-1 bg-white/10 rounded-lg appearance-none cursor-pointer"
+                            />
                         </div>
 
                         <div className="flex justify-between items-center">
@@ -290,6 +293,13 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
                                 onChange={(v) => updateSetting('showNightShadow', v)}
                             />
                         </div>
+                        <div className="flex justify-between items-center">
+                            <span className="text-sm text-slate-300">Auto-Rotate Globe</span>
+                            <ToggleSwitch
+                                checked={localSettings.autoRotateGlobe}
+                                onChange={(v) => updateSetting('autoRotateGlobe', v)}
+                            />
+                        </div>
                     </div>
                 </section>
 
@@ -339,55 +349,55 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
         </div>
     );
 
-    // Mobile: Bottom sheet
-    if (isMobile) {
-        return (
-            <AnimatePresence>
-                <motion.div
-                    key="settings-backdrop"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 pointer-events-auto"
-                    onClick={onClose}
-                />
-                <motion.div
-                    key="settings-sheet"
-                    initial={{ y: '100%' }}
-                    animate={{ y: 0 }}
-                    exit={{ y: '100%' }}
-                    transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-                    className="fixed bottom-0 left-0 right-0 bg-slate-950/95 backdrop-blur-xl border-t border-white/10 z-50 rounded-t-3xl max-h-[85vh] flex flex-col"
-                    style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
-                    onClick={(e) => e.stopPropagation()}
-                >
-                    {content}
-                </motion.div>
-            </AnimatePresence>
-        );
-    }
-
-    // Desktop: Modal
     return (
         <AnimatePresence>
-            <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 flex items-center justify-center pointer-events-auto"
-                onClick={onClose}
-            >
-                <motion.div
-                    initial={{ scale: 0.9, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    exit={{ scale: 0.9, opacity: 0 }}
-                    transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                    className="w-full max-w-md bg-slate-950/95 backdrop-blur-xl border border-white/10 rounded-xl overflow-hidden shadow-[0_0_40px_rgba(0,0,0,0.5)] max-h-[80vh] flex flex-col"
-                    onClick={(e) => e.stopPropagation()}
-                >
-                    {content}
-                </motion.div>
-            </motion.div>
+            {isOpen && (
+                isMobile ? (
+                    <div className="fixed inset-0 z-50 pointer-events-none">
+                        <motion.div
+                            key="settings-backdrop"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 pointer-events-auto"
+                            onClick={onClose}
+                        />
+                        <motion.div
+                            key="settings-sheet"
+                            initial={{ y: '100%' }}
+                            animate={{ y: 0 }}
+                            exit={{ y: '100%' }}
+                            transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+                            className="fixed bottom-0 left-0 right-0 bg-slate-950/95 backdrop-blur-xl border-t border-white/10 z-50 rounded-t-3xl max-h-[85vh] flex flex-col pointer-events-auto"
+                            style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            {content}
+                        </motion.div>
+                    </div>
+                ) : (
+                    <motion.div
+                        key="settings-modal-backdrop"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 flex items-center justify-center pointer-events-auto"
+                        onClick={onClose}
+                    >
+                        <motion.div
+                            key="settings-modal"
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                            className="w-full max-w-md bg-slate-950/95 backdrop-blur-xl border border-white/10 rounded-xl overflow-hidden shadow-[0_0_40px_rgba(0,0,0,0.5)] max-h-[80vh] flex flex-col"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            {content}
+                        </motion.div>
+                    </motion.div>
+                )
+            )}
         </AnimatePresence>
     );
 };

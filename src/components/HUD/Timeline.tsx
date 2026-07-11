@@ -4,7 +4,6 @@ import React, { useState, useEffect } from "react";
 import { Play, Pause, Rewind, FastForward, Clock, Calendar, ChevronUp, ChevronDown, RotateCcw } from "lucide-react";
 import { clsx } from "clsx";
 import { motion, AnimatePresence } from "framer-motion";
-import { useTranslations } from "@/hooks/useLocale";
 
 interface TimelineProps {
    time: Date | null;
@@ -13,6 +12,7 @@ interface TimelineProps {
    onTogglePlay?: () => void;
    multiplier?: number;
    onMultiplierChange?: (val: number) => void;
+   className?: string;
 }
 
 const Timeline: React.FC<TimelineProps> = ({
@@ -21,20 +21,22 @@ const Timeline: React.FC<TimelineProps> = ({
    isPlaying = true,
    onTogglePlay = () => { },
    multiplier = 1,
-   onMultiplierChange = () => { }
+   onMultiplierChange = () => { },
+   className
 }) => {
+   const [mounted, setMounted] = useState(false);
    const [isMobile, setIsMobile] = useState(false);
    const [isExpanded, setIsExpanded] = useState(false);
-   const t = useTranslations();
 
    useEffect(() => {
+      setMounted(true);
       const checkMobile = () => setIsMobile(window.innerWidth < 768);
       checkMobile();
       window.addEventListener('resize', checkMobile);
       return () => window.removeEventListener('resize', checkMobile);
    }, []);
 
-   if (!time) return null;
+   if (!mounted || !time) return null;
 
    const handleTimeChange = (ms: number) => {
       if (time) {
@@ -49,7 +51,7 @@ const Timeline: React.FC<TimelineProps> = ({
    // Mobile Compact Timeline
    if (isMobile) {
       return (
-         <div className="fixed bottom-0 left-0 right-0 z-30 pointer-events-none" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+         <div className="fixed bottom-0 left-0 right-0 z-50 pointer-events-none" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
             <div className="pointer-events-auto">
                {/* Expand button */}
                <AnimatePresence>
@@ -59,7 +61,7 @@ const Timeline: React.FC<TimelineProps> = ({
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 20 }}
                         onClick={() => setIsExpanded(true)}
-                        className="absolute bottom-4 right-4 bg-slate-950/90 backdrop-blur-xl border border-white/10 rounded-full px-4 py-2 flex items-center gap-2 shadow-lg"
+                        className="absolute bottom-24 right-4 bg-slate-950/90 backdrop-blur-xl border border-white/10 rounded-full px-4 py-2 flex items-center gap-2 shadow-lg"
                      >
                         <Clock size={16} className="text-cyan-400" />
                         <span className="text-white font-mono text-sm">
@@ -169,7 +171,7 @@ const Timeline: React.FC<TimelineProps> = ({
 
    // Desktop Timeline
    return (
-      <div className="fixed bottom-8 left-0 w-full flex justify-center items-end z-20 pointer-events-none">
+      <div className={clsx("fixed left-0 w-full flex justify-center items-end z-20 pointer-events-none transition-all duration-500 ease-in-out", className || "bottom-8")}>
          <div className="pointer-events-auto flex flex-col items-center gap-4">
 
             {/* Time Scrubber Visual */}

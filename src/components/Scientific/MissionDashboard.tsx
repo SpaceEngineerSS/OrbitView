@@ -74,13 +74,43 @@ const MissionDashboard: React.FC<MissionDashboardProps> = ({ selectedObject, tel
 
     if (!selectedObject) {
         return (
-            <div className="w-full h-full flex items-center justify-center">
-                <div className="text-center p-8 glass-panel border-red-500/30">
-                    <Activity size={48} className="mx-auto text-red-400 mb-4 animate-pulse" />
-                    <h2 className="text-xl font-bold text-white mb-2">NO ACTIVE MISSION</h2>
-                    <p className="text-slate-400">Select a satellite from the Globe or Observation list to view Mission Dashboard.</p>
+            <GlassPanel intensity="high" className={`w-full max-w-md mx-auto flex flex-col overflow-hidden shadow-2xl border-red-500/20 ${className}`}>
+                {/* Header */}
+                <div className="p-4 border-b border-white/10 flex items-center justify-between bg-black/60 backdrop-blur-md">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-red-500/10 border border-red-500/30 flex items-center justify-center text-red-400">
+                            <Activity size={20} className="animate-pulse" />
+                        </div>
+                        <div>
+                            <h2 className="text-base font-rajdhani font-bold text-white uppercase tracking-wider">
+                                MISSION DASHBOARD
+                            </h2>
+                            <p className="text-[9px] font-mono text-red-400">NO TARGET SELECTED</p>
+                        </div>
+                    </div>
+                    {onClose && (
+                        <button
+                            onClick={onClose}
+                            className="p-2 rounded-full bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-colors border border-white/5 flex items-center justify-center"
+                        >
+                            <X size={18} />
+                        </button>
+                    )}
                 </div>
-            </div>
+
+                {/* Content */}
+                <div className="p-6 text-center bg-slate-950/90">
+                    <p className="text-slate-400 text-sm mb-6 leading-relaxed">
+                        Please select a satellite from the orbital globe or use search to establish a communication link and load real-time telemetry.
+                    </p>
+                    <button
+                        onClick={onClose}
+                        className="w-full py-2.5 bg-red-500/15 hover:bg-red-500/25 border border-red-500/40 text-red-400 font-rajdhani font-bold tracking-wider rounded-lg transition-colors text-xs"
+                    >
+                        RETURN TO GLOBAL VIEW
+                    </button>
+                </div>
+            </GlassPanel>
         );
     }
 
@@ -117,7 +147,7 @@ const MissionDashboard: React.FC<MissionDashboardProps> = ({ selectedObject, tel
                     {onClose && (
                         <button
                             onClick={onClose}
-                            className="p-2 rounded-full bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-colors border border-white/5 md:hidden"
+                            className="p-2 rounded-full bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-colors border border-white/5 flex items-center justify-center"
                         >
                             <X size={20} />
                         </button>

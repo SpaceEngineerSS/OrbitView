@@ -11,10 +11,14 @@ import GlassPanel from "../UI/GlassPanel";
  */
 interface BottomPanelProps {
     telemetry: { lat: number; lon: number; alt: number; velocity: number } | null;
+    isExpanded?: boolean;
+    onToggle?: () => void;
 }
 
-const BottomPanel: React.FC<BottomPanelProps> = ({ telemetry }) => {
-    const [isExpanded, setIsExpanded] = useState(false);
+const BottomPanel: React.FC<BottomPanelProps> = ({ telemetry, isExpanded: controlledExpanded, onToggle }) => {
+    const [localExpanded, setLocalExpanded] = useState(false);
+    const isExpanded = controlledExpanded !== undefined ? controlledExpanded : localExpanded;
+    const handleToggle = onToggle || (() => setLocalExpanded(!localExpanded));
 
     // Derived or specific values
     const displayTelemetry = {
@@ -34,8 +38,8 @@ const BottomPanel: React.FC<BottomPanelProps> = ({ telemetry }) => {
             <div className="pointer-events-auto flex flex-col items-center w-full max-w-4xl">
                 {/* Toggle Handle */}
                 <button
-                    onClick={() => setIsExpanded(!isExpanded)}
-                    className="flex items-center gap-2 px-6 py-1 bg-black/60 backdrop-blur-md border border-white/10 border-b-0 rounded-t-xl text-cyan-400 hover:text-white transition-colors hover:bg-cyan-500/10"
+                    onClick={handleToggle}
+                    className="flex items-center gap-2 px-6 py-1 bg-[#090d16]/90 backdrop-blur-md border border-white/10 border-b-0 rounded-t-xl text-cyan-400 hover:text-white transition-colors hover:bg-cyan-500/10"
                 >
                     <span className="text-[10px] uppercase tracking-[0.2em] font-bold">Telemetry Stream</span>
                     {isExpanded ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
