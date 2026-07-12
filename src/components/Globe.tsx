@@ -198,14 +198,14 @@ const Globe: React.FC<GlobeProps> = ({ objects = [], onSelect, selectedObject, o
     const scene = viewerRef.scene;
 
     const rotateGlobe = () => {
-      if (!selectedObject && viewMode === 'ORBIT' && !isCompassMode && settings?.autoRotateGlobe !== false) {
+      if (!selectedObject && viewMode === 'ORBIT' && !isCompassMode && settings?.autoRotateGlobe !== false && isPlaying) {
         viewerRef.camera.rotateLeft(0.0005);
       }
     };
 
     const removeListener = scene.preRender.addEventListener(rotateGlobe);
     return () => removeListener();
-  }, [viewerRef, selectedObject, viewMode, isCompassMode, settings]);
+  }, [viewerRef, selectedObject, viewMode, isCompassMode, settings, isPlaying]);
 
   // Scene Configuration (Lighting & Atmosphere & Post-Process)
   useEffect(() => {

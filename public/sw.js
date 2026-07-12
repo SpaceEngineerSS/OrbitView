@@ -4,7 +4,7 @@ const STATIC_ASSETS = [
     '/manifest.json',
     '/icon-192x192.png',
     '/icon-512x512.png',
-    '/orbitview-logo.svg',
+    '/orbitview-logo.png',
 ];
 
 // Install event - cache static assets

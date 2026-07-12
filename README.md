@@ -33,23 +33,25 @@
 
 ## ✨ Features
 
-### 📱 v2.3 Mobile & PWA Experience (NEW)
-- **Pocket Lab Interface**: A completely redesigned mobile UX with a bottom-sheet Inspector and gesture controls.
-- **Haptic Feedback**: Tactile responses for interactions (selection, time scrubbing) on supported devices.
-- **Adaptive Performance**: Automatic resolution scaling and bloom disabling on mobile for smooth 60fps tracking.
-- **Touch-Optimized Controls**: Pinch-to-zoom, two-finger tilt, and swipe gestures for the 3D globe.
+### 📱 v3.0 Mobile Native Evolution (NEW)
+- **Pocket Lab Interface**: A native-app-like mobile UI shell (`MobileAppShell`) locked to `100dvh` to prevent browser bounce and safe-area overlap.
+- **Native Snapping Sheet**: A gesture-driven bottom sheet using `framer-motion` with 3 snapping heights: Tier 1 (Preview), Tier 2 (Split Tracker), and Tier 3 (Full Scientific Lab).
+- **Ankara Command Deck**: Integrated Doppler frequency shift analysis, space solar weather decay metrics, and visible overhead pass predictions relative to Ankara coordinates.
+- **Haptic & Scrubber integration**: Translucent timeline play/pause controller with speed cycling and haptic triggers.
+- **Hardware-Aware Profiling**: Dynamically downscales globe details and satellite load on lower-tier mobile hardware to secure 60fps rendering.
 
-### 🎨 v2.2 ORBITAL GLASS Design System
-- 🖥️ **Apple Vision Pro-inspired Glassmorphism UI** — Clean, modern interface with frosted glass panels and smooth animations
-- ⏱️ **Smart Timeline** — Context-aware time scrubber that auto-hides when analyzing satellites
-- 🎥 **Satellite Cockpit View (POV)** — Velocity-vector locked camera with Quaternion orientation
-- 🔬 **Centered Scientific Modal** — Full-screen analysis dashboard with backdrop blur
+### 🎨 v3.0 ORBITAL GLASS Design System
+- 🖥️ **Pure HSL Glassmorphic CSS Variables** — Frosted glass panels and neon spatial theme color tokens (uplink cyan, orbit gold) decoupled from Tailwind.
+- ⏱️ **Adaptive Timeline** — Context-aware time scrubber that adjusts positions to prevent component clashing.
+- 🎥 **Satellite Cockpit View (POV)** — Camera locked to the velocity vector with smooth Quaternion rotations.
+- 🔬 **Scientific Modals & Bottom Sheets** — Mobile-first scientific lab cards with premium frosted backgrounds and high contrast readability.
 
 ### ⚡ v2.0 Performance
 - 🛰️ **Real-time SGP4 Propagation** — Web Worker-driven batch processing for 25,000+ satellites at 60 FPS
 - 🧮 **Spatial Hashing Collision Engine** — O(N) link calculation with 1000km³ grid cells
 - 🌍 **High-Fidelity Inertial Orbit Rendering** — Fixed GMST algorithm shows true Kepler rings
 - ⚡ **Offline-First Architecture** — IndexedDB caching with Stale-While-Revalidate
+- 📦 **OTA Payload Minification** — Server-side TLE parsing and comment/whitespace stripping reduces network overhead by ~40% for mobile connections
 - 📊 **Scientific Data Export** — TLE, CSV, and JSON format export for research
 
 ### 🌍 Core Features

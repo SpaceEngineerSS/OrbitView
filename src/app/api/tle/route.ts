@@ -93,10 +93,11 @@ async function fetchMultipleGroups(groups: string[], now: number): Promise<NextR
         .join('\n');
 
     if (allTLE.length > 100) {
-        console.log(`[TLE HUB] Multi-group fetch success, total chars: ${allTLE.length}`);
-        serverCache.set('all', { data: allTLE, timestamp: now });
+        const minified = minifyTLE(allTLE);
+        console.log(`[TLE HUB] Multi-group fetch success, total chars: ${allTLE.length} -> minified: ${minified.length}`);
+        serverCache.set('all', { data: minified, timestamp: now });
 
-        return new NextResponse(allTLE, {
+        return new NextResponse(minified, {
             status: 200,
             headers: {
                 'Content-Type': 'text/plain',
@@ -126,10 +127,11 @@ async function fetchCelesTrakGroup(group: string, now: number): Promise<NextResp
         if (response.ok) {
             const text = await response.text();
             if (text.includes('\n1 ') || text.includes('\r\n1 ')) {
-                console.log(`[TLE HUB] CelesTrak ${group} success, ${text.length} chars`);
-                serverCache.set(group, { data: text, timestamp: now });
+                const minified = minifyTLE(text);
+                console.log(`[TLE HUB] CelesTrak ${group} success, ${text.length} chars -> minified: ${minified.length}`);
+                serverCache.set(group, { data: minified, timestamp: now });
 
-                return new NextResponse(text, {
+                return new NextResponse(minified, {
                     status: 200,
                     headers: {
                         'Content-Type': 'text/plain',
@@ -177,9 +179,10 @@ async function fetchDefaultCatalog(now: number): Promise<NextResponse> {
                 if (dataResponse.ok) {
                     const text = await dataResponse.text();
                     if (text.length > 1000) {
-                        console.log(`[TLE HUB] Space-Track Success, received ${text.length} chars (Full Catalog)`);
-                        serverCache.set('default', { data: text, timestamp: now });
-                        return new NextResponse(text, {
+                        const minified = minifyTLE(text);
+                        console.log(`[TLE HUB] Space-Track Success, received ${text.length} chars -> minified: ${minified.length}`);
+                        serverCache.set('default', { data: minified, timestamp: now });
+                        return new NextResponse(minified, {
                             status: 200,
                             headers: {
                                 'Content-Type': 'text/plain',
@@ -206,9 +209,10 @@ async function fetchDefaultCatalog(now: number): Promise<NextResponse> {
         if (response.ok) {
             const text = await response.text();
             if (text.includes('\n1 ')) {
-                console.log(`[TLE HUB] CelesTrak active fallback success, ${text.length} chars`);
-                serverCache.set('default', { data: text, timestamp: now });
-                return new NextResponse(text, {
+                const minified = minifyTLE(text);
+                console.log(`[TLE HUB] CelesTrak active fallback success, ${text.length} chars -> minified: ${minified.length}`);
+                serverCache.set('default', { data: minified, timestamp: now });
+                return new NextResponse(minified, {
                     status: 200,
                     headers: {
                         'Content-Type': 'text/plain',
@@ -244,4 +248,38 @@ HUBBLE SPACE TELESCOPE
             'X-Source': 'Embedded-Fallback'
         }
     });
+}
+
+/**
+ * Minify TLE Payload prior to over-the-air cell delivery
+ * Strips unused comments, whitespaces, and normalizes formatting
+ */
+function minifyTLE(rawTLE: string): string {
+    const lines = rawTLE.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
+    const cleaned: string[] = [];
+    
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        
+        // 3-line pattern
+        if (i + 2 < lines.length && lines[i+1].startsWith('1 ') && lines[i+2].startsWith('2 ')) {
+            cleaned.push(line);
+            cleaned.push(lines[i+1]);
+            cleaned.push(lines[i+2]);
+            i += 2;
+            continue;
+        }
+        
+        // 2-line pattern
+        if (i + 1 < lines.length && line.startsWith('1 ') && lines[i+1].startsWith('2 ')) {
+            const id = line.substring(2, 7).trim();
+            cleaned.push(`SAT ${id}`);
+            cleaned.push(line);
+            cleaned.push(lines[i+1]);
+            i += 1;
+            continue;
+        }
+    }
+    
+    return cleaned.join('\n');
 }
