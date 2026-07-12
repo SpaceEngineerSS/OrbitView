@@ -11,7 +11,7 @@ const SCALE_BY_DISTANCE_NORMAL = new Cesium.NearFarScalar(1.5e2, 1.0, 8.0e6, 0.5
 const SCALE_BY_DISTANCE_SELECTED = new Cesium.NearFarScalar(150, 1.5, 8e12, 1.0);
 const TRANSLUCENCY_BY_DISTANCE = new Cesium.NearFarScalar(1.5e2, 1.0, 8.0e6, 0.8);
 
-import { AppSettings } from "../HUD/SettingsPanel";
+import { AppSettings } from "@/components/hud/SettingsPanel";
 
 interface TLELayerProps {
     objects: SpaceObject[];

@@ -11,7 +11,7 @@ import {
     X,
     Signal
 } from "lucide-react";
-import GlassPanel from "@/components/UI/GlassPanel";
+import GlassPanel from "@/components/ui/GlassPanel";
 import { SpaceObject } from "@/lib/space-objects";
 
 /**

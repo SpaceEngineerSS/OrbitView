@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Activity, Globe, Clock, TrendingDown, Maximize2, Zap, Navigation, Map as MapIcon, X } from "lucide-react";
-import GlassPanel from "@/components/UI/GlassPanel";
+import GlassPanel from "@/components/ui/GlassPanel";
 import Skyplot from "./Skyplot";
 import PassPredictionPanel from "./PassPredictionPanel";
 import DecayPanel from "./DecayPanel";

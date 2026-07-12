@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Home, Globe, Settings, Crosshair, Radio, Database, Menu } from "lucide-react";
 import Link from "next/link";
 import { clsx } from "clsx";
-import GlassPanel from "../UI/GlassPanel";
+import GlassPanel from "@/components/ui/GlassPanel";
 
 const MENU_ITEMS = [
     { icon: Home, label: "Mission Control", href: "/" },

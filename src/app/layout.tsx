@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { Rajdhani, JetBrains_Mono } from "next/font/google";
 import { LocaleProvider } from "@/hooks/useLocale";
-import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
+import { ServiceWorkerRegistration } from "@/components/common/ServiceWorkerRegistration";
 import "./globals.css";
-import "@/components/UI/VanillaGlass/vanilla-glass.css";
+import "@/components/ui/VanillaGlass/vanilla-glass.css";
 
 
 const rajdhani = Rajdhani({

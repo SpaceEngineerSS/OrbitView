@@ -15,7 +15,7 @@ import { SpaceObject } from "@/lib/space-objects";
 import * as satellite from "satellite.js";
 import { Compass, Smartphone } from "lucide-react";
 import { SensorManager } from "@/lib/SensorManager";
-import { AppSettings } from "./HUD/SettingsPanel";
+import { AppSettings } from "@/components/hud/SettingsPanel";
 import { useTimelineStore } from "@/store/timelineStore";
 
 if (typeof window !== "undefined") {

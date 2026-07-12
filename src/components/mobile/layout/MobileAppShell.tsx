@@ -3,7 +3,7 @@
 import React, { memo, useState, useEffect } from "react";
 import { Search, Compass, Activity, ShieldAlert } from "lucide-react";
 import { SpaceObject } from "@/lib/space-objects";
-import { AppSettings } from "@/components/HUD/SettingsPanel";
+import { AppSettings } from "@/components/hud/SettingsPanel";
 import BottomNavigation from "./BottomNavigation";
 import NativeBottomSheet from "./NativeBottomSheet";
 import MobileTimeController from "../modules/MobileTimeController";

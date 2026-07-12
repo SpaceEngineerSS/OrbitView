@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronUp, ChevronDown, Activity, Zap, Navigation, Globe } from "lucide-react";
-import GlassPanel from "../UI/GlassPanel";
+import GlassPanel from "@/components/ui/GlassPanel";
 
 /**
  * BottomPanel - Telemetry Deck

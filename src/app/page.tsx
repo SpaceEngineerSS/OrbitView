@@ -4,15 +4,13 @@ import dynamic from "next/dynamic";
 import { Toaster } from "sonner";
 import { AnimatePresence, motion } from "framer-motion";
 import { Search } from "lucide-react";
-import ModernSidebar from "@/components/layout/ModernSidebar";
-import MobileNavBar from "@/components/layout/MobileNavBar";
-import TopBar from "@/components/layout/TopBar";
-import BottomPanel from "@/components/layout/BottomPanel";
-import InspectorPanel from "@/components/layout/InspectorPanel";
-import MissionDashboard from "@/components/Scientific/MissionDashboard";
-import SettingsPanel, { DEFAULT_SETTINGS, AppSettings } from "@/components/HUD/SettingsPanel";
-import MobileSearchOverlay from "@/components/HUD/Mobile/MobileSearchOverlay";
-import Timeline from "@/components/HUD/Timeline";
+import ModernSidebar from "@/components/desktop/layout/ModernSidebar";
+import TopBar from "@/components/desktop/layout/TopBar";
+import BottomPanel from "@/components/desktop/layout/BottomPanel";
+import InspectorPanel from "@/components/desktop/layout/InspectorPanel";
+import MissionDashboard from "@/components/desktop/modules/MissionDashboard";
+import SettingsPanel, { DEFAULT_SETTINGS, AppSettings } from "@/components/hud/SettingsPanel";
+import Timeline from "@/components/hud/Timeline";
 import { useTimelineStore } from "@/store/timelineStore";
 import { useEffect, useState, useCallback } from "react";
 import { fetchActiveSatellites } from "@/lib/tle";
@@ -21,7 +19,7 @@ import MobileAppShell from "@/components/mobile/layout/MobileAppShell";
 
 
 // Dynamic import for Globe to avoid SSR issues with Cesium
-const Globe = dynamic(() => import("@/components/Globe"), {
+const Globe = dynamic(() => import("@/components/globe/Globe"), {
     ssr: false,
     loading: () => (
         <div className="absolute inset-0 flex items-center justify-center bg-black text-cyan-400 font-rajdhani animate-pulse tracking-widest">

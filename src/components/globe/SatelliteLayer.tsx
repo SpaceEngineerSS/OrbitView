@@ -4,10 +4,10 @@ import React, { useState, useEffect, useRef, memo, useCallback } from "react";
 import { useCesium } from "resium";
 import * as Cesium from "cesium";
 import { SpaceObject } from "@/lib/space-objects";
-import TLELayer from "./Globe/TLELayer";
-import EphemerisLayer from "./Globe/EphemerisLayer";
-import SelectedSatelliteExtras from "./Globe/SelectedSatelliteExtras";
-import { AppSettings, DEFAULT_SETTINGS } from "./HUD/SettingsPanel";
+import TLELayer from "./TLELayer";
+import EphemerisLayer from "./EphemerisLayer";
+import SelectedSatelliteExtras from "./SelectedSatelliteExtras";
+import { AppSettings, DEFAULT_SETTINGS } from "@/components/hud/SettingsPanel";
 
 interface SatelliteLayerProps {
   objects: SpaceObject[];
