@@ -10,6 +10,8 @@ const satelliteImageryProvider = new Cesium.UrlTemplateImageryProvider({
   url: "https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
   credit: "Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community"
 });
+const defaultBaseLayer = new Cesium.ImageryLayer(satelliteImageryProvider);
+const defaultTerrainProvider = new Cesium.EllipsoidTerrainProvider();
 import SatelliteLayer from "./SatelliteLayer";
 import { SpaceObject } from "@/lib/space-objects";
 import * as satellite from "satellite.js";
@@ -295,8 +297,8 @@ const Globe: React.FC<GlobeProps> = ({ objects = [], onSelect, selectedObject, o
         infoBox={false}
         requestRenderMode={false}
         creditContainer={creditContainer}
-        terrainProvider={new Cesium.EllipsoidTerrainProvider()}
-        baseLayer={new Cesium.ImageryLayer(satelliteImageryProvider)}
+        terrainProvider={defaultTerrainProvider}
+        baseLayer={defaultBaseLayer}
       >
         <Scene highDynamicRange={true} />
 
