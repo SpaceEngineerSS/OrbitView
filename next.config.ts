@@ -5,7 +5,9 @@ import path from "path";
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   // Next.js 16 requires explicit turbopack config when using custom webpack config
-  turbopack: {},
+  turbopack: {
+    root: path.resolve(__dirname),
+  },
   webpack: (config, { isServer }) => {
     if (!isServer) {
       config.plugins.push(

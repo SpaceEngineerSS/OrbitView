@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useRef, useMemo, memo } from "react";
-import { Viewer, Scene, ImageryLayer } from "resium";
+import { Viewer, Scene } from "resium";
 import * as Cesium from "cesium";
 import "cesium/Build/Cesium/Widgets/widgets.css";
 
@@ -84,20 +84,7 @@ const Globe: React.FC<GlobeProps> = ({ objects = [], onSelect, selectedObject, o
     setMounted(true);
   }, []);
 
-  // Remove default Cesium Ion imagery and use OpenStreetMap
-  useEffect(() => {
-    if (viewerRef && !viewerRef.isDestroyed()) {
-      const layers = viewerRef.imageryLayers;
-      // aggressively remove default layers (usually index 0)
-      if (layers.length > 0) {
-        // Keep removing index 0 until only our OSM layer (added via component) remains? 
-        // Actually, Resium adds the child layer AFTER viewer init.
-        // So index 0 is likely the default.
-        const defaultLayer = layers.get(0);
-        if (defaultLayer) layers.remove(defaultLayer, false);
-      }
-    }
-  }, [viewerRef]);
+
 
   // Sync Cesium Clock settings from Zustand store
   useEffect(() => {
@@ -309,9 +296,9 @@ const Globe: React.FC<GlobeProps> = ({ objects = [], onSelect, selectedObject, o
         requestRenderMode={false}
         creditContainer={creditContainer}
         terrainProvider={new Cesium.EllipsoidTerrainProvider()}
+        baseLayer={new Cesium.ImageryLayer(satelliteImageryProvider)}
       >
         <Scene highDynamicRange={true} />
-        <ImageryLayer imageryProvider={satelliteImageryProvider} />
 
         <SatelliteLayer
           objects={objects}
