@@ -3,7 +3,6 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Home, Globe, Settings, Crosshair, Radio, Database, Menu } from "lucide-react";
-import Link from "next/link";
 import { clsx } from "clsx";
 import GlassPanel from "@/components/ui/GlassPanel";
 
@@ -24,16 +23,13 @@ interface ModernSidebarProps {
 const ModernSidebar: React.FC<ModernSidebarProps> = ({ activeView = 'globe', onViewChange }) => {
     const [hoveredItem, setHoveredItem] = useState<string | null>(null);
 
-    const handleNavigation = (href: string, label: string, e: React.MouseEvent) => {
+    const handleNavigation = (href: string, label: string) => {
         // Intercept logic for view changing without route change if needed
         if (href === '/orbit') {
-            e.preventDefault();
             onViewChange?.('globe');
         } else if (href === '/' || href === '/analytics' || href === '/targeting' || href === '/comms' || href === '/archive') {
-            e.preventDefault();
             onViewChange?.('analytics');
         } else if (href === '/settings') {
-            e.preventDefault();
             onViewChange?.('settings');
         }
     };
@@ -59,11 +55,10 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({ activeView = 'globe', onV
                         const isHovered = hoveredItem === item.label;
 
                         return (
-                            <Link
+                            <button
                                 key={item.href}
-                                href={item.href}
-                                onClick={(e) => handleNavigation(item.href, item.label, e)}
-                                className="relative group w-full flex justify-center"
+                                onClick={() => handleNavigation(item.href, item.label)}
+                                className="relative group w-full flex justify-center bg-transparent border-0 cursor-pointer focus:outline-none"
                             >
                                 <div
                                     className={clsx(
@@ -107,7 +102,7 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({ activeView = 'globe', onV
                                         </motion.div>
                                     )}
                                 </AnimatePresence>
-                            </Link>
+                            </button>
                         );
                     })}
                 </nav>
