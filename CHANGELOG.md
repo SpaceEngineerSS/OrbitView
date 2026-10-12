@@ -31,6 +31,16 @@ from scratch.
 - The inter-satellite link search missed most pairs between 1000 and 2500 km.
   It drew nothing, so it was removed.
 
+### Fixed — after release
+- The country filter is our own list (a sheet on phones) instead of a native
+  select, whose pop-up was white and unreadable in dark mode. It has a search.
+- Tonight takes the bright objects from the loaded catalog instead of a
+  separate CelesTrak request, which failed from Vercel (503) and left it empty.
+- Passes for the selected object appear about half a second after the
+  catalog, instead of 7–12 s: the analysis worker no longer converts the whole
+  catalog before answering.
+- Scrollable chip rows fade at the edge instead of cutting a chip in half.
+
 ### Fixed — labels
 - "Space stations" counted all 19 objects in CelesTrak's stations list
   (modules, cargo ships, cubesats, a piece of debris). It now means the ISS
@@ -90,7 +100,7 @@ from scratch.
 - Security headers and a Content Security Policy are set in `next.config.ts`.
 
 ### Added
-- Tonight: visible passes of the ~100 brightest satellites during your next
+- Tonight: visible passes of the ~150 brightest satellites during your next
   dark period.
 - Add a pass to your calendar (.ics with a reminder); browser alerts before
   passes of starred and selected satellites while the app is open.

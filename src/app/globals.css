@@ -189,6 +189,14 @@ body {
   line-height: 1;
 }
 
+/* Horizontal rows that scroll: fade out at the right edge instead of
+   cutting a chip in half, so it reads as "there's more". */
+.scroll-fade-x {
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent);
+  mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent);
+  padding-right: 32px;
+}
+
 .scroll {
   overflow-y: auto;
   overscroll-behavior: contain;

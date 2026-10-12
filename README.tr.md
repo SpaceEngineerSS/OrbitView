@@ -53,7 +53,7 @@ baştan dikkatle gözden geçirdim (aşağıda yazdığım birkaç gerçek düze
 - **Efemeris dışa aktarma.** Simülasyon zamanından başlayan CSV ya da JSON;
   kaynak TLE ve elemanlarla birlikte.
 - **Bu gece.** Uygulamayı akşam açtığınızda ilk kart, bu gece kendi
-  gözünüzle görebileceğiniz en parlak ~100 uydunun geçişlerini saat sırasıyla
+  gözünüzle görebileceğiniz en parlak ~150 uydunun geçişlerini saat sırasıyla
   gösterir.
 - **Takvim ve uyarılar.** İstediğiniz geçişi hatırlatıcılı bir `.ics` olarak
   takviminize ekleyin ya da yıldızladığınız uyduların geçişinden birkaç dakika

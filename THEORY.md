@@ -143,8 +143,10 @@ The night is the interval in which the Sun is more than 6° below the
 observer's horizon. It is found with a 10-minute scan of the Sun's elevation
 from the current simulation time (if it's already dark the window starts
 now), and both edges are refined by bisection to about 10 s. Passes of the
-CelesTrak "visual" group (about 100 bright objects) are then predicted inside
-that window with the method above, and only those marked visible are listed.
+objects on CelesTrak's "visual" list (about 150 bright ones, taken from the
+catalog already loaded; their ids are in `src/lib/visualIds.ts`) are then
+predicted inside that window with the method above, and only those marked
+sunlit are listed.
 — `src/lib/tonight.ts`
 
 ---

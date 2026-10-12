@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { CloudWarning, ArrowClockwise, Flag } from "@phosphor-icons/react";
+import { CloudWarning, ArrowClockwise, Flag, Check } from "@phosphor-icons/react";
 import { useSatcatStore, countByOwner } from "@/store/satcatStore";
 import { COUNTRY_FILTERS } from "@/lib/satcat";
 import { useCountryName } from "@/components/analysis/IdentityCard";
@@ -9,7 +9,8 @@ import { useAppStore, type FilterKey } from "@/store/appStore";
 import { FILTERS, countByFilter, REGIME_COLORS, featured, regimeColor } from "@/lib/catalog";
 import { useT } from "@/hooks/useLocale";
 import { useFormat } from "@/hooks/useFormat";
-import { ChipGroup } from "@/components/ui/Controls";
+import { ChipGroup, TextInput } from "@/components/ui/Controls";
+import { Dialog } from "@/components/ui/Dialog";
 import { cx } from "@/components/ui/cx";
 
 const SWATCH: Partial<Record<FilterKey, string>> = {
@@ -21,7 +22,11 @@ const SWATCH: Partial<Record<FilterKey, string>> = {
     debris: REGIME_COLORS.DEBRIS,
 };
 
-/** Owner-country filter as a pill-shaped native select (a real picker on phones). */
+/**
+ * Owner-country filter: a chip that opens our own list (a sheet on phones).
+ * A native <select> drew its pop-up in the system colours, white and
+ * unreadable in dark mode.
+ */
 function CountrySelect() {
     const t = useT();
     const f = useFormat();
@@ -30,28 +35,49 @@ function CountrySelect() {
     const objects = useAppStore((s) => s.objects);
     const owners = useSatcatStore((s) => s.owners);
     const name = useCountryName();
+    const [open, setOpen] = useState(false);
+    const [query, setQuery] = useState("");
     const counts = useMemo(() => countByOwner(objects.map((o) => o.id), owners), [objects, owners]);
     if (!owners) return null;
+
+    const q = query.trim().toLocaleLowerCase();
+    const rows = COUNTRY_FILTERS
+        .filter((c) => (counts.get(c) ?? 0) > 0)
+        .filter((c) => !q || name(c).toLocaleLowerCase().includes(q) || c.toLowerCase().includes(q));
+    const pick = (c: string | null) => { setCountry(c); setOpen(false); setQuery(""); };
+    const row = (key: string, label: string, count: number | null, on: boolean, value: string | null) => (
+        <li key={key}>
+            <button type="button" onClick={() => pick(value)} aria-pressed={on}
+                className={cx("w-full flex items-center gap-3 h-12 px-3 rounded-[14px] text-left transition-colors",
+                    on ? "bg-accent-soft" : "hover:bg-fill")}>
+                <span className={cx("flex-1 min-w-0 truncate text-[15px]", on ? "font-semibold text-accent" : "font-medium")}>{label}</span>
+                {count !== null && <span className="text-[13px] text-ink-2 tabular-nums">{f.num(count, 0)}</span>}
+                <Check size={16} weight="bold" className={cx("shrink-0 text-accent", !on && "invisible")} />
+            </button>
+        </li>
+    );
+
     return (
-        <label className={cx(
-            "relative shrink-0 h-8 pl-3 pr-3 rounded-full text-[13px] font-semibold flex items-center gap-1.5 cursor-pointer",
-            country ? "bg-accent text-on-accent" : "bg-card text-ink shadow-card hover:bg-card-2"
-        )}>
-            <Flag size={14} weight={country ? "fill" : "bold"} />
-            <span>{country ? name(country) : t("filter.country")}</span>
-            {country && <span className="opacity-75">{f.num(counts.get(country) ?? 0, 0)}</span>}
-            <select
-                aria-label={t("filter.country")}
-                value={country ?? ""}
-                onChange={(e) => setCountry(e.target.value || null)}
-                className="absolute inset-0 opacity-0 cursor-pointer"
-            >
-                <option value="">{t("filter.allCountries")}</option>
-                {COUNTRY_FILTERS.filter((c) => (counts.get(c) ?? 0) > 0).map((c) => (
-                    <option key={c} value={c}>{name(c)} ({f.num(counts.get(c) ?? 0, 0)})</option>
-                ))}
-            </select>
-        </label>
+        <>
+            <button type="button" onClick={() => setOpen(true)} aria-haspopup="dialog"
+                className={cx(
+                    "shrink-0 h-8 px-3 rounded-full text-[13px] font-semibold flex items-center gap-1.5 whitespace-nowrap transition-colors",
+                    country ? "bg-accent text-on-accent" : "bg-card text-ink shadow-card hover:bg-card-2"
+                )}>
+                <Flag size={14} weight={country ? "fill" : "bold"} />
+                <span>{country ? name(country) : t("filter.country")}</span>
+                {country && <span className="opacity-75">{f.num(counts.get(country) ?? 0, 0)}</span>}
+            </button>
+            <Dialog open={open} onClose={() => setOpen(false)} title={t("filter.country")} closeLabel={t("common.close")} width="sm">
+                <TextInput type="search" value={query} onChange={(e) => setQuery(e.target.value)}
+                    placeholder={t("filter.searchCountry")} aria-label={t("filter.searchCountry")} className="mb-2" />
+                <ul className="-mx-2">
+                    {!q && row("all", t("filter.allCountries"), null, country === null, null)}
+                    {rows.map((c) => row(c, name(c), counts.get(c) ?? 0, country === c, c))}
+                </ul>
+                {rows.length === 0 && <p className="py-6 text-center text-[14px] text-ink-2">{t("search.nothing")}</p>}
+            </Dialog>
+        </>
     );
 }
 
@@ -67,7 +93,7 @@ export function FilterChips({ className }: { className?: string }) {
     const counts = useMemo(() => countByFilter(objects, new Set(favorites), kinds), [objects, favorites, kinds]);
 
     return (
-        <div className={cx("flex gap-1.5 overflow-x-auto [scrollbar-width:none] -mx-1 px-1 py-1", className)}>
+        <div className={cx("scroll-fade-x flex gap-1.5 overflow-x-auto [scrollbar-width:none] -mx-1 pl-1 py-1", className)}>
             <CountrySelect />
             <ChipGroup
                 label={t("catalog.filters")}
