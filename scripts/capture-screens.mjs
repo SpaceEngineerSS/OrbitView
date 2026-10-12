@@ -15,12 +15,15 @@ import { fileURLToPath } from "node:url";
 const BASE = process.env.BASE_URL ?? "http://localhost:3000";
 const OUT = join(dirname(fileURLToPath(import.meta.url)), "..", "docs", "img");
 const TIME = process.env.SNAP_TIME ?? "2026-10-14T03:40:30Z";
+const EVENING = process.env.SNAP_EVENING ?? "2026-10-13T17:30:00Z";
+// The ISS in daylight over the Mediterranean, for the view from the satellite
+const POV_TIME = process.env.SNAP_POV ?? "2026-10-14T03:41:30Z";
 const ISTANBUL = { latitude: 41.0082, longitude: 28.9784, altitude: 40, label: "İstanbul" };
 
 mkdirSync(OUT, { recursive: true });
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-async function newPage(browser, { locale, theme, mobile }) {
+async function newPage(browser, { locale, theme, mobile, view = "3d" }) {
     const page = await browser.newPage();
     await page.setViewport(mobile
         ? { width: 390, height: 844, deviceScaleFactor: 2, isMobile: true, hasTouch: true }
@@ -30,7 +33,8 @@ async function newPage(browser, { locale, theme, mobile }) {
         state: {
             observer: ISTANBUL,
             settings: {
-                theme: "system", basemap: "imagery", clock: "utc", minElevation: 10,
+                theme: "system", basemap: "imagery", clock: "utc", minElevation: 10, view,
+                batterySaver: "off", trackOrbits: 1, alertMinutes: 0,
                 showOrbit: true, showGroundTrack: true, showFootprint: true, showNightShadow: true, autoRotate: false,
             },
             favorites: ["25544", "20580"],
@@ -46,8 +50,8 @@ async function newPage(browser, { locale, theme, mobile }) {
     return page;
 }
 
-async function open(page, query = "") {
-    await page.goto(`${BASE}/?t=${encodeURIComponent(TIME)}${query}`, { waitUntil: "networkidle2", timeout: 120_000 });
+async function open(page, query = "", time = TIME) {
+    await page.goto(`${BASE}/?t=${encodeURIComponent(time)}${query}`, { waitUntil: "networkidle2", timeout: 120_000 });
     await page.waitForSelector(".globe-region canvas", { timeout: 60_000 });
     await page.waitForFunction(() => !/Loading catalog|Katalog yükleniyor/.test(document.body.innerText), { timeout: 90_000 });
     await sleep(8000); // tiles, first frames, card animations
@@ -91,10 +95,10 @@ const browser = await puppeteer.launch({
 const PASSES = { en: "Next 48 hours", tr: "Önümüzdeki 48 saat" };
 
 /** One fresh tab per scene: WebGL in headless Chrome doesn't survive many reloads. */
-async function scene(opts, query, fn) {
+async function scene(opts, query, fn, time) {
     const page = await newPage(browser, opts);
     try {
-        await open(page, query);
+        await open(page, query, time);
         await fn(page);
     } finally {
         await page.close();
@@ -113,6 +117,14 @@ try {
             await shoot(p, `desktop-passes${s}`);
         });
         await scene({ ...desk, theme: "dark" }, "", (p) => shoot(p, `desktop-browse-dark${s}`));
+        // Evening in Istanbul, so the Tonight card has a full night ahead
+        await scene(desk, "", (p) => shoot(p, `desktop-tonight${s}`), EVENING);
+        await scene({ ...desk, view: "2d" }, "&sat=25544", (p) => shoot(p, `desktop-map${s}`));
+        await scene(desk, "&sat=25544", async (p) => {
+            await p.click('button[aria-label="View from the satellite"], button[aria-label="Uydudan bak"]');
+            await sleep(5000);
+            await shoot(p, `desktop-pov${s}`);
+        }, POV_TIME);
         await scene(phone, "", (p) => shoot(p, `mobile-browse${s}`));
         await scene(phone, "&sat=25544", async (p) => {
             await shoot(p, `mobile-iss${s}`);

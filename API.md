@@ -13,6 +13,7 @@ GET /api/tle?group=<name>
 |---|---|
 | *(none)* or `default` | Space-Track GP (objects with an epoch in the last 30 days) if `SPACETRACK_USER`/`SPACETRACK_PASS` are set; otherwise, or if it fails, CelesTrak `active`; then a stale copy; then a tiny built-in set |
 | `stations`, `active`, `starlink`, `cubesat`, `oneweb`, `iridium` | the CelesTrak group of that name |
+| `visual` | CelesTrak's ~100 brightest objects (used by the Tonight card) |
 | `all` | `stations` + `starlink` + `cubesat` merged |
 
 Anything else is `400` with the list of allowed names. The app itself asks for
@@ -69,3 +70,28 @@ Space-Track logout (best effort, after every query).
 IndexedDB, and refreshes in the background (stale-while-revalidate). A partial
 or stale refresh is shown but never written over the stored catalog. The UI
 shows the age of the data and says when the source was unreachable.
+
+---
+
+# `/api/satcat`
+
+```
+GET /api/satcat
+```
+
+CelesTrak's satellite catalog (`satcat.csv`, about 6–7 MB) reduced to the
+objects still in orbit, as JSON:
+
+```json
+{ "fetchedAt": 1760280000000,
+  "rows": [["25544", "ISS", "1998-11-20", "TYMSC", "PAY", "+", 399.05, "1998-067A"], …] }
+```
+
+Row fields: NORAD id, owner code, launch date, launch site code, object type
+(`PAY`, `R/B`, `DEB`, `UNK`), operational status, radar cross-section (m², or
+null), international designator.
+
+Cached for a day in memory and on the CDN (`s-maxage=86400`); after a failure
+the last good copy is served with `X-Stale: 1` for ten minutes, or a `503` if
+there is none. Upstream timeout: 20 s. The client loads it once the globe is
+idle and uses it for the Identity card and the country filter.

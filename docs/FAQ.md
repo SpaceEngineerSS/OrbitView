@@ -38,3 +38,17 @@ language in Settings if you prefer the other style.
 **Can I use the data in my own project?**
 The code is MIT-licensed. The orbital data comes from CelesTrak and
 Space-Track; check their terms if you redistribute it.
+
+**Why didn't I get a pass alert?**
+Alerts come from the open app: there is no server that could push them. Keep
+the tab (or the installed app) open, allow notifications, and star the
+satellite. For something that works with the app closed, use "Add to
+calendar" instead.
+
+**Why does only the ISS have a 3D model?**
+It's the one with an official, freely available NASA model of a usable size.
+Other objects are drawn as points.
+
+**The globe looks simpler on my phone.**
+On slower devices OrbitView switches to a lighter profile to stay smooth.
+Settings → Battery saver → Off brings the full look back.

@@ -53,6 +53,19 @@ GEO satellite showed about 3 km/s of range rate, roughly 100 kHz at 12 GHz.
 | ISS vs. GEO | rejected by the apogee/perigee filter |
 | ISS vs. the same orbit 0.01° behind | found, miss distance < 5 km, GEO not reported |
 
+## Rendering and new features — `v4-features.test.ts`
+
+| What | Assertion |
+|---|---|
+| Worker's inline TEME→ECF rotation vs. `stateAt` | under 1 m |
+| Worker only touches the visible indices; failed propagation | untouched / NaN |
+| Frame-rate rule | 0 when paused, 500 ms zoomed out at ×1, 66 ms at high speed, ≥ 200 ms on battery saver |
+| Device tier | static hints and measured medians classify as expected |
+| Calendar export | UTC times, escaping, 75-character folding, reminder |
+| SATCAT parsing | decayed objects dropped, quoted names, radar size |
+| Night window (Istanbul) | Sun below −6° just inside both edges, above it just before dusk |
+| Shared pass cache | one calculation per key; previous result shown while a new window loads |
+
 ## Data layer — `tle.test.ts`, `db.test.ts`, `SpaceWeather.test.ts`, `route.test.ts`
 
 - IndexedDB read failure falls back to the network; write failure still

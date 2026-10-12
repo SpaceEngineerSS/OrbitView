@@ -26,8 +26,12 @@ anywhere:
 | Map | satellite imagery (or a dark map) |
 | Orbit, ground track, coverage circle, day/night shading | on |
 | Slow rotation when idle | off |
+| View | globe (or flat map) |
+| Ground track length | 1 orbit (up to 5) |
+| Pass alerts | off (5, 10 or 15 minutes before; needs notification permission, works while the app is open) |
+| Battery saver | auto (on for slower devices; can be forced on or off) |
 
-Favourites and the selected filter are stored the same way.
+Favourites, the selected filter and the country filter are stored the same way.
 
 ## Links
 

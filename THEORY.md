@@ -133,6 +133,18 @@ that no 5-second sample in a pass is higher than the reported maximum.
 
 ---
 
+### Tonight
+
+The night is the interval in which the Sun is more than 6° below the
+observer's horizon. It is found with a 10-minute scan of the Sun's elevation
+from the current simulation time (if it's already dark the window starts
+now), and both edges are refined by bisection to about 10 s. Passes of the
+CelesTrak "visual" group (about 100 bright objects) are then predicted inside
+that window with the method above, and only those marked visible are listed.
+— `src/lib/tonight.ts`
+
+---
+
 ## 5. Doppler
 
 ```
@@ -212,12 +224,14 @@ of collision. Operators use conjunction data messages from 18 SDS for that.
 
 ## 8. Ground track, orbit ring and footprint
 
-- **Ground track:** sub-satellite points one period ahead and half a period
-  behind, recomputed every 30 s of simulation time.
-- **Orbit ring:** one revolution of TEME positions, all rotated by the sidereal
-  angle *at the current time*. That is the inertial orbit frozen at the
-  current Earth orientation, so the satellite sits exactly on it. It is
-  rebuilt every 2 s of simulation time as the Earth turns.
+- **Ground track:** sub-satellite points 1–5 periods ahead (a setting) and
+  half a period behind, recomputed every 30 s of simulation time.
+- **Orbit ring:** one revolution of TEME positions, drawn with a model
+  matrix that rotates it by −θ (the sidereal angle at the current time). That
+  is the inertial orbit as seen from the turning Earth, so the satellite sits
+  exactly on it, and turning the Earth only changes the matrix. The positions
+  themselves are recomputed every 15 minutes of simulation time to follow slow
+  changes such as nodal precession.
 - **Coverage circle:** the ground area from which the object is above the
   elevation mask ε:
 

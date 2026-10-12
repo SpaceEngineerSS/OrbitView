@@ -51,10 +51,28 @@ baştan dikkatle gözden geçirdim (aşağıda yazdığım birkaç gerçek düze
   sürükleyip gidebiliyorsunuz.
 - **Efemeris dışa aktarma.** Simülasyon zamanından başlayan CSV ya da JSON;
   kaynak TLE ve elemanlarla birlikte.
+- **Bu gece.** Uygulamayı akşam açtığınızda ilk kart, bu gece kendi
+  gözünüzle görebileceğiniz en parlak ~100 uydunun geçişlerini saat sırasıyla
+  gösterir.
+- **Takvim ve uyarılar.** İstediğiniz geçişi hatırlatıcılı bir `.ics` olarak
+  takviminize ekleyin ya da yıldızladığınız uyduların geçişinden birkaç dakika
+  önce tarayıcı bildirimi alın.
+- **Kimin uydusu.** CelesTrak uydu kataloğundan sahibi olan ülke, fırlatma
+  tarihi ve yeri, nesne türü ve radar boyutu. Ülke filtresiyle Türkiye'nin
+  uyduları tek dokunuş uzakta.
+- **Küre ya da harita.** Yer izlerini okumak için düz haritaya geçin.
+- **ISS yakından.** NASA'nın istasyon 3B modeli ve hemen arkasından onunla
+  birlikte uçan bir kamera.
 - **Telefonda gökyüzü görünümü.** Telefonu gökyüzüne doğrultun; görünüm
   konumunuzdan pusula ve eğim sensörlerini takip ediyor.
 - Açık ve koyu görünüm, Türkçe ve İngilizce, klavye kısayolları ve belirli bir
   nesneyi belirli bir anda açan bağlantılar (`?sat=25544&t=2026-10-14T03:40Z`).
+
+<p align="center">
+  <img src="docs/img/desktop-tonight-tr.webp" width="420" alt="Bu gece: parlak uyduların görünür geçişleri">
+  &nbsp;
+  <img src="docs/img/desktop-pov-tr.webp" width="420" alt="ISS'ten görünüm">
+</p>
 
 <p align="center">
   <img src="docs/img/mobile-iss-tr.webp" width="250" alt="Telefon: seçili uydu">
@@ -63,6 +81,19 @@ baştan dikkatle gözden geçirdim (aşağıda yazdığım birkaç gerçek düze
   &nbsp;
   <img src="docs/img/mobile-iss-dark-tr.webp" width="250" alt="Telefon: koyu görünüm">
 </p>
+
+## Mütevazı cihazlarda da akıcı
+
+Küre yalnızca üzerinde bir şey değiştiğinde çiziliyor. Zaman durdurulmuşken
+hiç çizilmiyor; normal hızda saniyede birkaç kez yenileniyor, çünkü 20.000
+km'den bakınca 7,6 km/s hızla giden bir uydu saniyede iki üç piksel ilerliyor.
+Konumlar ana iş parçacığının dışında ve yalnızca filtrenin gösterdiği nesneler
+için hesaplanıyor; uzun hesaplar ikinci bir worker'da çalışıyor, görüntüyü
+donduramıyor.
+
+Daha yavaş bir telefon ya da dizüstünde uygulama kendiliğinden hafif profile
+geçiyor (daha az kenar yumuşatma, atmosfer gölgelemesi yok, daha seyrek
+güncelleme); Ayarlar'daki **Pil tasarrufu** aynısını istediğiniz zaman yapar.
 
 ## Ne kadar doğru?
 
@@ -112,7 +143,9 @@ dosyalarında.
 - **Veri.** `/api/tle`, eleman setlerini (ayarlıysa) Space-Track'ten ya da
   CelesTrak'ten çekiyor, her grubu iki saat önbellekte tutuyor, CDN başlıklarını
   ayarlıyor ve eski veriyi asla yeniymiş gibi sunmuyor. Tarayıcı son sağlam
-  kataloğu IndexedDB'de saklıyor ve arka planda yeniliyor.
+  kataloğu IndexedDB'de saklıyor ve arka planda yeniliyor. `/api/satcat`, 6
+  MB'lık uydu kataloğunu günde bir kez yörüngede kalanların kompakt bir
+  tablosuna çeviriyor.
 - **İlerletme.** Bir Web Worker tüm katalog için SGP4 (satellite.js) çalıştırıp
   Dünya'ya sabit konumları bir `Float32Array` içinde geri veriyor; tampon
   gidip geliyor, her karede yeni bellek ayrılmıyor. Geçiş araması ve yakın
@@ -165,8 +198,10 @@ Ayrıntılar [docs/INSTALLATION.md](docs/INSTALLATION.md),
 
 ## Teşekkür
 
-Yörünge verisi [CelesTrak](https://celestrak.org) (T.S. Kelso) ve
-[Space-Track.org](https://www.space-track.org); uzay havası
+Yörünge verisi ve uydu kataloğu [CelesTrak](https://celestrak.org) (T.S. Kelso)
+ve [Space-Track.org](https://www.space-track.org); ISS modeli
+[NASA 3D Resources](https://science.nasa.gov/3d-resources/international-space-station-iss-b/)
+(NASA/Michael D. Carbajal); uzay havası
 [NOAA SWPC](https://www.swpc.noaa.gov); harita karoları © Esri ve veri
 sağlayıcıları. SGP4 için [satellite.js](https://github.com/shashwatak/satellite-js),
 küre için [CesiumJS](https://cesium.com/platform/cesiumjs/).

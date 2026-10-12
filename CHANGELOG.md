@@ -41,6 +41,19 @@ from scratch.
 - Space-weather fallbacks were shown as live readings. They are now marked.
 - The service worker cached API responses and range requests without limit.
 
+### Performance
+- The globe draws only when something changes. With time paused it doesn't
+  draw at all; at normal speed it redraws a few times a second instead of
+  sixty.
+- Positions are recomputed on a timer whose rate follows speed, zoom and the
+  device, only for the objects the current filter shows, and not while the
+  tab is hidden.
+- Passes, close-approach screening and the tonight list run in a second
+  worker. Selecting an object starts one pass calculation instead of four.
+- The browser's default GPU is requested instead of the high-performance one.
+- Slower devices switch to a light profile automatically; Battery saver in
+  Settings does it on demand.
+
 ### Changed
 - New interface: light and dark appearance, cards instead of tabs, a first card
   that changes with the situation (overhead now / visible pass / next pass),
@@ -56,6 +69,16 @@ from scratch.
 - Security headers and a Content Security Policy are set in `next.config.ts`.
 
 ### Added
+- Tonight: visible passes of the ~100 brightest satellites during your next
+  dark period.
+- Add a pass to your calendar (.ics with a reminder); browser alerts before
+  passes of starred and selected satellites while the app is open.
+- Satellite identity from the CelesTrak catalog (owner country, launch date
+  and site, object type, radar size) and a country filter.
+- Flat map view.
+- NASA's ISS model and a view from the satellite.
+- Ground track length of 1–5 orbits; position and velocity in TEME and ECEF;
+  references in About.
 - Close-approach screening against the loaded catalog, with time of closest
   approach and relative speed.
 - Doppler curve across the next pass; any downlink frequency.

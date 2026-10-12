@@ -50,10 +50,28 @@ from scratch.
   scrubber. Pass markers sit on the scrubber so you can drag straight to one.
 - **Ephemeris export.** CSV or JSON from the simulation time, with the TLE and
   elements it came from.
+- **Tonight.** Open the app in the evening and the first card lists the
+  passes of the ~100 brightest satellites you can see with your own eyes
+  tonight, in time order.
+- **Calendar and alerts.** Put any pass in your calendar (an `.ics` with a
+  reminder), or let the browser notify you a few minutes before passes of
+  the satellites you've starred.
+- **Who it belongs to.** Owner country, launch date and site, object type and
+  radar size from the CelesTrak satellite catalog, and a country filter, so
+  Türkiye's satellites are one tap away.
+- **Globe or map.** Switch to a flat map when you want to read ground tracks.
+- **The ISS up close.** NASA's 3D model of the station, and a camera that
+  rides along just behind it.
 - **Sky view on phones.** Point the phone at the sky; the view follows the
   compass and tilt sensors from your location.
 - Light and dark appearance, Turkish and English, keyboard shortcuts, and links
   that open a specific object at a specific moment (`?sat=25544&t=2026-10-14T03:40Z`).
+
+<p align="center">
+  <img src="docs/img/desktop-tonight.webp" width="420" alt="Tonight: visible passes of bright satellites">
+  &nbsp;
+  <img src="docs/img/desktop-pov.webp" width="420" alt="View from the ISS">
+</p>
 
 <p align="center">
   <img src="docs/img/mobile-iss.webp" width="250" alt="Phone: selected satellite">
@@ -62,6 +80,19 @@ from scratch.
   &nbsp;
   <img src="docs/img/mobile-iss-dark.webp" width="250" alt="Phone: dark appearance">
 </p>
+
+## Runs on modest hardware
+
+The globe only draws when something on it changes. With time paused it
+doesn't draw at all; at normal speed it redraws a few times a second, because
+seen from 20,000 km a satellite moving at 7.6 km/s crosses two or three
+pixels a second. Positions are recomputed off the main thread, only for what
+the current filter shows, and long calculations run in a second worker so
+they can't freeze the view.
+
+On a slower phone or laptop the app switches itself to a lighter profile
+(less anti-aliasing, no atmosphere shading, fewer updates); **Battery saver**
+in Settings does the same on demand.
 
 ## How accurate is it?
 
@@ -109,7 +140,8 @@ Three things in earlier versions were wrong, and I'd rather say so:
 - **Data.** `/api/tle` fetches element sets from Space-Track (if configured) or
   CelesTrak, caches each group for two hours, sets CDN cache headers and never
   passes off stale data as fresh. The browser keeps the last good catalog in
-  IndexedDB and refreshes it in the background.
+  IndexedDB and refreshes it in the background. `/api/satcat` turns the 6 MB
+  satellite catalog into a compact table of what's still in orbit, once a day.
 - **Propagation.** A Web Worker runs SGP4 (satellite.js) over the whole catalog
   and hands back a `Float32Array` of Earth-fixed positions; the buffer goes back
   and forth so nothing is allocated per frame. Pass searches and close-approach
@@ -181,8 +213,10 @@ scripts/          Cesium copy, screenshots, brand assets
 
 ## Credits
 
-Orbital data from [CelesTrak](https://celestrak.org) (T.S. Kelso) and
-[Space-Track.org](https://www.space-track.org). Space weather from
+Orbital data and the satellite catalog from [CelesTrak](https://celestrak.org)
+(T.S. Kelso) and [Space-Track.org](https://www.space-track.org). ISS model from
+[NASA 3D Resources](https://science.nasa.gov/3d-resources/international-space-station-iss-b/)
+(NASA/Michael D. Carbajal). Space weather from
 [NOAA SWPC](https://www.swpc.noaa.gov). Map tiles © Esri and its data
 providers. SGP4 by [satellite.js](https://github.com/shashwatak/satellite-js),
 globe by [CesiumJS](https://cesium.com/platform/cesiumjs/).
