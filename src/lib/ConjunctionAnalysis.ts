@@ -172,11 +172,3 @@ export function timeToTCA(tca: Date, now: Date): { passed: boolean; days: number
     };
 }
 
-export function getRiskColor(level: ConjunctionEvent['riskLevel']): string {
-    switch (level) {
-        case 'critical': return '#d9534f';
-        case 'high': return '#e07b39';
-        case 'medium': return '#f2a33a';
-        case 'low': return '#8d9097';
-    }
-}

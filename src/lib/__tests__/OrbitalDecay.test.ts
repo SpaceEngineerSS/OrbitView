@@ -2,8 +2,7 @@ import {
     predictOrbitalDecay,
     getAtmosphericDensity,
     parseBStar,
-    getAltitudeColor,
-    formatLifetime
+    lifetimeParts
 } from '../OrbitalDecay';
 
 describe('OrbitalDecay', () => {
@@ -67,25 +66,12 @@ describe('OrbitalDecay', () => {
         });
     });
 
-    describe('Helper functions', () => {
-        describe('getAltitudeColor', () => {
-            it('should return appropriate colors for altitudes', () => {
-                expect(getAltitudeColor(150)).toBe('#d9534f');
-                expect(getAltitudeColor(250)).toBe('#e07b39');
-                expect(getAltitudeColor(350)).toBe('#f2a33a');
-                expect(getAltitudeColor(600)).toBe('#7fb069');
-            });
-        });
-
-        describe('formatLifetime', () => {
-            it('should format days appropriately', () => {
-                expect(formatLifetime(0.5)).toBe('< 1 day');
-                expect(formatLifetime(15)).toContain('days');
-                expect(formatLifetime(180)).toContain('months');
-                expect(formatLifetime(Infinity)).toBe('> 25 years');
-                expect(formatLifetime(730)).toContain('years');
-                expect(formatLifetime(4000)).toContain('years');
-            });
+    describe('lifetimeParts', () => {
+        it('picks days, months, years or beyond the horizon', () => {
+            expect(lifetimeParts(15).unit).toBe('day');
+            expect(lifetimeParts(180).unit).toBe('month');
+            expect(lifetimeParts(730)).toEqual({ unit: 'year', value: 2 });
+            expect(lifetimeParts(Infinity)).toEqual({ unit: 'beyond', value: 25 });
         });
     });
 });

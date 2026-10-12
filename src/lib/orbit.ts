@@ -11,7 +11,6 @@ import * as satellite from 'satellite.js';
 
 export const EARTH_RADIUS_KM = 6378.135;      // WGS-72, as used by SGP4
 export const EARTH_ROTATION_RAD_S = 7.292115e-5;
-export const MU_KM3_S2 = 398600.8;            // WGS-72
 
 export interface Vec3 { x: number; y: number; z: number }
 
@@ -132,11 +131,6 @@ export function elementsFromSatrec(rec: satellite.SatRec): OrbitalElements {
 
 export function elementsFromTLE(line1: string, line2: string): OrbitalElements {
     return elementsFromSatrec(getSatrec(line1, line2));
-}
-
-/** Days between the TLE epoch and `date` (positive = TLE is older). */
-export function tleAgeDays(rec: satellite.SatRec, date: Date): number {
-    return (date.getTime() - elementsFromSatrec(rec).epoch.getTime()) / 86_400_000;
 }
 
 export interface ObserverGeodetic {

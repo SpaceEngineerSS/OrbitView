@@ -38,11 +38,6 @@ export function Card({ title, icon, action, children, className, index = 0 }: Ca
     );
 }
 
-/** Thin divider inside a card. */
-export function Divider({ className }: { className?: string }) {
-    return <div aria-hidden className={cx("h-px bg-separator my-3", className)} />;
-}
-
 /** "Label ...... value" row for details. */
 export function Row({ label, value, unit }: { label: ReactNode; value: ReactNode | null | undefined; unit?: string }) {
     const missing = value === null || value === undefined || (typeof value === "number" && !Number.isFinite(value));

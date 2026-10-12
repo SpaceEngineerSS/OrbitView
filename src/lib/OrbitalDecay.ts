@@ -201,14 +201,6 @@ export function riskFromLifetime(days: number): DecayPrediction['riskLevel'] {
     return 'low';
 }
 
-/** Altitude colour on the console palette (red → amber → muted green). */
-export function getAltitudeColor(altitudeKm: number): string {
-    if (altitudeKm < 200) return '#d9534f';
-    if (altitudeKm < 300) return '#e07b39';
-    if (altitudeKm < 400) return '#f2a33a';
-    return '#7fb069';
-}
-
 /** Language-neutral lifetime breakdown; UI formats it with i18n. */
 export function lifetimeParts(days: number): { unit: 'day' | 'month' | 'year' | 'beyond'; value: number } {
     if (!Number.isFinite(days)) return { unit: 'beyond', value: DECAY_HORIZON_DAYS / 365.25 };
@@ -217,14 +209,3 @@ export function lifetimeParts(days: number): { unit: 'day' | 'month' | 'year' | 
     return { unit: 'year', value: Math.round((days / 365.25) * 10) / 10 };
 }
 
-/** English fallback formatting (tests, exports). */
-export function formatLifetime(days: number): string {
-    if (days < 1) return '< 1 day';
-    const p = lifetimeParts(days);
-    switch (p.unit) {
-        case 'beyond': return `> ${p.value} years`;
-        case 'day': return `${p.value} days`;
-        case 'month': return `${p.value} months`;
-        case 'year': return `${p.value} years`;
-    }
-}

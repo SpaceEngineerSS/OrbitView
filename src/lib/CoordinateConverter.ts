@@ -25,8 +25,6 @@ const WGS84 = {
     omega: 7.292115e-5        // Earth rotation rate (rad/s)
 };
 
-export type CoordinateSystem = 'ECI' | 'ECF' | 'Geodetic';
-
 export interface ECICoordinates {
     x: number;  // km
     y: number;  // km
@@ -94,30 +92,6 @@ export function eciToEcf(eci: ECICoordinates, date: Date): ECFCoordinates {
 }
 
 /**
- * Convert ECF to ECI coordinates
- */
-export function ecfToEci(ecf: ECFCoordinates, date: Date): ECICoordinates {
-    const gmst = calculateGMST(date);
-    const cosGmst = Math.cos(gmst);
-    const sinGmst = Math.sin(gmst);
-
-    // Inverse rotation matrix R_z(-gmst)
-    const x = cosGmst * ecf.x - sinGmst * ecf.y;
-    const y = sinGmst * ecf.x + cosGmst * ecf.y;
-    const z = ecf.z;
-
-    const result: ECICoordinates = { x, y, z };
-
-    if (ecf.vx !== undefined && ecf.vy !== undefined && ecf.vz !== undefined) {
-        result.vx = cosGmst * ecf.vx - sinGmst * ecf.vy - WGS84.omega * y;
-        result.vy = sinGmst * ecf.vx + cosGmst * ecf.vy + WGS84.omega * x;
-        result.vz = ecf.vz;
-    }
-
-    return result;
-}
-
-/**
  * Convert ECF to Geodetic coordinates (WGS-84).
  * Iterates on latitude and computes height with a formula that stays
  * well-conditioned at the poles (no division by cos φ).
@@ -163,30 +137,6 @@ export function geodeticToEcf(geo: GeodeticCoordinates): ECFCoordinates {
 }
 
 /**
- * Format coordinates for display
- */
-export function formatCoordinates(
-    coords: ECICoordinates | ECFCoordinates | GeodeticCoordinates,
-    system: CoordinateSystem
-): string[] {
-    if (system === 'Geodetic') {
-        const geo = coords as GeodeticCoordinates;
-        return [
-            `Lat: ${geo.latitude.toFixed(4)}°`,
-            `Lon: ${geo.longitude.toFixed(4)}°`,
-            `Alt: ${geo.altitude.toFixed(2)} km`
-        ];
-    }
-
-    const xyz = coords as ECICoordinates;
-    return [
-        `X: ${xyz.x.toFixed(2)} km`,
-        `Y: ${xyz.y.toFixed(2)} km`,
-        `Z: ${xyz.z.toFixed(2)} km`
-    ];
-}
-
-/**
  * Calculate Sun's position in ECF coordinates for a given date.
  * Uses a simplified low-precision model suitable for visibility calculations.
  */
@@ -220,19 +170,6 @@ export function calculateSunPosition(date: Date): ECFCoordinates {
     return eciToEcf(eci, date);
 }
 
-/**
- * Get coordinate system description
- */
-export function getSystemDescription(system: CoordinateSystem): string {
-    switch (system) {
-        case 'ECI':
-            return 'Earth-Centered Inertial - Fixed in space, X points to vernal equinox';
-        case 'ECF':
-            return 'Earth-Centered Fixed - Rotates with Earth, X points to prime meridian';
-        case 'Geodetic':
-            return 'Latitude/Longitude/Altitude - Standard geographic coordinates';
-    }
-}
 /**
  * Determine if a satellite is currently sunlit or in Earth's shadow.
  * Uses a simplified cylindrical shadow model.

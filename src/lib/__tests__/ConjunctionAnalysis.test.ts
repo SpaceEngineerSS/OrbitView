@@ -1,4 +1,4 @@
-import { classifyObject, riskFromMissDistance, timeToTCA, getRiskColor } from '../ConjunctionAnalysis';
+import { classifyObject, riskFromMissDistance, timeToTCA } from '../ConjunctionAnalysis';
 
 describe('ConjunctionAnalysis helpers', () => {
     it('classifies catalog names', () => {
@@ -20,10 +20,5 @@ describe('ConjunctionAnalysis helpers', () => {
         const now = new Date('2026-01-01T00:00:00Z');
         expect(timeToTCA(new Date('2026-01-02T05:07:00Z'), now)).toEqual({ passed: false, days: 1, hours: 5, minutes: 7 });
         expect(timeToTCA(new Date('2025-12-31T23:00:00Z'), now).passed).toBe(true);
-    });
-
-    it('uses the console palette', () => {
-        expect(getRiskColor('critical')).toBe('#d9534f');
-        expect(getRiskColor('low')).toBe('#8d9097');
     });
 });

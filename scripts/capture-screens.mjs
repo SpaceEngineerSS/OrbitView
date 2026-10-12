@@ -111,21 +111,14 @@ try {
         const desk = { locale, theme: "light", mobile: false };
         const phone = { locale, theme: "light", mobile: true };
 
-        await scene(desk, "&sat=25544", async (p) => {
-            await shoot(p, `desktop-iss${s}`);
-            await scrollToCard(p, PASSES[locale]);
-            await shoot(p, `desktop-passes${s}`);
-        });
-        await scene({ ...desk, theme: "dark" }, "", (p) => shoot(p, `desktop-browse-dark${s}`));
+        await scene(desk, "&sat=25544", (p) => shoot(p, `desktop-iss${s}`));
         // Evening in Istanbul, so the Tonight card has a full night ahead
         await scene(desk, "", (p) => shoot(p, `desktop-tonight${s}`), EVENING);
-        await scene({ ...desk, view: "2d" }, "&sat=25544", (p) => shoot(p, `desktop-map${s}`));
         await scene(desk, "&sat=25544", async (p) => {
             await p.click('button[aria-label="View from the satellite"], button[aria-label="Uydudan bak"]');
             await sleep(5000);
             await shoot(p, `desktop-pov${s}`);
         }, POV_TIME);
-        await scene(phone, "", (p) => shoot(p, `mobile-browse${s}`));
         await scene(phone, "&sat=25544", async (p) => {
             await shoot(p, `mobile-iss${s}`);
             await flickSheetUp(p);
