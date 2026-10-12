@@ -28,19 +28,13 @@ function post(msg: FrameOutbound, transfer: Transferable[] = []) {
     self.postMessage(msg, transfer);
 }
 
-let debug = false;
-const dlog = (...a: unknown[]) => { if (debug) console.warn('[frame]', ...a); };
-
 function handle(msg: FrameInbound) {
-    if (msg.type === 'init' && msg.debug) debug = true;
-    dlog('handle', msg.type, 'gen' in msg ? msg.generation : '');
     switch (msg.type) {
         case 'init': {
             generation = msg.generation;
             spare = null;
             recs = msg.sats.map((s) => satellite.twoline2satrec(s.line1, s.line2));
             visible = new Int32Array(recs.length).map((_, i) => i);
-            dlog('init parsed', recs.length);
             post({ type: 'init_complete', generation, count: recs.length });
             return;
         }
@@ -73,7 +67,6 @@ self.onmessage = (e: MessageEvent<FrameInbound>) => {
     try {
         handle(e.data);
     } catch (err) {
-        dlog('caught', err instanceof Error ? err.stack : String(err));
         post({ type: 'error', message: err instanceof Error ? err.message : String(err) });
     }
 };
