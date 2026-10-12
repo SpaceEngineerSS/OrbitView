@@ -53,7 +53,7 @@ from scratch.
 - **Ephemeris export.** CSV or JSON from the simulation time, with the TLE and
   elements it came from.
 - **Tonight.** Open the app in the evening and the first card lists the
-  passes of the ~100 brightest satellites you can see with your own eyes
+  passes of the ~150 brightest satellites you can see with your own eyes
   tonight, in time order.
 - **Calendar and alerts.** Put any pass in your calendar (an `.ics` with a
   reminder), or let the browser notify you a few minutes before passes of

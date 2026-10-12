@@ -108,7 +108,7 @@ export default function DopplerCard({ obj, index }: { obj: SpaceObject; index: n
             icon={<WaveSine size={16} weight="bold" />}
             action={<InfoButton title={t("doppler.title")} closeLabel={t("common.close")}><p>{t("doppler.note")}</p></InfoButton>}
         >
-            <div className="flex gap-1.5 overflow-x-auto -mx-4 px-4 pb-1 [scrollbar-width:none]">
+            <div className="scroll-fade-x flex gap-1.5 overflow-x-auto -mx-4 pl-4 pb-1 [scrollbar-width:none]">
                 {PRESETS.map((p) => (
                     <button key={p.key} type="button"
                         onClick={() => setHz(p.hz)}

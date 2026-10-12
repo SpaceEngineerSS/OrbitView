@@ -13,7 +13,7 @@ GET /api/tle?group=<name>
 |---|---|
 | *(none)* or `default` | Space-Track GP (objects with an epoch in the last 30 days) if `SPACETRACK_USER`/`SPACETRACK_PASS` are set; otherwise, or if it fails, CelesTrak `active`; then a stale copy; then a tiny built-in set |
 | `stations`, `active`, `starlink`, `cubesat`, `oneweb`, `iridium` | the CelesTrak group of that name |
-| `visual` | CelesTrak's ~100 brightest objects (used by the Tonight card) |
+| `visual` | CelesTrak's ~150 brightest objects. The Tonight card normally takes them from the loaded catalog and asks for this group only if the catalog lacks most of them |
 | `all` | `stations` + `starlink` + `cubesat` merged |
 
 Anything else is `400` with the list of allowed names. The app itself asks for

@@ -22,7 +22,8 @@
     "clear": "Clear search",
     "featured": "Good places to start",
     "results": "{n} matches",
-    "none": "Nothing matches that. Try part of the name or the catalog number."
+    "none": "Nothing matches that. Try part of the name or the catalog number.",
+    "nothing": "No matches"
   },
   "catalog": {
     "title": "Catalog",
@@ -41,7 +42,8 @@
     "debris": "Debris & rocket bodies",
     "favorites": "Starred",
     "country": "Country / owner",
-    "allCountries": "All countries and agencies"
+    "allCountries": "All countries and agencies",
+    "searchCountry": "Search countries"
   },
   "regime": {
     "LEO": "Low Earth orbit",
@@ -397,7 +399,7 @@
   },
   "tonight": {
     "title": "Tonight",
-    "about": "Passes of the ~100 brightest satellites (CelesTrak's visual list) that you can see with the naked eye from your location during the coming night: the satellite is in sunlight while your sky is dark. Times use the elevation mask set in Settings.",
+    "about": "Passes of the ~150 brightest satellites (CelesTrak's visual list) that you can see with the naked eye from your location during the coming night: the satellite is in sunlight while your sky is dark. Times use the elevation mask set in Settings.",
     "computing": "Finding tonight's passes…",
     "noNight": "The Sun doesn't get far enough below your horizon in the next day and a half, so nothing will be visible.",
     "window": "Dark from {from} to {to}",

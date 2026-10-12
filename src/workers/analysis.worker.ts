@@ -9,28 +9,42 @@ import * as satellite from 'satellite.js';
 import { predictPassesForSatrec } from '../lib/PassPrediction';
 import { screenConjunctions, type ScreeningObject } from '../lib/ConjunctionAnalysis';
 import { nightWindow, tonightPasses } from '../lib/tonight';
-import type { AnalysisInbound, AnalysisOutbound } from '../types/satellite';
+import type { AnalysisInbound, AnalysisOutbound, TLEInitData } from '../types/satellite';
 
 declare const self: DedicatedWorkerGlobalScope;
 
-let records: ScreeningObject[] = [];
-let byId = new Map<string, ScreeningObject>();
+// Only the element sets are kept on init; satrecs are made when needed.
+// Converting all ~30k up front took seconds and delayed the first pass list.
+let tles = new Map<string, TLEInitData>();
+const recs = new Map<string, ScreeningObject>();
+let all: ScreeningObject[] | null = null;
 
 function post(msg: AnalysisOutbound) {
     self.postMessage(msg);
 }
 
 function find(id: string): ScreeningObject {
-    const r = byId.get(id);
-    if (!r) throw new Error(`Unknown object ${id}`);
+    let r = recs.get(id);
+    if (r) return r;
+    const t = tles.get(id);
+    if (!t) throw new Error(`Unknown object ${id}`);
+    r = { id: t.id, name: t.name, rec: satellite.twoline2satrec(t.line1, t.line2) };
+    recs.set(id, r);
     return r;
+}
+
+/** Every object, for close-approach screening; built on the first request. */
+function everything(): ScreeningObject[] {
+    if (!all) all = Array.from(tles.keys(), find);
+    return all;
 }
 
 function handle(msg: AnalysisInbound) {
     switch (msg.type) {
         case 'init':
-            records = msg.sats.map((s) => ({ id: s.id, name: s.name, rec: satellite.twoline2satrec(s.line1, s.line2) }));
-            byId = new Map(records.map((r) => [r.id, r]));
+            tles = new Map(msg.sats.map((s) => [s.id, s]));
+            recs.clear();
+            all = null;
             return;
 
         case 'passes': {
@@ -40,7 +54,7 @@ function handle(msg: AnalysisInbound) {
         }
 
         case 'conjunctions': {
-            const events = screenConjunctions(find(msg.id), records, {
+            const events = screenConjunctions(find(msg.id), everything(), {
                 start: new Date(msg.start), hours: msg.hours, thresholdKm: msg.thresholdKm,
             });
             post({ type: 'conjunctions_result', requestId: msg.requestId, events });

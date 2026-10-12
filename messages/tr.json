@@ -22,7 +22,8 @@
     "clear": "Aramayı temizle",
     "featured": "Başlamak için",
     "results": "{n} sonuç",
-    "none": "Eşleşen yok. Adın bir kısmını ya da katalog numarasını deneyin."
+    "none": "Eşleşen yok. Adın bir kısmını ya da katalog numarasını deneyin.",
+    "nothing": "Sonuç yok"
   },
   "catalog": {
     "title": "Katalog",
@@ -41,7 +42,8 @@
     "debris": "Enkaz ve roket gövdeleri",
     "favorites": "Yıldızlılar",
     "country": "Ülke / sahip",
-    "allCountries": "Tüm ülke ve kurumlar"
+    "allCountries": "Tüm ülke ve kurumlar",
+    "searchCountry": "Ülke ara"
   },
   "regime": {
     "LEO": "Alçak Dünya yörüngesi",
@@ -397,7 +399,7 @@
   },
   "tonight": {
     "title": "Bu gece",
-    "about": "En parlak ~100 uydunun (CelesTrak görsel listesi) önümüzdeki gece bulunduğunuz yerden çıplak gözle görülebilecek geçişleri: uydu güneş altında, sizin gökyüzünüz karanlık. Saatler Ayarlar'daki yükseliş maskesine göre.",
+    "about": "En parlak ~150 uydunun (CelesTrak görsel listesi) önümüzdeki gece bulunduğunuz yerden çıplak gözle görülebilecek geçişleri: uydu güneş altında, sizin gökyüzünüz karanlık. Saatler Ayarlar'daki yükseliş maskesine göre.",
     "computing": "Bu gecenin geçişleri bulunuyor…",
     "noNight": "Önümüzdeki bir buçuk günde Güneş ufkunuzun yeterince altına inmiyor; görünür geçiş olmayacak.",
     "window": "{from} – {to} arası karanlık",
