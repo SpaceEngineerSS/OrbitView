@@ -1,5 +1,5 @@
 /* OrbitView service worker */
-const VERSION = 'v4.0.0';
+const VERSION = 'v4.0.1';
 const CACHE_PREFIX = 'orbitview-';
 const STATIC_CACHE = `${CACHE_PREFIX}${VERSION}`; // precached shell assets + /_next/static
 const CESIUM_CACHE = `${CACHE_PREFIX}cesium-${VERSION}`; // /cesium/ runtime assets
@@ -126,6 +126,13 @@ self.addEventListener('fetch', (event) => {
 
     // Range requests produce 206 responses that can't be cached
     if (request.headers.has('range')) return;
+
+    // Worker scripts: the bundler starts every worker from one bootstrap
+    // file and tells them apart only by the #fragment, which the Cache API
+    // ignores. Served from cache, the second worker would get the first
+    // one's code (v4.0.0: the position worker ran the analysis code and
+    // no satellite was drawn on repeat visits). Let the browser load them.
+    if (request.destination === 'worker' || request.destination === 'sharedworker') return;
 
     if (request.mode === 'navigate') {
         event.respondWith(networkFirstNavigation(event));
