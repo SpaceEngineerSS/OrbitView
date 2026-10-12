@@ -10,7 +10,7 @@ import { usePerfStore, isLowPower } from "@/store/perfStore";
 import { useSatcatStore, matchesCountry } from "@/store/satcatStore";
 import { getEngine } from "@/lib/propagation";
 import { frameInterval } from "@/lib/frameMath";
-import { matchesFilter, regimeColor } from "@/lib/catalog";
+import { matchesFilter, regimeColor, isStation } from "@/lib/catalog";
 import type { SpaceObject } from "@/lib/space-objects";
 import { getSatrec, stateAt, lookAngles } from "@/lib/orbit";
 import { calculateSunPosition, isSatelliteSunlit } from "@/lib/CoordinateConverter";
@@ -27,12 +27,12 @@ const NO_SCALE = new Cesium.NearFarScalar(1e6, 1.0, 1e8, 1.0);
 /** One colour object per regime instead of one per point. */
 const colorCache = new Map<string, Cesium.Color>();
 function baseColor(o: SpaceObject): Cesium.Color {
-    const key = o.group === "station" ? "station" : o.category ?? "LEO";
+    const key = isStation(o) ? "station" : o.category ?? "LEO";
     let c = colorCache.get(key);
     if (!c) {
         c = Cesium.Color.fromCssColorString(regimeColor(o));
         // The dense LEO/debris cloud is slightly translucent so it doesn't drown the globe.
-        if (o.group !== "station" && (o.category === "LEO" || o.category === "DEBRIS")) c = c.withAlpha(0.7);
+        if (!isStation(o) && (o.category === "LEO" || o.category === "DEBRIS")) c = c.withAlpha(0.7);
         colorCache.set(key, c);
     }
     return c;
@@ -40,7 +40,7 @@ function baseColor(o: SpaceObject): Cesium.Color {
 
 /** Stations stand out a little; debris recedes. */
 function basePixelSize(o: SpaceObject): number {
-    if (o.group === "station") return 6;
+    if (isStation(o)) return 6;
     if (o.category === "DEBRIS") return 2;
     if (o.category === "LEO") return 2.5;
     return 3.5;
@@ -61,6 +61,7 @@ export default function SatellitePoints() {
     const favorites = useAppStore((s) => s.favorites);
     const country = useAppStore((s) => s.country);
     const owners = useSatcatStore((s) => s.owners);
+    const kinds = useSatcatStore((s) => s.kinds);
     const selectedId = useAppStore((s) => s.selectedId);
     const hoveredId = useAppStore((s) => s.hoveredId);
     const pov = useAppStore((s) => s.pov);
@@ -150,7 +151,7 @@ export default function SatellitePoints() {
         const list: number[] = [];
         for (let i = 0; i < ids.length; i++) {
             const o = byId.get(ids[i]);
-            const on = i === sel || (!!o && matchesFilter(o, filter, favs) && matchesCountry(ids[i], country, owners));
+            const on = i === sel || (!!o && matchesFilter(o, filter, favs, kinds) && matchesCountry(ids[i], country, owners));
             if (on) list.push(i);
             else if (i < points.length && points.get(i).show) points.get(i).show = false;
         }
@@ -158,7 +159,7 @@ export default function SatellitePoints() {
         getEngine().setVisible(visibleRef.current);
         dirtyRef.current = true;
         viewer.scene.requestRender();
-    }, [viewer, objects, filter, favorites, country, owners, selectedId]);
+    }, [viewer, objects, filter, favorites, country, owners, kinds, selectedId]);
 
     // Selection / hover styling
     useEffect(() => {

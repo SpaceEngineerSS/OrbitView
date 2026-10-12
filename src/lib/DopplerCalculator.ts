@@ -221,7 +221,6 @@ export function computeDoppler(
 export const COMMON_FREQUENCIES = {
     ISS_VOICE: 145_800_000,        // ISS Voice Downlink - 145.800 MHz
     ISS_PACKET: 145_825_000,       // ISS APRS - 145.825 MHz
-    NOAA_APT: 137_100_000,         // NOAA Weather Satellites - 137.1 MHz
     METEOR_LRPT: 137_900_000,      // Meteor-M2 - 137.9 MHz
     STARLINK_KU: 12_000_000_000,   // Starlink Ku-band - ~12 GHz
     GPS_L1: 1_575_420_000,         // GPS L1 - 1575.42 MHz

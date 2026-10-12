@@ -25,6 +25,11 @@ function rcsSize(rcs: number | null): "small" | "medium" | "large" | null {
 }
 
 /** Who owns it, when and where it was launched, what kind of object it is. */
+/** SATCAT operational status codes; "?" and blank say nothing. */
+const STATUS: Record<string, string> = {
+    "+": "active", "-": "inactive", P: "partial", B: "backup", S: "spare", X: "extended",
+};
+
 export default function IdentityCard({ obj, index }: { obj: SpaceObject; index: number }) {
     const { t, intl } = useLocale();
     const country = useCountryName();
@@ -35,7 +40,7 @@ export default function IdentityCard({ obj, index }: { obj: SpaceObject; index: 
         ? new Intl.DateTimeFormat(intl, { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" }).format(new Date(info.launchDate + "T00:00:00Z"))
         : null;
     const size = rcsSize(info?.rcs ?? null);
-    const operational = info?.status === "+" ? true : info?.status === "-" ? false : null;
+    const statusKey = info ? STATUS[info.status] : undefined;
 
     return (
         <Card index={index} title={t("identity.title")} icon={<IdentificationCard size={16} weight="bold" />}>
@@ -47,7 +52,7 @@ export default function IdentityCard({ obj, index }: { obj: SpaceObject; index: 
                     <div className="flex flex-wrap gap-1.5 mb-2">
                         <Badge tone="accent">{country(info.owner)}</Badge>
                         <Badge>{t(`identity.kind.${info.kind}`)}</Badge>
-                        {operational !== null && <Badge tone={operational ? "green" : "muted"}>{operational ? t("identity.active") : t("identity.inactive")}</Badge>}
+                        {statusKey && <Badge tone={statusKey === "inactive" ? "muted" : "green"}>{t(`identity.${statusKey}`)}</Badge>}
                     </div>
                     <Row label={t("identity.launched")} value={launch} />
                     <Row label={t("identity.site")} value={LAUNCH_SITES[info.launchSite] ?? info.launchSite} />

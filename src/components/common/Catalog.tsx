@@ -63,7 +63,8 @@ export function FilterChips({ className }: { className?: string }) {
     const favorites = useAppStore((s) => s.favorites);
     const filter = useAppStore((s) => s.filter);
     const setFilter = useAppStore((s) => s.setFilter);
-    const counts = useMemo(() => countByFilter(objects, new Set(favorites)), [objects, favorites]);
+    const kinds = useSatcatStore((s) => s.kinds);
+    const counts = useMemo(() => countByFilter(objects, new Set(favorites), kinds), [objects, favorites, kinds]);
 
     return (
         <div className={cx("flex gap-1.5 overflow-x-auto [scrollbar-width:none] -mx-1 px-1 py-1", className)}>

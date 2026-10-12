@@ -4,7 +4,7 @@ import { useState } from "react";
 import { MoonStars, CalendarPlus, CaretDown } from "@phosphor-icons/react";
 import { useTonight } from "@/store/tonightStore";
 import { useAppStore } from "@/store/appStore";
-import { useTimelineStore } from "@/store/timelineStore";
+import { useTimelineStore, useSimTimeBucket } from "@/store/timelineStore";
 import { useT } from "@/hooks/useLocale";
 import { useFormat } from "@/hooks/useFormat";
 import { useAddToCalendar } from "@/hooks/usePassActions";
@@ -20,7 +20,10 @@ const COMPASS = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"] as const;
 export default function TonightCard({ className, onPicked }: { className?: string; onPicked?: () => void }) {
     const t = useT();
     const f = useFormat();
-    const { observer, status, window, passes } = useTonight();
+    const { observer, status, window, passes: computed } = useTonight();
+    // The list is recomputed every 30 min of sim time; drop what has already set.
+    const simNow = useSimTimeBucket(60_000);
+    const passes = computed.filter((p) => p.losTime.getTime() > simNow);
     const byId = useAppStore((s) => s.byId);
     const select = useAppStore((s) => s.select);
     const seek = useTimelineStore((s) => s.seek);
@@ -47,7 +50,9 @@ export default function TonightCard({ className, onPicked }: { className?: strin
             {observer && status === "ready" && window && (
                 <>
                     <div className="text-[13px] text-ink-2 -mt-1 mb-2">
-                        {t("tonight.window", { from: f.time(window.start, false), to: f.time(window.end, false) })}
+                        {window.start <= simNow
+                            ? t("tonight.windowNow", { to: f.time(window.end, false) })
+                            : t("tonight.window", { from: f.time(window.start, false), to: f.time(window.end, false) })}
                     </div>
                     {passes.length === 0 && <Note>{t("tonight.none")}</Note>}
                     <ul>

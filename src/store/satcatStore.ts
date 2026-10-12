@@ -1,13 +1,14 @@
 import { create } from 'zustand';
-import { rowToInfo, type SatcatInfo, type SatcatPayload } from '@/lib/satcat';
+import { rowToInfo, type ObjectKindCode, type SatcatInfo, type SatcatPayload } from '@/lib/satcat';
 
 /**
  * Catalog metadata from /api/satcat, loaded once after the globe is up.
- * `owners` is a plain id → owner-code map so filtering stays cheap.
+ * `owners` and `kinds` are plain id → code maps so filtering stays cheap.
  */
 interface SatcatState {
     status: 'idle' | 'loading' | 'ready' | 'error';
     owners: Map<string, string> | null;
+    kinds: Map<string, ObjectKindCode> | null;
     info: Map<string, SatcatInfo>;
     load: () => Promise<void>;
 }
@@ -15,6 +16,7 @@ interface SatcatState {
 export const useSatcatStore = create<SatcatState>((set, get) => ({
     status: 'idle',
     owners: null,
+    kinds: null,
     info: new Map(),
     load: async () => {
         if (get().status === 'loading' || get().status === 'ready') return;
@@ -25,11 +27,13 @@ export const useSatcatStore = create<SatcatState>((set, get) => ({
             const payload = (await res.json()) as SatcatPayload;
             const info = new Map<string, SatcatInfo>();
             const owners = new Map<string, string>();
+            const kinds = new Map<string, ObjectKindCode>();
             for (const row of payload.rows) {
                 info.set(row[0], rowToInfo(row));
                 owners.set(row[0], row[1]);
+                kinds.set(row[0], row[4]);
             }
-            set({ status: 'ready', info, owners });
+            set({ status: 'ready', info, owners, kinds });
         } catch {
             set({ status: 'error' });
         }

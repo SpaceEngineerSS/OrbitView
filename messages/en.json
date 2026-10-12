@@ -40,30 +40,22 @@
     "heo": "Highly elliptical (HEO)",
     "debris": "Debris & rocket bodies",
     "favorites": "Starred",
-    "country": "Country",
-    "allCountries": "All countries"
+    "country": "Country / owner",
+    "allCountries": "All countries and agencies"
   },
   "regime": {
     "LEO": "Low Earth orbit",
     "MEO": "Medium Earth orbit",
     "GEO": "Geostationary",
     "HEO": "Highly elliptical",
-    "DEBRIS": "Debris / rocket body",
-    "MEO/HEO": "Medium / elliptical",
-    "SAT": "Unclassified"
-  },
-  "group": {
-    "station": "CelesTrak · stations",
-    "starlink": "CelesTrak · Starlink",
-    "cubesat": "CelesTrak · CubeSats",
-    "active": "CelesTrak · active"
+    "DEBRIS": "Debris / rocket body"
   },
   "data": {
     "loading": "Loading catalog…",
     "failed": "Couldn't load the catalog.",
     "objects": "{n} objects",
-    "ageMin": "TLEs {n} min old",
-    "ageH": "TLEs {n} h old",
+    "ageMin": "Updated {n} min ago",
+    "ageH": "Updated {n} h ago",
     "stale": "source unreachable, showing older data",
     "copyTle": "Copy TLE",
     "copyLink": "Copy link",
@@ -146,7 +138,7 @@
   },
   "telemetry": {
     "altitude": "Altitude",
-    "speed": "Speed",
+    "speed": "Orbital speed",
     "latitude": "Latitude",
     "longitude": "Longitude",
     "illumination": "Lighting",
@@ -177,19 +169,19 @@
     "maxEl": "Max",
     "duration": "Length",
     "path": "Path",
-    "visibleShort": "Visible",
-    "visibleHint": "Visible to the eye: the satellite is in sunlight while your sky is dark",
+    "visibleShort": "Sunlit",
+    "visibleHint": "Sunlit in a dark sky: the satellite is in sunlight while your sky is dark. Whether you can see it depends on its size and brightness.",
     "skyplot": "Sky plot",
     "skyplotLegend": "Centre is straight up, the rim is the horizon. Circle: rise, square: set.",
     "jumpTo": "Jump to this pass →",
     "note": "Times are from SGP4 with the current TLE, refined to half a second. Atmospheric refraction is ignored, so very low passes rise a little earlier in reality. * started before the window.",
     "count": "{n} passes",
-    "visibleCount": "{n} visible",
+    "visibleCount": "{n} sunlit",
     "stripLabel": "Passes over the next 48 hours",
-    "legendVisible": "Visible",
-    "legendRadio": "Radio only",
+    "legendVisible": "Sunlit",
+    "legendRadio": "Not visible",
     "legendNight": "Night",
-    "radioOnly": "Radio only"
+    "radioOnly": "Not visible"
   },
   "doppler": {
     "frequency": "Downlink frequency",
@@ -197,7 +189,6 @@
     "presets": {
       "issVoice": "ISS voice 145.800",
       "issAprs": "ISS APRS 145.825",
-      "noaaApt": "NOAA APT 137.100",
       "meteorLrpt": "Meteor LRPT 137.900",
       "gpsL1": "GPS L1",
       "kuBand": "Ku 12 GHz"
@@ -213,7 +204,8 @@
     "note": "Uses the satellite's velocity relative to the rotating Earth. First-order Doppler; relativistic terms are below 1 Hz at these frequencies.",
     "title": "Doppler",
     "atRise": "At rise",
-    "atSet": "At set"
+    "atSet": "At set",
+    "noFrequency": "No known frequency for this object. Enter one to see the shift."
   },
   "elements": {
     "title": "Mean elements",
@@ -258,10 +250,10 @@
     },
     "reentryAround": "Re-entry around {d}",
     "risk": {
-      "critical": "Decaying fast",
-      "high": "Low orbit",
-      "medium": "Some drag",
-      "low": "Stable"
+      "critical": "Down within weeks",
+      "high": "Down within months",
+      "medium": "Down within years",
+      "low": "Long-lived"
     },
     "manoeuvres": "This object raises its orbit with thrusters, so drag alone doesn't decide when it comes down. The estimate assumes it stops manoeuvring."
   },
@@ -390,7 +382,8 @@
     "inAndMax": "in {d} · up to {el}°",
     "position": "Over",
     "aboveHorizon": "Above your horizon",
-    "belowHorizon": "Below your horizon"
+    "belowHorizon": "Below your horizon",
+    "lowHorizon": "Low, under the {n}° mask"
   },
   "orbit": {
     "title": "Orbit",
@@ -410,7 +403,8 @@
     "window": "Dark from {from} to {to}",
     "none": "No visible passes of bright satellites tonight.",
     "more": "{n} more",
-    "less": "Show fewer"
+    "less": "Show fewer",
+    "windowNow": "Dark now, until {to}"
   },
   "calendar": {
     "add": "Add to calendar",
@@ -448,7 +442,11 @@
       "small": "Small (< 0.1 m²)",
       "medium": "Medium (0.1–1 m²)",
       "large": "Large (> 1 m²)"
-    }
+    },
+    "partial": "Partly operational",
+    "backup": "Backup",
+    "spare": "Spare",
+    "extended": "Extended mission"
   },
   "countries": {
     "TURK": "Türkiye",

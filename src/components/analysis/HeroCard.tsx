@@ -9,6 +9,8 @@ import { usePasses, useElements } from "@/hooks/useAnalysis";
 import { useAppStore } from "@/store/appStore";
 import { useTelemetryStore } from "@/store/telemetryStore";
 import { useTimelineStore } from "@/store/timelineStore";
+import { useSatcatStore } from "@/store/satcatStore";
+import { isDebris } from "@/lib/catalog";
 import { Card } from "@/components/ui/Card";
 import { Stat, Badge } from "@/components/ui/Stat";
 import { ElevationArc } from "./viz";
@@ -40,6 +42,8 @@ export default function HeroCard({ obj }: { obj: SpaceObject }) {
     const t = useT();
     const f = useFormat();
     const observer = useAppStore((s) => s.observer);
+    const minEl = useAppStore((s) => s.settings.minElevation);
+    const kinds = useSatcatStore((s) => s.kinds);
     const passes = usePasses(obj, observer);
     const tel = useTelemetryStore((s) => (s.telemetry?.id === obj.id ? s.telemetry : null));
     const el = useElements(obj);
@@ -104,10 +108,13 @@ export default function HeroCard({ obj }: { obj: SpaceObject }) {
                 {tel && (tel.sunlit
                     ? <Badge tone="orange" icon={<Sun size={14} weight="fill" />}>{t("telemetry.sunlit")}</Badge>
                     : <Badge tone="indigo" icon={<Moon size={14} weight="fill" />}>{t("telemetry.eclipsed")}</Badge>)}
-                {tel?.look && (tel.look.elevationDeg > 0
+                {/* Same elevation mask as the pass list, so the two never disagree. */}
+                {tel?.look && (tel.look.elevationDeg >= minEl
                     ? <Badge tone="green">{t("hero.aboveHorizon")}</Badge>
-                    : <Badge>{t("hero.belowHorizon")}</Badge>)}
-                {obj.category && <Badge>{t(`regime.${obj.category}`)}</Badge>}
+                    : tel.look.elevationDeg > 0
+                        ? <Badge>{t("hero.lowHorizon", { n: minEl })}</Badge>
+                        : <Badge>{t("hero.belowHorizon")}</Badge>)}
+                {obj.regime && <Badge>{t(`regime.${isDebris(obj, kinds) ? "DEBRIS" : obj.regime}`)}</Badge>}
             </div>
         </Card>
     );

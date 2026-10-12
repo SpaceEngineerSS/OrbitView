@@ -4,7 +4,8 @@ import { forwardRef, useDeferredValue, useId, useMemo, useState, type KeyboardEv
 import { AnimatePresence, motion } from "motion/react";
 import { MagnifyingGlass, X } from "@phosphor-icons/react";
 import { useAppStore } from "@/store/appStore";
-import { buildSearchIndex, searchCatalog, featured, regimeColor, type SearchHit } from "@/lib/catalog";
+import { buildSearchIndex, searchCatalog, featured, regimeColor, isDebris, type SearchHit } from "@/lib/catalog";
+import { useSatcatStore } from "@/store/satcatStore";
 import type { SpaceObject } from "@/lib/space-objects";
 import { useT } from "@/hooks/useLocale";
 import { cx } from "@/components/ui/cx";
@@ -43,6 +44,7 @@ export const SearchBox = forwardRef<HTMLInputElement, SearchBoxProps>(function S
     const t = useT();
     const objects = useAppStore((s) => s.objects);
     const byId = useAppStore((s) => s.byId);
+    const kinds = useSatcatStore((s) => s.kinds);
     const select = useAppStore((s) => s.select);
     const [query, setQuery] = useState("");
     const [focused, setFocused] = useState(false);
@@ -94,7 +96,7 @@ export const SearchBox = forwardRef<HTMLInputElement, SearchBoxProps>(function S
                     </span>
                     <span className="flex-1 min-w-0">
                         <span className="block truncate text-[15px] font-medium"><Highlight name={r.object.name} query={deferred} at={r.at} /></span>
-                        <span className="block text-[12px] text-ink-2">NORAD {r.object.id}{r.object.category ? ` · ${t(`regime.${r.object.category}`)}` : ""}</span>
+                        <span className="block text-[12px] text-ink-2">NORAD {r.object.id}{r.object.regime ? ` · ${t(`regime.${isDebris(r.object, kinds) ? "DEBRIS" : r.object.regime}`)}` : ""}</span>
                     </span>
                 </li>
             ))}

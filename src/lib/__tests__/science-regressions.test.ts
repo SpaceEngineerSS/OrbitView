@@ -7,7 +7,8 @@ import { calculateGMST, ecfToGeodetic, geodeticToEcf } from '../CoordinateConver
 import { computeDoppler } from '../DopplerCalculator';
 import { getSatrec, stateAt, lookAngles, elementsFromTLE } from '../orbit';
 import { predictPassesForSatrec } from '../PassPrediction';
-import { parseBStar, predictOrbitalDecay } from '../OrbitalDecay';
+import { parseBStar, predictOrbitalDecay, riskFromLifetime } from '../OrbitalDecay';
+import { calculateSunPosition, isSatelliteSunlit } from '../CoordinateConverter';
 import { screenConjunctions, shellsOverlap } from '../ConjunctionAnalysis';
 
 const ISS1 = '1 25544U 98067A   23351.58334491  .00016717  00000-0  30142-3 0  9999';
@@ -117,6 +118,35 @@ describe('Pass prediction', () => {
     });
 });
 
+describe('Pass visibility covers the whole pass, not only culmination', () => {
+    const rec = getSatrec(ISS1, ISS2);
+    const sunlitInDarkSky = (t: number) => {
+        const d = new Date(t);
+        const s = stateAt(rec, d)!;
+        const sun = calculateSunPosition(d);
+        const sunEl = lookAngles({ positionEcf: sun, velocityEcf: { x: 0, y: 0, z: 0 } }, ISTANBUL).elevationDeg;
+        return isSatelliteSunlit(s.positionEcf, sun) && sunEl < -6;
+    };
+
+    it('agrees with a 5-second scan of every pass over three days', () => {
+        const passes = predictPassesForSatrec(rec, ISTANBUL, EPOCH, new Date(EPOCH.getTime() + 3 * 86400_000), 10);
+        let partial = 0;
+        for (const p of passes) {
+            const a = p.aosTime.getTime(), b = p.losTime.getTime();
+            const flags: boolean[] = [];
+            for (let t = a; t <= b; t += 5000) flags.push(sunlitInDarkSky(t));
+            const any = flags.some(Boolean);
+            // A sunlit stretch shorter than the 30 s step may be missed; nothing else.
+            const sunlitSeconds = flags.filter(Boolean).length * 5;
+            if (sunlitSeconds > 30) expect(p.visible).toBe(true);
+            if (p.visible) expect(any).toBe(true);
+            if (any && !sunlitInDarkSky(p.maxElevationTime.getTime())) partial++;
+        }
+        // The case v4.0 missed: sunlit part of the pass, but not at the peak.
+        expect(partial).toBeGreaterThan(0);
+    });
+});
+
 describe('Orbital elements come from the mean motion, not the instantaneous radius', () => {
     it('ISS period and inclination', () => {
         const el = elementsFromTLE(ISS1, ISS2);
@@ -150,6 +180,15 @@ describe('Orbital lifetime', () => {
         expect(low.estimatedLifetimeDays).toBeLessThan(high.estimatedLifetimeDays);
         expect(predictOrbitalDecay(6378 + 400, 0, 0).dragUnknown).toBe(true);
         expect(predictOrbitalDecay(6378 + 1200, 0, 1e-5).beyondHorizon).toBe(true);
+    });
+});
+
+describe('Lifetime badge follows the lifetime, not the perigee height', () => {
+    it('maps weeks, months, years and long-lived', () => {
+        expect(riskFromLifetime(10)).toBe('critical');
+        expect(riskFromLifetime(200)).toBe('high');
+        expect(riskFromLifetime(5 * 365)).toBe('medium');
+        expect(riskFromLifetime(Infinity)).toBe('low');
     });
 });
 

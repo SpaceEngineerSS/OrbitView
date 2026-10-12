@@ -13,6 +13,7 @@ import { Card, Row, Note } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Stat";
 import { InfoButton } from "@/components/ui/Dialog";
 import { RangeBar } from "./viz";
+import { isStation } from "@/lib/catalog";
 
 function AltitudeChart({ history, label }: { history: { days: number; altitude: number }[]; label: string }) {
     if (history.length < 2) return null;
@@ -52,7 +53,7 @@ export default function LifetimeCard({ obj, index }: { obj: SpaceObject; index: 
         return t(`lifetime.unit.${p.unit}`, { n: f.num(p.value, p.unit === "year" ? 1 : 0) ?? "" });
     };
     // Stations and constellations re-boost; drag alone says little about them.
-    const manoeuvres = obj.group === "station" || /^STARLINK|^ONEWEB|^ISS|^CSS|TIANHE/i.test(obj.name);
+    const manoeuvres = isStation(obj) || /^STARLINK|^ONEWEB/i.test(obj.name);
     const tone = decay.riskLevel === "critical" ? "red" : decay.riskLevel === "high" ? "orange" : decay.riskLevel === "medium" ? "orange" : "green";
 
     return (

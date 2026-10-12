@@ -40,30 +40,22 @@
     "heo": "Yüksek eliptik (HEO)",
     "debris": "Enkaz ve roket gövdeleri",
     "favorites": "Yıldızlılar",
-    "country": "Ülke",
-    "allCountries": "Tüm ülkeler"
+    "country": "Ülke / sahip",
+    "allCountries": "Tüm ülke ve kurumlar"
   },
   "regime": {
     "LEO": "Alçak Dünya yörüngesi",
     "MEO": "Orta Dünya yörüngesi",
     "GEO": "Yer eşzamanlı",
     "HEO": "Yüksek eliptik",
-    "DEBRIS": "Enkaz / roket gövdesi",
-    "MEO/HEO": "Orta / eliptik",
-    "SAT": "Sınıflandırılmamış"
-  },
-  "group": {
-    "station": "CelesTrak · istasyonlar",
-    "starlink": "CelesTrak · Starlink",
-    "cubesat": "CelesTrak · CubeSat",
-    "active": "CelesTrak · aktif"
+    "DEBRIS": "Enkaz / roket gövdesi"
   },
   "data": {
     "loading": "Katalog yükleniyor…",
     "failed": "Katalog yüklenemedi.",
     "objects": "{n} nesne",
-    "ageMin": "TLE'ler {n} dk önce",
-    "ageH": "TLE'ler {n} sa önce",
+    "ageMin": "{n} dk önce güncellendi",
+    "ageH": "{n} sa önce güncellendi",
     "stale": "kaynağa ulaşılamadı, eski veri gösteriliyor",
     "copyTle": "TLE'yi kopyala",
     "copyLink": "Bağlantıyı kopyala",
@@ -146,7 +138,7 @@
   },
   "telemetry": {
     "altitude": "İrtifa",
-    "speed": "Hız",
+    "speed": "Yörünge hızı",
     "latitude": "Enlem",
     "longitude": "Boylam",
     "illumination": "Aydınlanma",
@@ -177,19 +169,19 @@
     "maxEl": "Maks",
     "duration": "Süre",
     "path": "Yön",
-    "visibleShort": "Görünür",
-    "visibleHint": "Çıplak gözle görülebilir: uydu güneş altında, sizin gökyüzünüz karanlık",
+    "visibleShort": "Güneşli",
+    "visibleHint": "Karanlık gökte güneşli: uydu güneş altında, sizin gökyüzünüz karanlık. Görüp göremeyeceğiniz boyutuna ve parlaklığına bağlı.",
     "skyplot": "Gökyüzü haritası",
     "skyplotLegend": "Merkez tam tepe, kenar ufuk. Daire: doğuş, kare: batış.",
     "jumpTo": "Bu geçişe git →",
     "note": "Saatler güncel TLE ile SGP4'ten hesaplanır ve yarım saniyeye kadar inceltilir. Atmosferik kırılma hesaba katılmaz; çok alçak geçişler gerçekte biraz daha erken doğar. * pencereden önce başlamış.",
     "count": "{n} geçiş",
-    "visibleCount": "{n} görünür",
+    "visibleCount": "{n} güneşli",
     "stripLabel": "Önümüzdeki 48 saatteki geçişler",
-    "legendVisible": "Görünür",
-    "legendRadio": "Yalnız radyo",
+    "legendVisible": "Güneşli",
+    "legendRadio": "Görünmez",
     "legendNight": "Gece",
-    "radioOnly": "Yalnız radyo"
+    "radioOnly": "Görünmez"
   },
   "doppler": {
     "frequency": "İniş frekansı",
@@ -197,7 +189,6 @@
     "presets": {
       "issVoice": "ISS ses 145.800",
       "issAprs": "ISS APRS 145.825",
-      "noaaApt": "NOAA APT 137.100",
       "meteorLrpt": "Meteor LRPT 137.900",
       "gpsL1": "GPS L1",
       "kuBand": "Ku 12 GHz"
@@ -213,7 +204,8 @@
     "note": "Uydunun dönen Dünya'ya göre hızı kullanılır. Birinci derece Doppler; bu frekanslarda göreli etkiler 1 Hz'in altında kalır.",
     "title": "Doppler",
     "atRise": "Doğuşta",
-    "atSet": "Batışta"
+    "atSet": "Batışta",
+    "noFrequency": "Bu nesnenin bilinen bir frekansı yok. Kaymayı görmek için bir frekans girin."
   },
   "elements": {
     "title": "Ortalama elemanlar",
@@ -258,10 +250,10 @@
     },
     "reentryAround": "Atmosfere giriş ≈ {d}",
     "risk": {
-      "critical": "Hızla alçalıyor",
-      "high": "Alçak yörünge",
-      "medium": "Biraz sürüklenme",
-      "low": "Kararlı"
+      "critical": "Haftalar içinde düşer",
+      "high": "Aylar içinde düşer",
+      "medium": "Yıllar içinde düşer",
+      "low": "Uzun ömürlü"
     },
     "manoeuvres": "Bu nesne iticilerle yörüngesini yükseltiyor; ne zaman düşeceğini yalnız sürüklenme belirlemez. Tahmin, manevraları bıraktığını varsayar."
   },
@@ -390,7 +382,8 @@
     "inAndMax": "{d} sonra · en fazla {el}°",
     "position": "Konum",
     "aboveHorizon": "Ufkunuzun üstünde",
-    "belowHorizon": "Ufkunuzun altında"
+    "belowHorizon": "Ufkunuzun altında",
+    "lowHorizon": "Alçakta, {n}° sınırının altında"
   },
   "orbit": {
     "title": "Yörünge",
@@ -410,7 +403,8 @@
     "window": "{from} – {to} arası karanlık",
     "none": "Bu gece parlak uyduların görünür geçişi yok.",
     "more": "{n} tane daha",
-    "less": "Daha az göster"
+    "less": "Daha az göster",
+    "windowNow": "Şu an karanlık, {to} saatine kadar"
   },
   "calendar": {
     "add": "Takvime ekle",
@@ -448,7 +442,11 @@
       "small": "Küçük (< 0,1 m²)",
       "medium": "Orta (0,1–1 m²)",
       "large": "Büyük (> 1 m²)"
-    }
+    },
+    "partial": "Kısmen çalışıyor",
+    "backup": "Yedek",
+    "spare": "Yedek parça",
+    "extended": "Uzatılmış görev"
   },
   "countries": {
     "TURK": "Türkiye",

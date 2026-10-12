@@ -156,11 +156,6 @@ export function predictOrbitalDecay(
     const B = ballisticCoefficientFromBStar(bstar);
     const dragUnknown = !(Math.abs(bstar) >= 1e-7);
 
-    let riskLevel: DecayPrediction['riskLevel'] = 'low';
-    if (perigee < 200) riskLevel = 'critical';
-    else if (perigee < 300) riskLevel = 'high';
-    else if (perigee < 400) riskLevel = 'medium';
-
     if (dragUnknown) {
         return {
             perigeeAltitudeKm: perigee,
@@ -173,7 +168,7 @@ export function predictOrbitalDecay(
             altitudeHistory: [],
             beyondHorizon: true,
             dragUnknown: true,
-            riskLevel,
+            riskLevel: 'low',
         };
     }
 
@@ -194,8 +189,16 @@ export function predictOrbitalDecay(
         altitudeHistory: nominal.history,
         beyondHorizon: !Number.isFinite(nominal.days),
         dragUnknown: false,
-        riskLevel,
+        riskLevel: riskFromLifetime(nominal.days),
     };
+}
+
+/** How soon it comes down: weeks, months, years, or not within the horizon. */
+export function riskFromLifetime(days: number): DecayPrediction['riskLevel'] {
+    if (days < 30) return 'critical';
+    if (days < 365) return 'high';
+    if (days < 3650) return 'medium';
+    return 'low';
 }
 
 /** Altitude colour on the console palette (red → amber → muted green). */

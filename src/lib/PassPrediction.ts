@@ -38,7 +38,7 @@ export interface SatellitePass {
     azimuthAOS: number;     // deg
     azimuthLOS: number;     // deg
     azimuthMax: number;     // deg
-    visible: boolean;       // sunlit satellite + dark sky at culmination
+    visible: boolean;       // sunlit satellite + dark sky at some point of the pass
     startsBeforeWindow: boolean;
     endsAfterWindow: boolean;
 }
@@ -91,6 +91,17 @@ function isVisibleAt(rec: SatRec, obs: ObserverLocation, t: number): boolean {
     return sunlit && sunLook.elevationDeg < -6;
 }
 
+/**
+ * Sunlit in a dark sky at any point of the pass, not only at culmination:
+ * an evening pass often goes into the Earth's shadow halfway, and one that
+ * starts in shadow can come out of it. 30 s steps plus both ends and the peak.
+ */
+function isVisibleDuring(rec: SatRec, obs: ObserverLocation, aos: number, los: number, tMax: number): boolean {
+    if (isVisibleAt(rec, obs, tMax)) return true;
+    for (let t = aos; t < los; t += 30_000) if (isVisibleAt(rec, obs, t)) return true;
+    return isVisibleAt(rec, obs, los);
+}
+
 const MAX_OVERRUN_MS = 6 * 3600_000;
 
 export function predictPassesForSatrec(
@@ -126,7 +137,7 @@ export function predictPassesForSatrec(
             azimuthAOS: atAos?.az ?? 0,
             azimuthLOS: atLos?.az ?? 0,
             azimuthMax: atMax?.az ?? 0,
-            visible: isVisibleAt(rec, observer, tMax),
+            visible: isVisibleDuring(rec, observer, a, los, tMax),
             startsBeforeWindow: a === start && startsBefore && passes.length === 0,
             endsAfterWindow: endsAfter,
         });
