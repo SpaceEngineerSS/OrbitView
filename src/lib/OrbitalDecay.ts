@@ -1,152 +1,150 @@
 /**
- * Orbital Decay Calculator
- * 
- * Estimates satellite orbital lifetime based on atmospheric drag.
- * Uses B* (B-Star) drag coefficient from TLE data.
- * 
- * @module OrbitalDecay
- * @see {@link https://celestrak.org/columns/v04n03/} CelesTrak: Orbital Decay
- * 
- * Mathematical Foundation:
- * ========================
- * King-Hele Decay Theory:
- *   da/dt = -(1/2) × ρ × v × (C_D × A/m) × a
- * 
- * Simplified using TLE B* term:
- *   da/dt ≈ -B* × ρ × a × v
- * 
- * Where:
- * - a = Semi-major axis (km)
- * - ρ = Atmospheric density (kg/m³)
- * - v = Orbital velocity (km/s)
- * - C_D = Drag coefficient (~2.2 for satellites)
- * - A/m = Area-to-mass ratio
- * - B* = Modified ballistic coefficient from TLE
- * 
- * Atmospheric Density Model:
- *   ρ(h) = ρ₀ × exp(-(h - h₀) / H)
- * 
- * Where H is the scale height varying with altitude.
- * 
- * References:
- * -----------
- * [1] King-Hele, D.G. (1987). "Satellite Orbits in an Atmosphere: Theory and Applications"
- *     Blackie & Son. ISBN: 978-0216922525
- * 
- * [2] Vallado, D.A. (2013). "Fundamentals of Astrodynamics and Applications"
- *     4th Edition, Chapter 8: Orbit Perturbations. ISBN: 978-1881883180
- * 
- * [3] U.S. Standard Atmosphere (1976). NOAA/NASA/USAF.
- *     {@link https://ntrs.nasa.gov/citations/19770009539}
- * 
- * [4] Hoots, F.R. & Roehrich, R.L. (1980). "Spacetrack Report No. 3"
- *     {@link https://celestrak.org/NORAD/documentation/spacetrk.pdf}
- * 
- * Accuracy Notes:
- * - Atmospheric density varies with solar activity (F10.7, Kp index)
- * - This model uses average conditions; actual decay may vary ±50%
- * - B* encapsulates drag characteristics assuming Cd = 2.2
+ * Orbital lifetime estimate from the TLE drag term.
+ *
+ * This is a rough estimate, not a reentry prediction. It answers "weeks,
+ * months or decades?" and shows how wide the uncertainty is.
+ *
+ * Model
+ * -----
+ * Ballistic coefficient from B* (Hoots & Roehrich 1980, Vallado 2013 §9.7):
+ *     B* = ρ₀·B / 2,   ρ₀ = 0.15696615 kg·m⁻²·ER   →   B = C_D·A/m = 2·B* ÷ ρ₀  [m²/kg]
+ *
+ * Near-circular decay under drag (King-Hele 1987):
+ *     da/dt = −B · ρ(h) · √(μ·a)
+ *
+ * For eccentric orbits drag acts mostly near perigee, so the decay is driven
+ * by the perigee altitude. We integrate on h = perigee altitude, which is
+ * pessimistic for e > 0.05 (the apogee drops first in reality).
+ *
+ * Density: exponential atmosphere, Vallado (2013) Table 8-4 (CIRA-72 based),
+ * all 28 bands. Solar activity changes thermospheric density by roughly
+ * ×0.5–×2 over a cycle, so the result is reported as a range
+ * [ρ×2 → short, ρ×0.5 → long] around the nominal value.
+ *
+ * B* from TLE fitting is noisy and sometimes negative; |B*| is used and a
+ * B* below 1e-7 is treated as "drag not measurable".
  */
 
-// Physical constants
-const EARTH_RADIUS_KM = 6371;
-const EARTH_MU = 398600.4418; // km³/s² - Earth's gravitational parameter
-const SECONDS_PER_DAY = 86400;
+export const MU_M3_S2 = 3.986004418e14;
+const EARTH_RADIUS_KM = 6378.137;
+const RHO0_BSTAR = 0.15696615;          // kg·m⁻²·ER (SGP4 reference)
+const REENTRY_ALT_KM = 120;
+const SECONDS_PER_DAY = 86_400;
 
-/**
- * Simplified atmospheric density model (exponential)
- * Based on US Standard Atmosphere 1976
- */
-const DENSITY_LAYERS = [
-    { h0: 0, rho0: 1.225, H: 8.5 },         // Sea level
-    { h0: 100, rho0: 5.297e-7, H: 5.9 },    // 100 km
-    { h0: 150, rho0: 2.070e-9, H: 26.8 },   // 150 km
-    { h0: 200, rho0: 2.789e-10, H: 37.2 },  // 200 km
-    { h0: 250, rho0: 7.248e-11, H: 45.5 },  // 250 km
-    { h0: 300, rho0: 2.418e-11, H: 53.6 },  // 300 km
-    { h0: 350, rho0: 9.518e-12, H: 53.3 },  // 350 km
-    { h0: 400, rho0: 3.725e-12, H: 58.5 },  // 400 km
-    { h0: 450, rho0: 1.585e-12, H: 60.8 },  // 450 km
-    { h0: 500, rho0: 6.967e-13, H: 63.8 },  // 500 km
-    { h0: 600, rho0: 1.454e-13, H: 71.8 },  // 600 km
-    { h0: 700, rho0: 3.614e-14, H: 88.7 },  // 700 km
-    { h0: 800, rho0: 1.170e-14, H: 124.6 }, // 800 km
-    { h0: 900, rho0: 5.245e-15, H: 181.1 }, // 900 km
-    { h0: 1000, rho0: 3.019e-15, H: 268.0 },// 1000 km
+/** Simulation horizon. Anything longer is reported as "> 25 years". */
+export const DECAY_HORIZON_DAYS = 25 * 365.25;
+
+/** Vallado (2013) Table 8-4: base altitude (km), base density (kg/m³), scale height (km). */
+const DENSITY_TABLE: ReadonlyArray<readonly [number, number, number]> = [
+    [0, 1.225, 7.249],
+    [25, 3.899e-2, 6.349],
+    [30, 1.774e-2, 6.682],
+    [40, 3.972e-3, 7.554],
+    [50, 1.057e-3, 8.382],
+    [60, 3.206e-4, 7.714],
+    [70, 8.770e-5, 6.549],
+    [80, 1.905e-5, 5.799],
+    [90, 3.396e-6, 5.382],
+    [100, 5.297e-7, 5.877],
+    [110, 9.661e-8, 7.263],
+    [120, 2.438e-8, 9.473],
+    [130, 8.484e-9, 12.636],
+    [140, 3.845e-9, 16.149],
+    [150, 2.070e-9, 22.523],
+    [180, 5.464e-10, 29.740],
+    [200, 2.789e-10, 37.105],
+    [250, 7.248e-11, 45.546],
+    [300, 2.418e-11, 53.628],
+    [350, 9.518e-12, 53.298],
+    [400, 3.725e-12, 58.515],
+    [450, 1.585e-12, 60.828],
+    [500, 6.967e-13, 63.822],
+    [600, 1.454e-13, 71.835],
+    [700, 3.614e-14, 88.667],
+    [800, 1.170e-14, 124.64],
+    [900, 5.245e-15, 181.05],
+    [1000, 3.019e-15, 268.00],
 ];
 
-/**
- * Get atmospheric density at given altitude
- * @param altitudeKm - Altitude in kilometers
- * @returns Density in kg/m³
- */
+/** Atmospheric density, kg/m³. */
 export function getAtmosphericDensity(altitudeKm: number): number {
-    if (altitudeKm < 0) return 1.225;
-    if (altitudeKm > 1500) return 0; // Negligible drag above 1500 km
-
-    // Find appropriate layer
-    let layer = DENSITY_LAYERS[0];
-    for (let i = DENSITY_LAYERS.length - 1; i >= 0; i--) {
-        if (altitudeKm >= DENSITY_LAYERS[i].h0) {
-            layer = DENSITY_LAYERS[i];
-            break;
-        }
+    if (!Number.isFinite(altitudeKm)) return 0;
+    if (altitudeKm < 0) return DENSITY_TABLE[0][1];
+    let row = DENSITY_TABLE[0];
+    for (let i = DENSITY_TABLE.length - 1; i >= 0; i--) {
+        if (altitudeKm >= DENSITY_TABLE[i][0]) { row = DENSITY_TABLE[i]; break; }
     }
-
-    // Exponential decay: ρ = ρ₀ × exp(-(h - h₀) / H)
-    const deltaH = altitudeKm - layer.h0;
-    return layer.rho0 * Math.exp(-deltaH / layer.H);
+    const [h0, rho0, H] = row;
+    return rho0 * Math.exp(-(altitudeKm - h0) / H);
 }
 
 /**
- * Parse B* (BSTAR) drag coefficient from TLE Line 1
- * B* is in columns 54-61 of TLE Line 1
- * Format: [sign][5 digits][sign][exponent]
- * Example: " 50906-4" means 0.50906 × 10⁻⁴
+ * Parse B* from TLE line 1, columns 54–61 (assumed-decimal mantissa + exponent).
+ * " 34123-4" → 0.34123e-4. Returns 0 for a blank or malformed field.
  */
 export function parseBStar(tleLine1: string): number {
-    try {
-        const bstarStr = tleLine1.substring(53, 61).trim();
-        if (!bstarStr) return 0;
+    const field = tleLine1.substring(53, 61);
+    const m = /^\s*([+-]?)(\d{1,5})\s*([+-])\s*(\d)\s*$/.exec(field);
+    if (!m) return 0;
+    const mantissa = parseFloat(`0.${m[2].padStart(5, '0')}`) * (m[1] === '-' ? -1 : 1);
+    const exponent = parseInt(m[4], 10) * (m[3] === '-' ? -1 : 1);
+    return mantissa * Math.pow(10, exponent);
+}
 
-        // Parse mantissa and exponent
-        // Format: " 12345-6" or "-12345-6"
-        const mantissaStr = bstarStr.substring(0, 6).trim();
-        const exponentStr = bstarStr.substring(6).trim();
-
-        let mantissa = parseFloat(`0.${mantissaStr.replace(/[^0-9]/g, '')}`);
-        if (mantissaStr.startsWith('-')) mantissa = -mantissa;
-
-        const exponent = parseInt(exponentStr, 10);
-
-        return mantissa * Math.pow(10, exponent);
-    } catch {
-        return 0;
-    }
+/** Ballistic coefficient C_D·A/m in m²/kg from B* (1/ER). */
+export function ballisticCoefficientFromBStar(bstar: number): number {
+    return (2 * Math.abs(bstar)) / RHO0_BSTAR;
 }
 
 export interface DecayPrediction {
-    currentAltitudeKm: number;
-    currentDensity: number;
-    decayRateKmPerDay: number;
+    perigeeAltitudeKm: number;
+    currentDensity: number;           // kg/m³ at perigee
+    ballisticCoefficient: number;     // m²/kg
+    decayRateKmPerDay: number;        // nominal, at the current altitude
+    /** Nominal lifetime in days; Infinity if beyond the horizon */
     estimatedLifetimeDays: number;
-    estimatedReentryDate: Date;
+    /** Range from solar activity: ρ×2 (short) … ρ×0.5 (long). Infinity = beyond horizon */
+    lifetimeRangeDays: { min: number; max: number };
+    estimatedReentryDate: Date | null;
     altitudeHistory: { days: number; altitude: number }[];
+    beyondHorizon: boolean;
+    /** B* too small or zero: drag is not measurable from this TLE */
+    dragUnknown: boolean;
     riskLevel: 'low' | 'medium' | 'high' | 'critical';
 }
 
+function decayRate(hKm: number, B: number, densityScale: number): number {
+    const a = (EARTH_RADIUS_KM + hKm) * 1000;
+    const rho = getAtmosphericDensity(hKm) * densityScale;
+    return B * rho * Math.sqrt(MU_M3_S2 * a) * SECONDS_PER_DAY / 1000; // km/day
+}
+
+/** Integrate h(t) down to the reentry altitude with an adaptive step. */
+function integrate(h0: number, B: number, densityScale: number, record: boolean) {
+    const history: { days: number; altitude: number }[] = [];
+    let h = h0;
+    let t = 0;
+    let nextRecord = 0;
+    while (h > REENTRY_ALT_KM && t < DECAY_HORIZON_DAYS) {
+        if (record && t >= nextRecord) {
+            history.push({ days: t, altitude: h });
+            nextRecord = t + Math.max(1, t / 50);
+        }
+        const rate = decayRate(h, B, densityScale);
+        if (rate <= 0) { t = DECAY_HORIZON_DAYS; break; }
+        // Keep each step to ≤0.5 km of altitude loss, ≤ 30 days.
+        const dt = Math.min(30, Math.max(1 / 1440, 0.5 / rate));
+        h -= rate * dt;
+        t += dt;
+    }
+    if (record) history.push({ days: Math.min(t, DECAY_HORIZON_DAYS), altitude: Math.max(h, REENTRY_ALT_KM) });
+    return { days: h <= REENTRY_ALT_KM ? t : Infinity, history };
+}
+
 /**
- * Calculate orbital decay prediction
- * 
- * Uses simplified King-Hele decay theory:
- * da/dt = -(1/2) × n × a × B* × ρ/ρ₀
- * 
- * Where:
- * - n = mean motion (rad/s)
- * - a = semi-major axis (km)
- * - B* = ballistic coefficient from TLE
- * - ρ = atmospheric density
- * - ρ₀ = reference density
+ * @param semiMajorAxisKm  mean semi-major axis (from TLE mean motion)
+ * @param eccentricity     mean eccentricity
+ * @param bstar            SGP4 B* (1/ER)
  */
 export function predictOrbitalDecay(
     semiMajorAxisKm: number,
@@ -154,130 +152,76 @@ export function predictOrbitalDecay(
     bstar: number,
     currentDate: Date = new Date()
 ): DecayPrediction {
-    const altitudeKm = semiMajorAxisKm - EARTH_RADIUS_KM;
-    const currentDensity = getAtmosphericDensity(altitudeKm);
+    const perigee = semiMajorAxisKm * (1 - Math.max(0, eccentricity)) - EARTH_RADIUS_KM;
+    const B = ballisticCoefficientFromBStar(bstar);
+    const dragUnknown = !(Math.abs(bstar) >= 1e-7);
 
-    // Orbital period in seconds
-    const periodSeconds = 2 * Math.PI * Math.sqrt(Math.pow(semiMajorAxisKm, 3) / EARTH_MU);
-    const periodDays = periodSeconds / SECONDS_PER_DAY;
+    let riskLevel: DecayPrediction['riskLevel'] = 'low';
+    if (perigee < 200) riskLevel = 'critical';
+    else if (perigee < 300) riskLevel = 'high';
+    else if (perigee < 400) riskLevel = 'medium';
 
-    // Mean motion (rad/s)
-    const n = (2 * Math.PI) / periodSeconds;
-
-    // Reference atmospheric density at 120km (for B* normalization)
-    const rho0 = getAtmosphericDensity(120);
-
-    // Decay rate calculation using King-Hele approximation
-    // da/dt = -(1/2) × n × a × |B*| × (ρ/ρ₀)
-    // Simplified: use B* directly as it encapsulates ballistic coefficient
-
-    // For very high orbits (>800km), decay is negligible
-    if (altitudeKm > 800) {
-        const minDecay = 0.0001; // minimum decay rate km/day
+    if (dragUnknown) {
         return {
-            currentAltitudeKm: altitudeKm,
-            currentDensity,
-            decayRateKmPerDay: minDecay,
-            estimatedLifetimeDays: 3650,
-            estimatedReentryDate: new Date(currentDate.getTime() + 3650 * 24 * 60 * 60 * 1000),
-            altitudeHistory: [
-                { days: 0, altitude: altitudeKm },
-                { days: 3650, altitude: altitudeKm - 0.5 }
-            ],
-            riskLevel: 'low'
+            perigeeAltitudeKm: perigee,
+            currentDensity: getAtmosphericDensity(perigee),
+            ballisticCoefficient: B,
+            decayRateKmPerDay: 0,
+            estimatedLifetimeDays: Infinity,
+            lifetimeRangeDays: { min: Infinity, max: Infinity },
+            estimatedReentryDate: null,
+            altitudeHistory: [],
+            beyondHorizon: true,
+            dragUnknown: true,
+            riskLevel,
         };
     }
 
-    // Calculate decay rate per day
-    // Empirical formula based on atmospheric drag:
-    // Δh ≈ 2π × a × (ρ/ρ₀) × B* × (orbits per day)
-    const orbitsPerDay = 1 / periodDays;
-    const densityRatio = rho0 > 0 ? currentDensity / rho0 : 0;
-
-    // Use absolute value of B*, scale appropriately
-    // B* is typically in the range of 1e-5 to 1e-3
-    const scaledBstar = Math.abs(bstar);
-
-    // Simplified decay formula (km/day)
-    // Lower altitudes = faster decay due to higher density
-    let decayRateKmPerDay = 2 * Math.PI * semiMajorAxisKm * densityRatio * scaledBstar * orbitsPerDay;
-
-    // Ensure reasonable bounds (0.0001 to 10 km/day)
-    decayRateKmPerDay = Math.max(0.0001, Math.min(10, decayRateKmPerDay));
-
-    // Simulate decay for altitude history
-    const altitudeHistory: { days: number; altitude: number }[] = [];
-    let simAltitude = altitudeKm;
-    let simDays = 0;
-    const maxDays = 3650; // 10 years max simulation
-    const reentryAltitude = 120; // km - typical reentry altitude
-
-    // Use larger step size for efficiency (simulate every 10 days for long-term orbits)
-    const stepSize = altitudeKm > 500 ? 10 : 1;
-
-    while (simAltitude > reentryAltitude && simDays < maxDays) {
-        // Only record every 10th point for efficiency
-        if (simDays % 10 === 0 || simDays === 0) {
-            altitudeHistory.push({ days: simDays, altitude: simAltitude });
-        }
-
-        // Calculate decay for this altitude
-        const rho = getAtmosphericDensity(simAltitude);
-        const simDensityRatio = rho0 > 0 ? rho / rho0 : 0;
-        const simSemiMajor = EARTH_RADIUS_KM + simAltitude;
-        const simPeriodDays = (2 * Math.PI * Math.sqrt(Math.pow(simSemiMajor, 3) / EARTH_MU)) / SECONDS_PER_DAY;
-        const simOrbitsPerDay = 1 / simPeriodDays;
-
-        // Calculate daily decay with same formula
-        let dailyDecay = 2 * Math.PI * simSemiMajor * simDensityRatio * scaledBstar * simOrbitsPerDay;
-        dailyDecay = Math.max(0.0001, Math.min(10, dailyDecay));
-
-        simAltitude -= dailyDecay * stepSize;
-        simDays += stepSize;
-    }
-
-    // Add final point
-    altitudeHistory.push({ days: simDays, altitude: Math.max(simAltitude, 0) });
-
-    // Estimated reentry date
-    const estimatedReentryDate = new Date(currentDate.getTime() + simDays * 24 * 60 * 60 * 1000);
-
-    // Risk level based on altitude
-    let riskLevel: 'low' | 'medium' | 'high' | 'critical';
-    if (altitudeKm < 200) riskLevel = 'critical';
-    else if (altitudeKm < 300) riskLevel = 'high';
-    else if (altitudeKm < 400) riskLevel = 'medium';
-    else riskLevel = 'low';
+    const nominal = integrate(perigee, B, 1, true);
+    const short = integrate(perigee, B, 2, false);
+    const long = integrate(perigee, B, 0.5, false);
 
     return {
-        currentAltitudeKm: altitudeKm,
-        currentDensity,
-        decayRateKmPerDay,
-        estimatedLifetimeDays: simDays,
-        estimatedReentryDate,
-        altitudeHistory,
-        riskLevel
+        perigeeAltitudeKm: perigee,
+        currentDensity: getAtmosphericDensity(perigee),
+        ballisticCoefficient: B,
+        decayRateKmPerDay: decayRate(perigee, B, 1),
+        estimatedLifetimeDays: nominal.days,
+        lifetimeRangeDays: { min: short.days, max: long.days },
+        estimatedReentryDate: Number.isFinite(nominal.days)
+            ? new Date(currentDate.getTime() + nominal.days * SECONDS_PER_DAY * 1000)
+            : null,
+        altitudeHistory: nominal.history,
+        beyondHorizon: !Number.isFinite(nominal.days),
+        dragUnknown: false,
+        riskLevel,
     };
 }
 
-/**
- * Get altitude risk color
- */
+/** Altitude colour on the console palette (red → amber → muted green). */
 export function getAltitudeColor(altitudeKm: number): string {
-    if (altitudeKm < 200) return '#ef4444'; // Red
-    if (altitudeKm < 300) return '#f97316'; // Orange
-    if (altitudeKm < 400) return '#eab308'; // Yellow
-    if (altitudeKm < 500) return '#84cc16'; // Lime
-    return '#22c55e'; // Green
+    if (altitudeKm < 200) return '#d9534f';
+    if (altitudeKm < 300) return '#e07b39';
+    if (altitudeKm < 400) return '#f2a33a';
+    return '#7fb069';
 }
 
-/**
- * Format remaining lifetime
- */
+/** Language-neutral lifetime breakdown; UI formats it with i18n. */
+export function lifetimeParts(days: number): { unit: 'day' | 'month' | 'year' | 'beyond'; value: number } {
+    if (!Number.isFinite(days)) return { unit: 'beyond', value: DECAY_HORIZON_DAYS / 365.25 };
+    if (days < 60) return { unit: 'day', value: Math.max(0, Math.round(days)) };
+    if (days < 730) return { unit: 'month', value: Math.round(days / 30.44) };
+    return { unit: 'year', value: Math.round((days / 365.25) * 10) / 10 };
+}
+
+/** English fallback formatting (tests, exports). */
 export function formatLifetime(days: number): string {
     if (days < 1) return '< 1 day';
-    if (days < 30) return `${Math.round(days)} days`;
-    if (days < 365) return `${Math.round(days / 30)} months`;
-    if (days < 3650) return `${(days / 365).toFixed(1)} years`;
-    return '> 10 years';
+    const p = lifetimeParts(days);
+    switch (p.unit) {
+        case 'beyond': return `> ${p.value} years`;
+        case 'day': return `${p.value} days`;
+        case 'month': return `${p.value} months`;
+        case 'year': return `${p.value} years`;
+    }
 }

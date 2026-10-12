@@ -1,273 +1,182 @@
 /**
- * Conjunction Analysis & Collision Risk Assessment
- * 
- * Analyzes close approach events (conjunctions) between space objects.
- * Uses SOCRATES (Satellite Orbital Conjunction Reports Assessing 
- * Threatening Encounters in Space) data from CelesTrak.
- * 
- * @module ConjunctionAnalysis
- * @see {@link https://celestrak.org/SOCRATES/} SOCRATES Data
- * 
- * Mathematical Foundation:
- * ========================
- * Time of Closest Approach (TCA):
- * The instant when the distance between two objects is minimized.
- * 
- * Collision Probability (Pc):
- * Calculated using position uncertainty (covariance) and hard body radius:
- * 
- *   Pc = ∫∫ f(x,y) dx dy over collision area
- * 
- * Where f(x,y) is the 2D probability density in the conjunction plane.
- * 
- * Risk Classification (by miss distance):
- * - Critical: < 100m (immediate concern)
- * - High: < 500m (maneuver consideration)
- * - Medium: < 1 km (monitoring required)
- * - Low: > 1 km (standard tracking)
- * 
- * Collision Energy:
- *   E = (1/2) × m × v²_rel
- * 
- * Relative velocities in LEO typically 10-15 km/s; hypervelocity impacts.
- * 
- * References:
- * -----------
- * [1] Kelso, T.S. & Alfano, S. (2007). "Satellite Orbital Conjunction Reports"
- *     AAS Paper 07-127. {@link https://celestrak.org/publications/AAS/07-127/}
- * 
- * [2] Alfano, S. (2005). "Relating Position Uncertainty to Maximum Conjunction Probability"
- *     The Journal of the Astronautical Sciences, 53(2), 193-205.
- * 
- * [3] Kessler, D.J. & Cour-Palais, B.G. (1978). "Collision Frequency of Artificial Satellites"
- *     Journal of Geophysical Research, 83(A6), 2637-2646. (Kessler Syndrome origin)
- * 
- * [4] Inter-Agency Space Debris Coordination Committee (IADC)
- *     {@link https://www.iadc-home.org/}
- * 
- * Data Source Notes:
- * - SOCRATES provides conjunction data for tracked objects (>10cm in LEO)
- * - Full data requires Space-Track authentication
- * - Sample data used for demonstration purposes
+ * Close-approach screening for one satellite against the catalog.
+ *
+ * This is a TLE-based screen, not an operational conjunction assessment:
+ * TLE positions carry kilometre-level errors, so a reported miss distance of
+ * 2 km means "worth a look", not "will collide". Operators use CDMs from
+ * Space-Track/18 SDS with covariance for that.
+ *
+ * Pipeline
+ * --------
+ * 1. Apogee/perigee filter (Hoots et al. 1984): two orbits whose radial
+ *    shells are further apart than the threshold can never meet.
+ * 2. Coarse scan of the separation every `stepSeconds`, tracking local
+ *    minima.
+ * 3. Each minimum is refined with a golden-section search to ~0.1 s → TCA,
+ *    miss distance and relative speed at TCA.
+ *
+ * References: Hoots, Crawford & Roehrich (1984), "An analytic method to
+ * determine future close approaches between satellites", Celestial
+ * Mechanics 33; Alfano & Negron (1993).
  */
+
+import type { SatRec } from 'satellite.js';
+import { stateAt, elementsFromSatrec, type Vec3 } from './orbit';
+
+export type ObjectKind = 'payload' | 'debris' | 'rocket_body' | 'unknown';
+
+export interface ScreeningObject {
+    id: string;
+    name: string;
+    rec: SatRec;
+}
 
 export interface ConjunctionEvent {
     id: string;
-    primaryObject: {
-        name: string;
-        noradId: string;
-        type: 'payload' | 'debris' | 'rocket_body' | 'unknown';
-    };
-    secondaryObject: {
-        name: string;
-        noradId: string;
-        type: 'payload' | 'debris' | 'rocket_body' | 'unknown';
-    };
-    tca: Date;                    // Time of Closest Approach
-    minRangeKm: number;           // Minimum distance in km
-    relativeVelocityKmS: number;  // Relative velocity in km/s
-    probabilityOfCollision?: number; // Pc if available
+    primaryObject: { name: string; noradId: string; type: ObjectKind };
+    secondaryObject: { name: string; noradId: string; type: ObjectKind };
+    tca: Date;
+    minRangeKm: number;
+    relativeVelocityKmS: number;
     riskLevel: 'low' | 'medium' | 'high' | 'critical';
 }
 
-/**
- * Parse SOCRATES CSV data from CelesTrak
- * Note: SOCRATES data requires authentication or may be rate-limited
- * This parser handles the public summary format
- */
-export function parseSOCRATES(csvData: string): ConjunctionEvent[] {
-    const lines = csvData.split('\n').filter(l => l.trim());
-    const events: ConjunctionEvent[] = [];
-
-    // Skip header line
-    for (let i = 1; i < lines.length; i++) {
-        const line = lines[i];
-        const parts = line.split(',').map(p => p.trim().replace(/"/g, ''));
-
-        if (parts.length < 10) continue;
-
-        try {
-            const minRange = parseFloat(parts[7]) / 1000; // Convert m to km
-            const relVel = parseFloat(parts[8]);
-
-            const event: ConjunctionEvent = {
-                id: `conj-${i}`,
-                primaryObject: {
-                    name: parts[0] || 'Unknown',
-                    noradId: parts[1] || '',
-                    type: categorizeObject(parts[0])
-                },
-                secondaryObject: {
-                    name: parts[2] || 'Unknown',
-                    noradId: parts[3] || '',
-                    type: categorizeObject(parts[2])
-                },
-                tca: new Date(parts[6]),
-                minRangeKm: minRange,
-                relativeVelocityKmS: relVel,
-                probabilityOfCollision: parts[9] ? parseFloat(parts[9]) : undefined,
-                riskLevel: calculateRiskLevel(minRange, relVel)
-            };
-
-            events.push(event);
-        } catch (e) {
-            console.warn('Failed to parse conjunction event:', line);
-        }
-    }
-
-    return events.sort((a, b) => a.tca.getTime() - b.tca.getTime());
+export interface ScreeningOptions {
+    start: Date;
+    hours: number;
+    thresholdKm: number;
+    stepSeconds?: number;
 }
 
-/**
- * Categorize object type based on name
- */
-function categorizeObject(name: string): 'payload' | 'debris' | 'rocket_body' | 'unknown' {
-    const upperName = name.toUpperCase();
-    if (upperName.includes('DEB') || upperName.includes('DEBRIS')) return 'debris';
-    if (upperName.includes('R/B') || upperName.includes('ROCKET')) return 'rocket_body';
-    if (upperName.includes('STARLINK') || upperName.includes('ONEWEB') ||
-        upperName.includes('GPS') || upperName.includes('ISS')) return 'payload';
-    return 'unknown';
+export function classifyObject(name: string): ObjectKind {
+    const n = name.toUpperCase();
+    if (/\bDEB\b|DEBRIS/.test(n)) return 'debris';
+    if (/\bR\/B\b|ROCKET BODY/.test(n)) return 'rocket_body';
+    if (n.trim().length === 0) return 'unknown';
+    return 'payload';
 }
 
-/**
- * Calculate risk level based on miss distance and relative velocity
- */
-function calculateRiskLevel(minRangeKm: number, relVelKmS: number): 'low' | 'medium' | 'high' | 'critical' {
-    // Combined risk metric: smaller distance and higher velocity = higher risk
-    const collisionEnergy = relVelKmS * relVelKmS; // Proportional to kinetic energy
-
-    if (minRangeKm < 0.1) return 'critical';     // < 100m
-    if (minRangeKm < 0.5) return 'high';          // < 500m
-    if (minRangeKm < 1.0) return 'medium';        // < 1km
+export function riskFromMissDistance(km: number): ConjunctionEvent['riskLevel'] {
+    if (km < 1) return 'critical';
+    if (km < 5) return 'high';
+    if (km < 10) return 'medium';
     return 'low';
 }
 
-/**
- * Generate sample conjunction events for demo purposes
- * (Since SOCRATES requires authentication)
- */
-export function generateSampleConjunctions(): ConjunctionEvent[] {
-    const now = new Date();
+function shells(rec: SatRec) {
+    const el = elementsFromSatrec(rec);
+    return { perigee: el.perigeeAltKm, apogee: el.apogeeAltKm };
+}
 
-    const samples: ConjunctionEvent[] = [
-        {
-            id: 'conj-1',
-            primaryObject: {
-                name: 'STARLINK-2305',
-                noradId: '48125',
-                type: 'payload'
-            },
-            secondaryObject: {
-                name: 'COSMOS 2251 DEB',
-                noradId: '34725',
-                type: 'debris'
-            },
-            tca: new Date(now.getTime() + 6 * 60 * 60 * 1000), // 6 hours from now
-            minRangeKm: 0.35,
-            relativeVelocityKmS: 14.2,
-            probabilityOfCollision: 0.00012,
-            riskLevel: 'high'
-        },
-        {
-            id: 'conj-2',
-            primaryObject: {
-                name: 'ISS (ZARYA)',
-                noradId: '25544',
-                type: 'payload'
-            },
-            secondaryObject: {
-                name: 'SL-8 R/B',
-                noradId: '12345',
-                type: 'rocket_body'
-            },
-            tca: new Date(now.getTime() + 18 * 60 * 60 * 1000), // 18 hours
-            minRangeKm: 2.1,
-            relativeVelocityKmS: 8.5,
-            probabilityOfCollision: 0.000001,
-            riskLevel: 'low'
-        },
-        {
-            id: 'conj-3',
-            primaryObject: {
-                name: 'ONEWEB-0156',
-                noradId: '47452',
-                type: 'payload'
-            },
-            secondaryObject: {
-                name: 'FENGYUN 1C DEB',
-                noradId: '29532',
-                type: 'debris'
-            },
-            tca: new Date(now.getTime() + 72 * 60 * 60 * 1000), // 3 days
-            minRangeKm: 0.08,
-            relativeVelocityKmS: 15.8,
-            probabilityOfCollision: 0.0045,
-            riskLevel: 'critical'
-        },
-        {
-            id: 'conj-4',
-            primaryObject: {
-                name: 'SENTINEL-2A',
-                noradId: '40697',
-                type: 'payload'
-            },
-            secondaryObject: {
-                name: 'DELTA 1 DEB',
-                noradId: '00890',
-                type: 'debris'
-            },
-            tca: new Date(now.getTime() + 120 * 60 * 60 * 1000), // 5 days
-            minRangeKm: 0.75,
-            relativeVelocityKmS: 11.2,
-            riskLevel: 'medium'
+/** Apogee/perigee overlap test (both in km altitude). */
+export function shellsOverlap(a: SatRec, b: SatRec, thresholdKm: number): boolean {
+    const sa = shells(a);
+    const sb = shells(b);
+    return Math.max(sa.perigee, sb.perigee) - Math.min(sa.apogee, sb.apogee) <= thresholdKm;
+}
+
+function sep(a: Vec3, b: Vec3): number {
+    return Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z);
+}
+
+function separationAt(p: SatRec, s: SatRec, t: number): number {
+    const d = new Date(t);
+    const a = stateAt(p, d);
+    const b = stateAt(s, d);
+    if (!a || !b) return Infinity;
+    return sep(a.positionEci, b.positionEci);
+}
+
+function refine(p: SatRec, s: SatRec, lo: number, hi: number): number {
+    const g = (Math.sqrt(5) - 1) / 2;
+    let c = hi - g * (hi - lo), d = lo + g * (hi - lo);
+    let fc = separationAt(p, s, c), fd = separationAt(p, s, d);
+    while (hi - lo > 100) {
+        if (fc < fd) { hi = d; d = c; fd = fc; c = hi - g * (hi - lo); fc = separationAt(p, s, c); }
+        else { lo = c; c = d; fc = fd; d = lo + g * (hi - lo); fd = separationAt(p, s, d); }
+    }
+    return (lo + hi) / 2;
+}
+
+export function screenConjunctions(
+    primary: ScreeningObject,
+    catalog: ScreeningObject[],
+    opts: ScreeningOptions
+): ConjunctionEvent[] {
+    const step = (opts.stepSeconds ?? 60) * 1000;
+    const t0 = opts.start.getTime();
+    const t1 = t0 + opts.hours * 3600_000;
+    const events: ConjunctionEvent[] = [];
+
+    // Pre-compute primary positions once.
+    const times: number[] = [];
+    const prim: (Vec3 | null)[] = [];
+    for (let t = t0; t <= t1; t += step) {
+        times.push(t);
+        prim.push(stateAt(primary.rec, new Date(t))?.positionEci ?? null);
+    }
+
+    // A minimum below the threshold can hide between samples; LEO relative
+    // speeds reach ~15 km/s, so widen the gate by the distance covered in a step.
+    const gate = opts.thresholdKm + 15 * (step / 1000);
+
+    for (const obj of catalog) {
+        if (obj.id === primary.id) continue;
+        if (!shellsOverlap(primary.rec, obj.rec, opts.thresholdKm)) continue;
+
+        let d2 = Infinity, d1 = Infinity;
+        for (let i = 0; i < times.length; i++) {
+            const p = prim[i];
+            const st = p ? stateAt(obj.rec, new Date(times[i])) : null;
+            const d = p && st ? sep(p, st.positionEci) : Infinity;
+
+            // d1 is a local minimum if d2 > d1 <= d
+            if (i >= 2 && d1 < d2 && d1 <= d && d1 < gate) {
+                const tca = refine(primary.rec, obj.rec, times[i - 2], times[i]);
+                const date = new Date(tca);
+                const a = stateAt(primary.rec, date);
+                const b = stateAt(obj.rec, date);
+                if (a && b) {
+                    const miss = sep(a.positionEci, b.positionEci);
+                    if (miss <= opts.thresholdKm) {
+                        events.push({
+                            id: `${primary.id}-${obj.id}-${Math.round(tca / 1000)}`,
+                            primaryObject: { name: primary.name, noradId: primary.id, type: classifyObject(primary.name) },
+                            secondaryObject: { name: obj.name, noradId: obj.id, type: classifyObject(obj.name) },
+                            tca: date,
+                            minRangeKm: miss,
+                            relativeVelocityKmS: sep(a.velocityEci, b.velocityEci),
+                            riskLevel: riskFromMissDistance(miss),
+                        });
+                    }
+                }
+            }
+            d2 = d1;
+            d1 = d;
         }
-    ];
-
-    return samples;
-}
-
-/**
- * Format time until TCA
- */
-export function formatTimeToTCA(tca: Date): string {
-    const now = new Date();
-    const diffMs = tca.getTime() - now.getTime();
-
-    if (diffMs < 0) return 'PASSED';
-
-    const hours = Math.floor(diffMs / (1000 * 60 * 60));
-    const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-
-    if (hours >= 24) {
-        const days = Math.floor(hours / 24);
-        return `${days}d ${hours % 24}h`;
     }
 
-    return `${hours}h ${minutes}m`;
+    return events.sort((x, y) => x.minRangeKm - y.minRangeKm);
 }
 
-/**
- * Get risk color
- */
-export function getRiskColor(level: string): string {
+/** Time from `now` to TCA as {hours, minutes}; negative values mean it has passed. */
+export function timeToTCA(tca: Date, now: Date): { passed: boolean; days: number; hours: number; minutes: number } {
+    const ms = tca.getTime() - now.getTime();
+    const abs = Math.abs(ms);
+    const totalMin = Math.floor(abs / 60_000);
+    return {
+        passed: ms < 0,
+        days: Math.floor(totalMin / 1440),
+        hours: Math.floor((totalMin % 1440) / 60),
+        minutes: totalMin % 60,
+    };
+}
+
+export function getRiskColor(level: ConjunctionEvent['riskLevel']): string {
     switch (level) {
-        case 'critical': return '#ef4444';
-        case 'high': return '#f97316';
-        case 'medium': return '#eab308';
-        case 'low': return '#22c55e';
-        default: return '#64748b';
-    }
-}
-
-/**
- * Get object type icon name
- */
-export function getObjectTypeIcon(type: string): string {
-    switch (type) {
-        case 'payload': return 'satellite';
-        case 'debris': return 'circle-x';
-        case 'rocket_body': return 'rocket';
-        default: return 'help-circle';
+        case 'critical': return '#d9534f';
+        case 'high': return '#e07b39';
+        case 'medium': return '#f2a33a';
+        case 'low': return '#8d9097';
     }
 }

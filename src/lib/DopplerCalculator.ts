@@ -17,7 +17,9 @@
  * - f_0 = Base/transmitted frequency in Hz
  * 
  * Range Rate Calculation: v_r = v⃗_sat · r̂
- * - v⃗_sat = Satellite velocity vector (ECF frame)
+ * - v⃗_sat = Satellite velocity relative to the rotating Earth (ECF frame).
+ *   Rotating the inertial velocity is not enough: v_ecf = R·v_eci − ω × r.
+ *   Leaving out ω × r is a ~0.4 km/s error for LEO (≈200 Hz at 145.8 MHz).
  * - r̂ = Unit range vector from observer to satellite
  * 
  * Sign Convention:
@@ -40,11 +42,11 @@
  * - For GPS satellites, relativistic corrections are applied separately
  */
 
+import type { SatRec } from 'satellite.js';
+import { stateAt, lookAngles } from './orbit';
+
 // Speed of light in m/s
 const SPEED_OF_LIGHT = 299_792_458;
-
-// Earth radius in meters
-const EARTH_RADIUS = 6_371_000;
 
 export interface ObserverPosition {
     latitude: number;   // degrees
@@ -64,6 +66,8 @@ export interface DopplerResult {
     receivedFreqHz: number;    // Received frequency in Hz
     shiftPpm: number;          // Shift in parts per million
     isApproaching: boolean;    // true if satellite is approaching
+    elevationDeg: number;      // Elevation above the observer's horizon
+    aboveHorizon: boolean;     // false → no line of sight, the shift is theoretical
 }
 
 /**
@@ -160,13 +164,54 @@ export function calculateDopplerShift(
     // Calculate shift in parts per million
     const shiftPpm = (dopplerShiftHz / baseFrequencyHz) * 1_000_000;
 
+    // Elevation: angle between the range vector and the local vertical
+    const latRad = observer.latitude * (Math.PI / 180);
+    const lonRad = observer.longitude * (Math.PI / 180);
+    const up = {
+        x: Math.cos(latRad) * Math.cos(lonRad),
+        y: Math.cos(latRad) * Math.sin(lonRad),
+        z: Math.sin(latRad)
+    };
+    const elevationDeg = Math.asin(dot(rangeUnit, up)) * (180 / Math.PI);
+
     return {
         rangeKm,
         rangeRateMps: rangeRate,
         dopplerShiftHz,
         receivedFreqHz,
         shiftPpm,
-        isApproaching: rangeRate < 0
+        isApproaching: rangeRate < 0,
+        elevationDeg,
+        aboveHorizon: elevationDeg > 0
+    };
+}
+
+/**
+ * Doppler shift straight from an SGP4 record.
+ *
+ * The velocity used is the Earth-fixed one (rotation term included), which is
+ * what a ground station actually sees. Returns null when SGP4 fails.
+ */
+export function computeDoppler(
+    rec: SatRec,
+    date: Date,
+    observer: ObserverPosition,
+    baseFrequencyHz: number
+): DopplerResult | null {
+    const state = stateAt(rec, date);
+    if (!state) return null;
+    const look = lookAngles(state, observer);
+    const rangeRateMps = look.rangeRateKmS * 1000;
+    const dopplerShiftHz = -(rangeRateMps / SPEED_OF_LIGHT) * baseFrequencyHz;
+    return {
+        rangeKm: look.rangeKm,
+        rangeRateMps,
+        dopplerShiftHz,
+        receivedFreqHz: baseFrequencyHz + dopplerShiftHz,
+        shiftPpm: (dopplerShiftHz / baseFrequencyHz) * 1_000_000,
+        isApproaching: rangeRateMps < 0,
+        elevationDeg: look.elevationDeg,
+        aboveHorizon: look.elevationDeg > 0
     };
 }
 

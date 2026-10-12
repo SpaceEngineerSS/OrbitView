@@ -42,7 +42,7 @@ describe('OrbitalDecay', () => {
         it('should predict decay for low orbit satellite', () => {
             const prediction = predictOrbitalDecay(6621, 0.001, 0.001, new Date());
             expect(prediction).toBeDefined();
-            expect(prediction.currentAltitudeKm).toBeCloseTo(250, 0);
+            expect(prediction.perigeeAltitudeKm).toBeCloseTo(6621 * 0.999 - 6378.137, 0);
             expect(prediction.estimatedLifetimeDays).toBeGreaterThan(0);
             expect(prediction.decayRateKmPerDay).toBeGreaterThanOrEqual(0);
         });
@@ -63,17 +63,17 @@ describe('OrbitalDecay', () => {
         it('should calculate reentry date', () => {
             const prediction = predictOrbitalDecay(6621, 0.001, 0.001, new Date());
             expect(prediction.estimatedReentryDate).toBeInstanceOf(Date);
-            expect(prediction.estimatedReentryDate.getTime()).toBeGreaterThan(Date.now());
+            expect(prediction.estimatedReentryDate!.getTime()).toBeGreaterThan(Date.now());
         });
     });
 
     describe('Helper functions', () => {
         describe('getAltitudeColor', () => {
             it('should return appropriate colors for altitudes', () => {
-                expect(getAltitudeColor(150)).toBe('#ef4444');
-                expect(getAltitudeColor(250)).toBe('#f97316');
-                expect(getAltitudeColor(350)).toBe('#eab308');
-                expect(getAltitudeColor(600)).toBe('#22c55e');
+                expect(getAltitudeColor(150)).toBe('#d9534f');
+                expect(getAltitudeColor(250)).toBe('#e07b39');
+                expect(getAltitudeColor(350)).toBe('#f2a33a');
+                expect(getAltitudeColor(600)).toBe('#7fb069');
             });
         });
 
@@ -82,8 +82,9 @@ describe('OrbitalDecay', () => {
                 expect(formatLifetime(0.5)).toBe('< 1 day');
                 expect(formatLifetime(15)).toContain('days');
                 expect(formatLifetime(180)).toContain('months');
+                expect(formatLifetime(Infinity)).toBe('> 25 years');
                 expect(formatLifetime(730)).toContain('years');
-                expect(formatLifetime(4000)).toBe('> 10 years');
+                expect(formatLifetime(4000)).toContain('years');
             });
         });
     });

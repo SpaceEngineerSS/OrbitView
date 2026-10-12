@@ -1,5 +1,5 @@
 export interface DeviceOrientation {
-    alpha: number | null; // Compass direction (0-360) / Z-axis
+    alpha: number | null; // Compass heading, clockwise from north (0-360); null if unknown
     beta: number | null;  // Front-to-back tilt (-180 to 180) / X-axis
     gamma: number | null; // Left-to-right tilt (-90 to 90) / Y-axis
     absolute: boolean;
@@ -22,23 +22,29 @@ export class SensorManager {
         return SensorManager.instance;
     }
 
+    /**
+     * iOS 13+ asks the user before exposing orientation. Elsewhere there is no
+     * prompt, so we only check that the API exists at all.
+     */
     public async requestPermission(): Promise<boolean> {
-        if (typeof (DeviceOrientationEvent as any).requestPermission === 'function') {
+        if (typeof window === 'undefined' || typeof DeviceOrientationEvent === 'undefined') return false;
+        const ctor = DeviceOrientationEvent as unknown as { requestPermission?: () => Promise<'granted' | 'denied'> };
+        if (typeof ctor.requestPermission === 'function') {
             try {
-                const permissionState = await (DeviceOrientationEvent as any).requestPermission();
-                return permissionState === 'granted';
-            } catch (error) {
-                console.error('Permission request failed', error);
+                return (await ctor.requestPermission()) === 'granted';
+            } catch {
                 return false;
             }
         }
-        return true; // Non-iOS 13+ devices don't need explicit permission
+        return true;
     }
 
     public start() {
         if (this.isListening) return;
 
         if (typeof window !== 'undefined') {
+            // Chrome on Android only reports a north-referenced alpha on this event.
+            window.addEventListener('deviceorientationabsolute', this.handleOrientation as EventListener, true);
             window.addEventListener('deviceorientation', this.handleOrientation, true);
             this.isListening = true;
         }
@@ -48,6 +54,7 @@ export class SensorManager {
         if (!this.isListening) return;
 
         if (typeof window !== 'undefined') {
+            window.removeEventListener('deviceorientationabsolute', this.handleOrientation as EventListener, true);
             window.removeEventListener('deviceorientation', this.handleOrientation, true);
             this.isListening = false;
         }
@@ -61,26 +68,22 @@ export class SensorManager {
     }
 
     private handleOrientation = (event: DeviceOrientationEvent) => {
-        // Basic normalization
-        // Alpha: 0 is North (if absolute), 0-360
-        // Beta: Front-back tilt, -180 to 180
-        // Gamma: Left-right tilt, -90 to 90
-
-        // iOS webkitCompassHeading support
-        let alpha = event.alpha;
-        if ((event as any).webkitCompassHeading) {
-            // iOS uses webkitCompassHeading for "true" north relative logic
-            // We might need to adjust alpha based on this if we want true north
-            // For now, let's stick to standard event props and see if we need a specific iOS fix
-            // Actually, for AR, we usually want webkitCompassHeading if available for alpha
-            alpha = (event as any).webkitCompassHeading || event.alpha;
+        // iOS Safari exposes a true compass heading (clockwise from north).
+        // Elsewhere alpha is counter-clockwise and only north-referenced when
+        // the event is absolute, so convert it to a clockwise heading then.
+        const iosHeading = (event as DeviceOrientationEvent & { webkitCompassHeading?: number }).webkitCompassHeading;
+        let alpha: number | null = null;
+        if (typeof iosHeading === 'number' && Number.isFinite(iosHeading)) {
+            alpha = iosHeading;
+        } else if (event.absolute && event.alpha !== null) {
+            alpha = (360 - event.alpha) % 360;
         }
 
         this.orientation = {
-            alpha: alpha,
+            alpha,
             beta: event.beta,
             gamma: event.gamma,
-            absolute: event.absolute
+            absolute: alpha !== null
         };
 
         this.listeners.forEach(listener => listener(this.orientation));

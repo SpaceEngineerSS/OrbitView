@@ -1,216 +1,184 @@
 /**
- * Satellite Pass Prediction
- * 
- * Predicts satellite passes visible from a ground observer location.
- * Uses SGP4 propagation and look angle calculations.
- * 
- * @module PassPrediction
- * @see {@link https://celestrak.org/columns/v04n09/} CelesTrak: Pass Prediction
- * 
- * Mathematical Foundation:
- * ========================
- * Look Angle Calculation:
- * 
- * Azimuth (Az): Horizontal direction, clockwise from North
- *   Az = atan2(sin(Δλ), cos(φ_obs)×tan(φ_sat) - sin(φ_obs)×cos(Δλ))
- * 
- * Elevation (El): Angle above local horizon
- *   El = asin(sin(φ_obs)×sin(φ_sat) + cos(φ_obs)×cos(φ_sat)×cos(Δλ))
- * 
- * Pass Terminology:
- * - AOS (Acquisition of Signal): Satellite rises above minimum elevation
- * - LOS (Loss of Signal): Satellite sets below minimum elevation  
- * - TCA (Time of Closest Approach): Maximum elevation point
- * 
- * Algorithm: Coarse-to-Fine Search
- * 1. Step through time at 60-second intervals
- * 2. Calculate elevation at each step
- * 3. When elevation crosses threshold, refine with smaller steps
- * 4. Record AOS/LOS/MaxEl for each pass
- * 
- * References:
- * -----------
- * [1] Vallado, D.A. (2013). "Fundamentals of Astrodynamics and Applications"
- *     4th Edition, Chapter 11: Satellite Visibility. ISBN: 978-1881883180
- * 
- * [2] Kelso, T.S. (1996). "Predicting Satellite Visibility"
- *     Satellite Times, Vol. 2, No. 6. {@link https://celestrak.org/columns/v02n06/}
- * 
- * [3] satellite.js - JavaScript SGP4 implementation
- *     {@link https://github.com/shashwatak/satellite-js}
- * 
- * Accuracy Notes:
- * - Pass times typically accurate to ±10 seconds for 24-hour predictions
- * - Accuracy degrades for predictions beyond 1 week due to TLE age
- * - Atmospheric refraction not modeled (affects low elevation angles)
+ * Satellite pass prediction.
+ *
+ * A pass is the interval during which the satellite is above `minElevation`
+ * for a ground observer.
+ *
+ * Method
+ * ------
+ * 1. Scan the window with a coarse step (default 60 s; LEO passes last
+ *    several minutes, so none is skipped above ~10°).
+ * 2. When the sign of (elevation − minElevation) changes between two samples,
+ *    bisect that interval down to 0.5 s to get AOS / LOS.
+ * 3. Find the culmination with a golden-section search between AOS and LOS.
+ *
+ * A pass already in progress at `startTime` is reported with
+ * `startsBeforeWindow = true`; one still in progress at `endTime` is followed
+ * to its real LOS (up to 6 h past the window). An object that never sets
+ * (e.g. a GEO satellite in view) is reported as a single pass covering the
+ * window with both flags set.
+ *
+ * Visibility (optical): the satellite is sunlit and the observer's sun
+ * elevation is below −6° (civil twilight) at culmination.
+ *
+ * References: Vallado (2013) ch. 11; Kelso, "Predicting Satellite Visibility",
+ * Satellite Times 2(6), 1996. Refraction is not modelled.
  */
 
-import * as satellite from "satellite.js";
-import { SatelliteData } from "./tle";
-import { calculateSunPosition, isSatelliteSunlit, geodeticToEcf } from "./CoordinateConverter";
+import type { SatRec } from 'satellite.js';
+import { getSatrec, stateAt, lookAngles, type ObserverGeodetic } from './orbit';
+import { calculateSunPosition, isSatelliteSunlit } from './CoordinateConverter';
 
 export interface SatellitePass {
-    aosTime: Date;       // Acquisition of Singal (Rise)
-    losTime: Date;       // Loss of Signal (Set)
-    maxElevationTime: Date; // Time of max elevation
-    maxElevation: number;   // Max elevation in degrees
-    duration: number;       // Duration in seconds
-    azimuthAOS: number;     // Azimuth at AOS
-    azimuthLOS: number;     // Azimuth at LOS
-    visible: boolean;       // Is the pass visible? (Sunlit sat + Dark sky)
+    aosTime: Date;
+    losTime: Date;
+    maxElevationTime: Date;
+    maxElevation: number;   // deg
+    duration: number;       // s
+    azimuthAOS: number;     // deg
+    azimuthLOS: number;     // deg
+    azimuthMax: number;     // deg
+    visible: boolean;       // sunlit satellite + dark sky at culmination
+    startsBeforeWindow: boolean;
+    endsAfterWindow: boolean;
 }
 
-export interface ObserverLocation {
-    latitude: number;
-    longitude: number;
-    altitude: number;
+/** Altitude in metres above the ellipsoid. */
+export type ObserverLocation = ObserverGeodetic;
+
+interface Sample { el: number; az: number }
+
+function sample(rec: SatRec, obs: ObserverLocation, t: number): Sample | null {
+    const s = stateAt(rec, new Date(t));
+    if (!s) return null;
+    const look = lookAngles(s, obs);
+    return { el: look.elevationDeg, az: look.azimuthDeg };
 }
 
-/**
- * Predicts satellite passes for a given time range.
- * Using a coarse-to-fine search approach for performance.
- */
-export function predictPasses(
-    satData: SatelliteData,
+/** Bisect between t0 (state a) and t1 (state !a) to the threshold crossing. */
+function bisect(rec: SatRec, obs: ObserverLocation, t0: number, t1: number, minEl: number): number {
+    const above0 = (sample(rec, obs, t0)?.el ?? -90) >= minEl;
+    let lo = t0, hi = t1;
+    while (hi - lo > 500) {
+        const mid = (lo + hi) / 2;
+        const aboveMid = (sample(rec, obs, mid)?.el ?? -90) >= minEl;
+        if (aboveMid === above0) lo = mid; else hi = mid;
+    }
+    return (lo + hi) / 2;
+}
+
+/** Golden-section search for the elevation maximum on [a, b]. */
+function culminate(rec: SatRec, obs: ObserverLocation, a: number, b: number): number {
+    const g = (Math.sqrt(5) - 1) / 2;
+    let c = b - g * (b - a);
+    let d = a + g * (b - a);
+    let fc = sample(rec, obs, c)?.el ?? -90;
+    let fd = sample(rec, obs, d)?.el ?? -90;
+    while (b - a > 500) {
+        if (fc > fd) { b = d; d = c; fd = fc; c = b - g * (b - a); fc = sample(rec, obs, c)?.el ?? -90; }
+        else { a = c; c = d; fc = fd; d = a + g * (b - a); fd = sample(rec, obs, d)?.el ?? -90; }
+    }
+    return (a + b) / 2;
+}
+
+function isVisibleAt(rec: SatRec, obs: ObserverLocation, t: number): boolean {
+    const date = new Date(t);
+    const s = stateAt(rec, date);
+    if (!s) return false;
+    const sunEcf = calculateSunPosition(date);
+    const sunlit = isSatelliteSunlit(s.positionEcf, sunEcf);
+    const sunLook = lookAngles({ positionEcf: sunEcf, velocityEcf: { x: 0, y: 0, z: 0 } }, obs);
+    return sunlit && sunLook.elevationDeg < -6;
+}
+
+const MAX_OVERRUN_MS = 6 * 3600_000;
+
+export function predictPassesForSatrec(
+    rec: SatRec,
     observer: ObserverLocation,
     startTime: Date,
     endTime: Date,
-    minElevation: number = 10 // Minimum elevation to be considered a pass
+    minElevation = 10,
+    stepSeconds = 60
 ): SatellitePass[] {
     const passes: SatellitePass[] = [];
+    const start = startTime.getTime();
+    const end = endTime.getTime();
+    const step = stepSeconds * 1000;
 
-    // TLE -> SatRec
-    const satRec = satellite.twoline2satrec(satData.line1, satData.line2);
+    let prevT = start;
+    let prev = sample(rec, observer, start);
+    let aos: number | null = prev && prev.el >= minElevation ? start : null;
+    const startsBefore = aos !== null;
 
-    // Observer Geodetic
-    // satellite.js expects radians for lat/lon, km for alt
-    const observerGd = {
-        longitude: satellite.degreesToRadians(observer.longitude),
-        latitude: satellite.degreesToRadians(observer.latitude),
-        height: observer.altitude / 1000.0
+    const close = (los: number, endsAfter: boolean) => {
+        const a = aos!;
+        const tMax = culminate(rec, observer, a, los);
+        const atAos = sample(rec, observer, a);
+        const atLos = sample(rec, observer, los);
+        const atMax = sample(rec, observer, tMax);
+        passes.push({
+            aosTime: new Date(a),
+            losTime: new Date(los),
+            maxElevationTime: new Date(tMax),
+            maxElevation: atMax?.el ?? minElevation,
+            duration: (los - a) / 1000,
+            azimuthAOS: atAos?.az ?? 0,
+            azimuthLOS: atLos?.az ?? 0,
+            azimuthMax: atMax?.az ?? 0,
+            visible: isVisibleAt(rec, observer, tMax),
+            startsBeforeWindow: a === start && startsBefore && passes.length === 0,
+            endsAfterWindow: endsAfter,
+        });
+        aos = null;
     };
 
-    // For visibility calculation
-    const observerEcf = geodeticToEcf({
-        latitude: observer.latitude,
-        longitude: observer.longitude,
-        altitude: observer.altitude / 1000
-    });
+    for (let t = start + step; ; t += step) {
+        // Once the previous sample is past the window we only keep stepping
+        // to finish a pass that is in progress.
+        if (prevT >= end && (aos === null || t > end + MAX_OVERRUN_MS)) break;
 
-    let currentTime = new Date(startTime);
-    let inPass = false;
-    let currentPass: Partial<SatellitePass> = {};
-    let maxEl = 0;
-    let maxElTime = new Date(startTime);
-    let sunlitAtMax = false;
-    let darkAtMax = false;
-
-    // Coarse step in seconds
-    const stepSize = 60;
-
-    while (currentTime <= endTime) {
-        // Propagate
-        const positionAndVelocity = satellite.propagate(satRec, currentTime);
-        if (!positionAndVelocity || typeof positionAndVelocity.position === 'boolean') {
-            currentTime = new Date(currentTime.getTime() + stepSize * 1000);
-            continue;
-        }
-        const positionEci = positionAndVelocity.position;
-        const gmst = satellite.gstime(currentTime);
-
-        const positionEcf = satellite.eciToEcf(positionEci, gmst);
-        const lookAngles = satellite.ecfToLookAngles(observerGd, positionEcf);
-
-        const elevationDeg = satellite.radiansToDegrees(lookAngles.elevation);
-        const azimuthDeg = satellite.radiansToDegrees(lookAngles.azimuth);
-
-        if (elevationDeg >= minElevation) {
-            if (!inPass) {
-                // Pass Started
-                inPass = true;
-                currentPass = {
-                    aosTime: new Date(currentTime),
-                    azimuthAOS: azimuthDeg,
-                    maxElevation: 0
-                };
-                maxEl = elevationDeg;
-                maxElTime = new Date(currentTime);
-
-                // Track visibility at start (will refine at max)
-                const sunEcf = calculateSunPosition(currentTime);
-                sunlitAtMax = isSatelliteSunlit(positionEcf, sunEcf);
-
-                const observerSunLook = satellite.ecfToLookAngles(observerGd, sunEcf);
-                darkAtMax = satellite.radiansToDegrees(observerSunLook.elevation) < -6;
-            } else {
-                // Updating Max Elevation
-                if (elevationDeg > maxEl) {
-                    maxEl = elevationDeg;
-                    maxElTime = new Date(currentTime);
-
-                    // Update visibility status at peak
-                    const sunEcf = calculateSunPosition(currentTime);
-                    sunlitAtMax = isSatelliteSunlit(positionEcf, sunEcf);
-
-                    const observerSunLook = satellite.ecfToLookAngles(observerGd, sunEcf);
-                    darkAtMax = satellite.radiansToDegrees(observerSunLook.elevation) < -6;
-                }
-            }
-        } else {
-            if (inPass) {
-                // Pass Ended
-                inPass = false;
-                currentPass.losTime = new Date(currentTime);
-                currentPass.azimuthLOS = azimuthDeg;
-                currentPass.maxElevation = maxEl;
-                currentPass.maxElevationTime = maxElTime;
-                currentPass.duration = (currentPass.losTime!.getTime() - currentPass.aosTime!.getTime()) / 1000;
-
-                // A pass is optically visible if the satellite is sunlit and observer is in dark
-                currentPass.visible = sunlitAtMax && darkAtMax;
-
-                // Add to list
-                if (currentPass.maxElevation! >= minElevation) {
-                    passes.push(currentPass as SatellitePass);
-                }
+        const cur = sample(rec, observer, t);
+        if (cur && prev) {
+            const wasAbove = prev.el >= minElevation;
+            const isAbove = cur.el >= minElevation;
+            if (!wasAbove && isAbove) {
+                const rise = bisect(rec, observer, prevT, t, minElevation);
+                if (rise <= end) aos = rise;
+            } else if (wasAbove && !isAbove && aos !== null) {
+                const set = bisect(rec, observer, prevT, t, minElevation);
+                close(set, set > end);
             }
         }
-
-        // Advance time
-        currentTime = new Date(currentTime.getTime() + stepSize * 1000);
+        prev = cur;
+        prevT = t;
     }
+
+    // Never set within window + overrun: geostationary-like.
+    if (aos !== null) close(Math.min(prevT, end + MAX_OVERRUN_MS), true);
 
     return passes;
 }
 
-/**
- * Calculates current look angles (Azimuth/Elevation/Range) for a satellite
- */
+/** Convenience wrapper taking TLE lines. */
+export function predictPasses(
+    satData: { line1: string; line2: string },
+    observer: ObserverLocation,
+    startTime: Date,
+    endTime: Date,
+    minElevation = 10
+): SatellitePass[] {
+    return predictPassesForSatrec(getSatrec(satData.line1, satData.line2), observer, startTime, endTime, minElevation);
+}
+
+/** Current azimuth / elevation / range for a satellite. Altitude of observer in metres. */
 export function getLookAngles(
-    satData: SatelliteData,
+    satData: { line1: string; line2: string },
     observer: ObserverLocation,
     time: Date
-) {
-    const satRec = satellite.twoline2satrec(satData.line1, satData.line2);
-    const observerGd = {
-        longitude: satellite.degreesToRadians(observer.longitude),
-        latitude: satellite.degreesToRadians(observer.latitude),
-        height: observer.altitude / 1000.0
-    };
-
-    const positionAndVelocity = satellite.propagate(satRec, time);
-    if (!positionAndVelocity || typeof positionAndVelocity.position === 'boolean') {
-        return null;
-    }
-    const positionEci = positionAndVelocity.position;
-    const gmst = satellite.gstime(time);
-
-    const positionEcf = satellite.eciToEcf(positionEci, gmst);
-    const lookAngles = satellite.ecfToLookAngles(observerGd, positionEcf);
-
-    return {
-        azimuth: satellite.radiansToDegrees(lookAngles.azimuth),
-        elevation: satellite.radiansToDegrees(lookAngles.elevation),
-        range: lookAngles.rangeSat // km
-    };
+): { azimuth: number; elevation: number; range: number } | null {
+    const s = stateAt(getSatrec(satData.line1, satData.line2), time);
+    if (!s) return null;
+    const look = lookAngles(s, observer);
+    return { azimuth: look.azimuthDeg, elevation: look.elevationDeg, range: look.rangeKm };
 }

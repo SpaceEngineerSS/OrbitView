@@ -50,6 +50,7 @@
  */
 
 import * as satellite from 'satellite.js';
+import { getSatrec, stateAt, elementsFromSatrec, type Vec3 } from './orbit';
 
 export interface GroundTrackPoint {
     latitude: number;
@@ -82,7 +83,7 @@ export function calculateGroundTrack(
     pastMinutes: number = 45,
     stepSeconds: number = 60
 ): GroundTrackResult {
-    const satrec = satellite.twoline2satrec(tle1, tle2);
+    const satrec = getSatrec(tle1, tle2);
 
     const pastTrack: GroundTrackPoint[] = [];
     const futureTrack: GroundTrackPoint[] = [];
@@ -116,33 +117,34 @@ export function calculateGroundTrack(
     return { pastTrack, futureTrack, currentPosition };
 }
 
-/**
- * Get satellite position at a specific time
- */
 function getSatellitePosition(
     satrec: satellite.SatRec,
     time: Date
 ): GroundTrackPoint | null {
-    try {
-        const positionAndVelocity = satellite.propagate(satrec, time);
+    const s = stateAt(satrec, time);
+    if (!s) return null;
+    return { latitude: s.latitudeDeg, longitude: s.longitudeDeg, altitude: s.altitudeKm, time };
+}
 
-        if (!positionAndVelocity || typeof positionAndVelocity.position === 'boolean') {
-            return null;
-        }
-
-        const positionEci = positionAndVelocity.position;
-        const gmst = satellite.gstime(time);
-        const positionGd = satellite.eciToGeodetic(positionEci, gmst);
-
-        return {
-            latitude: satellite.degreesLat(positionGd.latitude),
-            longitude: satellite.degreesLong(positionGd.longitude),
-            altitude: positionGd.height,
-            time
-        };
-    } catch {
-        return null;
+/**
+ * One full revolution, starting at `date`, expressed in the Earth-fixed frame
+ * *as it is at `date`* (km). This is the inertial orbit "frozen" at the current
+ * Earth orientation, so the satellite sits exactly on the ring. Re-evaluate it
+ * every few seconds as the Earth turns underneath.
+ */
+export function orbitRingEcf(satrec: satellite.SatRec, date: Date, samples = 180): Vec3[] {
+    const el = elementsFromSatrec(satrec);
+    const periodMs = el.periodMin * 60_000;
+    const gmst = satellite.gstime(date);
+    const c = Math.cos(gmst), sn = Math.sin(gmst);
+    const out: Vec3[] = [];
+    for (let i = 0; i <= samples; i++) {
+        const st = stateAt(satrec, new Date(date.getTime() + (periodMs * i) / samples));
+        if (!st) continue;
+        const r = st.positionEci;
+        out.push({ x: c * r.x + sn * r.y, y: -sn * r.x + c * r.y, z: r.z });
     }
+    return out;
 }
 
 /**
