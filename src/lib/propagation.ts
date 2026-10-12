@@ -20,6 +20,9 @@ interface Pending { resolve: (v: unknown) => void; reject: (e: Error) => void }
 class PropagationEngine {
     private frame: Worker | null = null;
     private analysis: Worker | null = null;
+    // Messages wait here until each worker says hello (see the workers).
+    private frameQueue: { msg: FrameInbound; transfer: Transferable[] }[] | null = [];
+    private analysisQueue: AnalysisInbound[] | null = [];
     private generation = 0;
     private ready = false;
     private inFlight = false;
@@ -55,15 +58,30 @@ class PropagationEngine {
     }
 
     private sendFrame(msg: FrameInbound, transfer: Transferable[] = []) {
-        this.frameWorker().postMessage(msg, transfer);
+        const w = this.frameWorker();
+        if (!this.frameQueue) { w.postMessage(msg, transfer); return; }
+        // Only the latest init and visible set matter; a new init also
+        // supersedes an older visible set.
+        if (msg.type === 'init') this.frameQueue = [];
+        if (msg.type === 'visible') this.frameQueue = this.frameQueue.filter((q) => q.msg.type !== 'visible');
+        this.frameQueue.push({ msg, transfer });
     }
 
     private sendAnalysis(msg: AnalysisInbound) {
-        this.analysisWorker().postMessage(msg);
+        const w = this.analysisWorker();
+        if (!this.analysisQueue) { w.postMessage(msg); return; }
+        if (msg.type === 'init') this.analysisQueue = this.analysisQueue.filter((q) => q.type !== 'init');
+        this.analysisQueue.push(msg);
     }
 
     private onFrameMessage(msg: FrameOutbound) {
         switch (msg.type) {
+            case 'hello': {
+                const queued = this.frameQueue ?? [];
+                this.frameQueue = null;
+                queued.forEach((q) => this.frame!.postMessage(q.msg, q.transfer));
+                return;
+            }
             case 'init_complete':
                 if (msg.generation === this.generation) this.ready = true;
                 return;
@@ -81,6 +99,12 @@ class PropagationEngine {
     }
 
     private onAnalysisMessage(msg: AnalysisOutbound) {
+        if (msg.type === 'hello') {
+            const queued = this.analysisQueue ?? [];
+            this.analysisQueue = null;
+            queued.forEach((q) => this.analysis!.postMessage(q));
+            return;
+        }
         const p = msg.requestId !== undefined ? this.pending.get(msg.requestId) : undefined;
         if (msg.requestId !== undefined) this.pending.delete(msg.requestId);
         if (!p) return;

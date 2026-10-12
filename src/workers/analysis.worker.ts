@@ -79,3 +79,8 @@ self.onmessage = (e: MessageEvent<AnalysisInbound>) => {
         post({ type: 'error', requestId: 'requestId' in m ? m.requestId : undefined, message: err instanceof Error ? err.message : String(err) });
     }
 };
+
+// Tell the page we're listening. In the production bundle this module runs
+// after its chunks load, so a message posted right after `new Worker()`
+// can arrive before the handler above exists and be dropped.
+post({ type: 'hello' });

@@ -21,6 +21,7 @@ export type FrameInbound =
     | { type: 'update'; generation: number; time: number; buffer?: ArrayBuffer };
 
 export type FrameOutbound =
+    | { type: 'hello' }
     | { type: 'init_complete'; generation: number; count: number }
     | { type: 'update_complete'; generation: number; time: number; positions: Float32Array; computeMs: number }
     | { type: 'error'; message: string };
@@ -34,6 +35,7 @@ export type AnalysisInbound =
     | { type: 'tonight'; requestId: number; sats: TLEInitData[]; observer: ObserverLocation; from: number; minElevation: number };
 
 export type AnalysisOutbound =
+    | { type: 'hello' }
     | { type: 'passes_result'; requestId: number; passes: SatellitePass[] }
     | { type: 'conjunctions_result'; requestId: number; events: ConjunctionEvent[] }
     | { type: 'tonight_result'; requestId: number; window: { start: number; end: number } | null; passes: TonightPass[] }
