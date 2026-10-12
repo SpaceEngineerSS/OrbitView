@@ -1,147 +1,342 @@
 {
-    "app": {
-        "title": "OrbitView",
-        "loading": "YÖRÜNGE GÖRÜNTÜLEYİCİ BAŞLATILIYOR...",
-        "loadingSatellites": "Uydu verileri yükleniyor..."
-    },
-    "sidebar": {
-        "search": "Uydu ara...",
-        "filter": {
-            "all": "Tümü",
-            "iss": "ISS",
-            "starlink": "Starlink",
-            "gps": "GPS",
-            "weather": "Meteoroloji",
-            "debris": "Uzay Çöpü"
-        },
-        "statistics": "İstatistikler",
-        "favorites": "Favoriler",
-        "noFavorites": "Henüz favori yok",
-        "noResults": "Uydu bulunamadı"
-    },
-    "infoPanel": {
-        "trackingActive": "TAKİP AKTİF",
-        "mountCamera": "KAMERA BAĞLA",
-        "unmount": "AYIR",
-        "analyze": "ANALİZ",
-        "telemetry": "Telemetri",
-        "orbitalData": "Yörünge Verisi",
-        "id": "ID",
-        "type": "TİP",
-        "signalStrength": "Sinyal Gücü",
-        "receptionQuality": "Alım Kalitesi",
-        "realTimeTelemetry": "Gerçek Zamanlı Telemetri",
-        "latitude": "ENLEM",
-        "longitude": "BOYLAM",
-        "altitude": "YÜKSEKLİK",
-        "velocity": "HIZ",
-        "acquiringSignal": "SİNYAL ALINIYOR...",
-        "signalIntegrity": "SİNYAL BÜTÜNLÜĞÜ",
-        "optimal": "OPTİMAL",
-        "orbitalElements": "Yörünge Elementleri",
-        "orbitalPeriod": "Yörünge Periyodu",
-        "apogee": "Apoapis",
-        "perigee": "Periapis",
-        "inclination": "Eğiklik",
-        "nextPass": "SONRAKİ GEÇİŞ",
-        "duration": "Süre",
-        "maxElevation": "Maks. Yükseklik"
-    },
-    "timeline": {
-        "play": "Oynat",
-        "pause": "Duraklat",
-        "speed": "Hız",
-        "realTime": "Gerçek Zaman",
-        "jumpToNow": "Şimdiye Atla"
-    },
-    "location": {
-        "title": "Gözlemci Konumu",
-        "subtitle": "Yer istasyonu konumunuzu belirleyin",
-        "useMyLocation": "Konumumu Kullan",
-        "detecting": "Tespit ediliyor...",
-        "quickSelect": "Hızlı Seçim",
-        "manualCoordinates": "Manuel Koordinatlar",
-        "latitude": "Enlem (°)",
-        "longitude": "Boylam (°)",
-        "altitude": "Yükseklik (m)",
-        "saveLocation": "Konumu Kaydet",
-        "locationUpdated": "Konum güncellendi",
-        "geolocationError": "Konum alınamadı",
-        "geolocationNotSupported": "Tarayıcınız konum özelliğini desteklemiyor",
-        "invalidLatitude": "Enlem -90 ile 90 arasında olmalıdır",
-        "invalidLongitude": "Boylam -180 ile 180 arasında olmalıdır"
-    },
-    "modeSwitch": {
-        "explorer": "Kaşif",
-        "analyst": "Analist"
-    },
-    "keyboard": {
-        "title": "Klavye Kısayolları",
-        "search": "Aramaya odaklan",
-        "favorite": "Favori ekle/çıkar",
-        "random": "Rastgele uydu",
-        "playPause": "Oynat/Duraklat",
-        "escape": "Panelleri kapat",
-        "help": "Kısayolları göster",
-        "analyst": "Analist Modunu Aç/Kapa"
-    },
-    "scientific": {
-        "dashboard": "Bilimsel Panel",
-        "doppler": "Doppler",
-        "decay": "Çürüme",
-        "conjunction": "Kavuşum",
-        "prediction": "Geçiş Tahmini",
-        "elements": "Elementler",
-        "semiMajorAxis": "Yarı Büyük Eksen",
-        "eccentricity": "Dışmerkezlik",
-        "raan": "Yükselen Düğüm Boylamı",
-        "argOfPerigee": "Perijee Argümanı",
-        "meanAnomaly": "Ortalama Anomali",
-        "meanMotion": "Ortalama Hareket",
-        "orbitType": "Yörünge Tipi"
-    },
-    "references": {
-        "title": "Referanslar ve Alıntılar",
-        "primarySources": "Birincil Kaynaklar",
-        "dataSources": "Veri Kaynakları",
-        "libraries": "Kütüphaneler",
-        "algorithms": "Algoritmalar",
-        "copyBibtex": "BibTeX Kopyala",
-        "copied": "Kopyalandı!"
-    },
-    "settings": {
-        "title": "Ayarlar",
-        "units": "Birimler",
-        "metric": "Metrik",
-        "imperial": "İngiliz",
-        "timeFormat": "Saat Formatı",
-        "theme": "Tema",
-        "dark": "Karanlık",
-        "system": "Sistem",
-        "maxSatellites": "Maks. Uydu Sayısı",
-        "orbitPathQuality": "Yörünge Yolu Kalitesi",
-        "showLabels": "Etiketleri Göster",
-        "showOrbits": "Yörüngeleri Göster",
-        "showGroundTrack": "Yer İzini Göster",
-        "showFootprint": "Ayak İzini Göster",
-        "enableLighting": "Aydınlatmayı Etkinleştir",
-        "enableAtmosphere": "Atmosferi Etkinleştir"
-    },
-    "footer": {
-        "builtWith": "ile yapıldı",
-        "forSpaceEnthusiasts": "uzay meraklıları için",
-        "dataFrom": "Veriler:",
-        "version": "Sürüm"
-    },
-    "common": {
-        "close": "Kapat",
-        "save": "Kaydet",
-        "cancel": "İptal",
-        "loading": "Yükleniyor...",
-        "error": "Hata",
-        "success": "Başarılı",
-        "minutes": "dakika",
-        "hours": "saat",
-        "days": "gün"
+  "app": {
+    "loadingGlobe": "Küre yükleniyor…"
+  },
+  "common": {
+    "back": "Geri",
+    "change": "Değiştir",
+    "close": "Kapat",
+    "reload": "Yeniden yükle",
+    "retry": "Tekrar dene",
+    "save": "Kaydet"
+  },
+  "nav": {
+    "label": "Ana menü",
+    "globe": "Küre",
+    "catalog": "Katalog",
+    "settings": "Ayarlar"
+  },
+  "search": {
+    "label": "Ara",
+    "placeholder": "Ad veya NORAD numarası",
+    "clear": "Aramayı temizle",
+    "featured": "Başlamak için",
+    "results": "{n} sonuç",
+    "none": "Eşleşen yok. Adın bir kısmını ya da katalog numarasını deneyin."
+  },
+  "catalog": {
+    "title": "Katalog",
+    "filters": "Kürede gösterilen nesneler",
+    "showOnGlobe": "Kürede göster"
+  },
+  "filter": {
+    "all": "Hepsi",
+    "stations": "Uzay istasyonları",
+    "starlink": "Starlink",
+    "gnss": "Navigasyon (GNSS)",
+    "leo": "Alçak yörünge (LEO)",
+    "meo": "Orta yörünge (MEO)",
+    "geo": "Yer eşzamanlı (GEO)",
+    "heo": "Yüksek eliptik (HEO)",
+    "debris": "Enkaz ve roket gövdeleri",
+    "favorites": "Yıldızlılar"
+  },
+  "regime": {
+    "LEO": "Alçak Dünya yörüngesi",
+    "MEO": "Orta Dünya yörüngesi",
+    "GEO": "Yer eşzamanlı",
+    "HEO": "Yüksek eliptik",
+    "DEBRIS": "Enkaz / roket gövdesi",
+    "MEO/HEO": "Orta / eliptik",
+    "SAT": "Sınıflandırılmamış"
+  },
+  "group": {
+    "station": "CelesTrak · istasyonlar",
+    "starlink": "CelesTrak · Starlink",
+    "cubesat": "CelesTrak · CubeSat",
+    "active": "CelesTrak · aktif"
+  },
+  "data": {
+    "loading": "Katalog yükleniyor…",
+    "failed": "Katalog yüklenemedi.",
+    "objects": "{n} nesne",
+    "ageMin": "TLE'ler {n} dk önce",
+    "ageH": "TLE'ler {n} sa önce",
+    "stale": "kaynağa ulaşılamadı, eski veri gösteriliyor",
+    "copyTle": "TLE'yi kopyala",
+    "copyLink": "Bağlantıyı kopyala",
+    "copied": "Kopyalandı",
+    "ephemeris": "Efemeris dışa aktarma",
+    "span": "Süre",
+    "step": "Adım",
+    "ephemerisNote": "Simülasyon zamanından başlar. Konumlar TEME çerçevesinde SGP4 çıktısıdır; yanında WGS-84 enlem, boylam ve yükseklik var."
+  },
+  "time": {
+    "title": "Simülasyon zamanı",
+    "live": "CANLI",
+    "paused": "DURDU",
+    "offset": "KAYIK",
+    "local": "Yerel",
+    "now": "Şimdi",
+    "play": "Oynat",
+    "pause": "Durdur",
+    "speed": "Hız",
+    "back1h": "1 saat geri",
+    "back1d": "1 gün geri",
+    "fwd1h": "1 saat ileri",
+    "fwd1d": "1 gün ileri",
+    "scrub": "Zamanda ilerlemek için sürükleyin"
+  },
+  "units": {
+    "min": "dk",
+    "days": "gün",
+    "revPerDay": "tur/gün",
+    "mPerDay": "m/gün",
+    "s": "{s} sn",
+    "ms": "{m} dk {s} sn",
+    "hm": "{h} sa {m} dk",
+    "dh": "{d} g {h} sa"
+  },
+  "geo": {
+    "n": "K",
+    "s": "G",
+    "e": "D",
+    "w": "B"
+  },
+  "compass": {
+    "N": "K",
+    "NE": "KD",
+    "E": "D",
+    "SE": "GD",
+    "S": "G",
+    "SW": "GB",
+    "W": "B",
+    "NW": "KB"
+  },
+  "idle": {
+    "title": "Seçili nesne yok.",
+    "body": "Küredeki bir noktaya tıklayın ya da yukarıdan arayın. Geçiş saatlerini ve Doppler'i kendi yeriniz için görmek istiyorsanız önce konumunuzu girin."
+  },
+  "inspector": {
+    "title": "Seçili nesne",
+    "sections": "Analiz bölümleri",
+    "favorite": "Yıldızla",
+    "unfavorite": "Yıldızı kaldır",
+    "follow": "Kamerayla takip et",
+    "unfollow": "Takibi bırak",
+    "close": "Seçimi kaldır",
+    "tab": {
+      "overview": "Özet",
+      "passes": "Geçişler",
+      "doppler": "Doppler",
+      "elements": "Elemanlar",
+      "lifetime": "Ömür",
+      "conjunctions": "Yaklaşma",
+      "data": "Veri"
     }
+  },
+  "sheet": {
+    "expand": "Genişlet",
+    "collapse": "Daralt"
+  },
+  "telemetry": {
+    "altitude": "İrtifa",
+    "speed": "Hız",
+    "latitude": "Enlem",
+    "longitude": "Boylam",
+    "illumination": "Aydınlanma",
+    "sunlit": "Güneş altında",
+    "eclipsed": "Dünya'nın gölgesinde"
+  },
+  "look": {
+    "azimuth": "Azimut",
+    "elevation": "Yükseliş",
+    "range": "Uzaklık"
+  },
+  "overview": {
+    "fromObserver": "Bulunduğunuz yerden",
+    "orbit": "Yörünge",
+    "regime": "Yörünge sınıfı",
+    "oldTle": "Bu eleman seti simülasyon zamanından {d} gün uzakta. SGP4 hatası yaşla hızla büyür; konumları kaba kabul edin."
+  },
+  "passes": {
+    "title": "Önümüzdeki 48 saat",
+    "window": "{el}° üstü",
+    "computing": "Geçişler hesaplanıyor…",
+    "noneIn48h": "Önümüzdeki 48 saatte maske açısının üstünde geçiş yok.",
+    "next": "Sıradaki geçiş",
+    "inProgress": "Şu an tepede",
+    "aosIn": "{d} sonra doğuyor",
+    "losIn": "{d} sonra batıyor",
+    "aos": "Doğuş",
+    "maxEl": "Maks",
+    "duration": "Süre",
+    "path": "Yön",
+    "visibleShort": "GÖZ",
+    "visibleHint": "Çıplak gözle görülebilir: uydu güneş altında, sizin gökyüzünüz karanlık",
+    "skyplot": "Gökyüzü haritası",
+    "skyplotLegend": "Merkez tam tepe, kenar ufuk. Daire: doğuş, kare: batış.",
+    "jumpTo": "Bu geçişe git →",
+    "note": "Saatler güncel TLE ile SGP4'ten hesaplanır ve yarım saniyeye kadar inceltilir. Atmosferik kırılma hesaba katılmaz; çok alçak geçişler gerçekte biraz daha erken doğar. * pencereden önce başlamış."
+  },
+  "doppler": {
+    "frequency": "İniş frekansı",
+    "customMHz": "MHz cinsinden frekans",
+    "presets": {
+      "issVoice": "ISS ses 145.800",
+      "issAprs": "ISS APRS 145.825",
+      "noaaApt": "NOAA APT 137.100",
+      "meteorLrpt": "Meteor LRPT 137.900",
+      "gpsL1": "GPS L1",
+      "kuBand": "Ku 12 GHz"
+    },
+    "now": "Şu an",
+    "belowHorizon": "ufkun altında, alınamaz",
+    "received": "Alınan",
+    "shift": "Kayma",
+    "rangeRate": "Uzaklık değişimi",
+    "approaching": "yaklaşıyor",
+    "receding": "uzaklaşıyor",
+    "curveTitle": "Sıradaki geçiş boyunca kayma",
+    "note": "Uydunun dönen Dünya'ya göre hızı kullanılır. Birinci derece Doppler; bu frekanslarda göreli etkiler 1 Hz'in altında kalır."
+  },
+  "elements": {
+    "title": "Ortalama elemanlar",
+    "derived": "Türetilen",
+    "epoch": "epok {d}",
+    "semiMajorAxis": "Yarı büyük eksen",
+    "eccentricity": "Dış merkezlik",
+    "inclination": "Eğim",
+    "raan": "Çıkış düğümü boylamı",
+    "argPerigee": "Yerberi açısı",
+    "meanAnomaly": "Ortalama anomali",
+    "meanMotion": "Ortalama hareket",
+    "period": "Periyot",
+    "perigee": "Yerberi yüksekliği",
+    "apogee": "Yeröte yüksekliği",
+    "bstar": "B* sürüklenme terimi",
+    "tleAge": "TLE yaşı",
+    "note": "Bunlar SGP4 ortalama elemanlarıdır, oskülatör değil. Yalnızca SGP4'e geri verildiklerinde anlamlıdırlar."
+  },
+  "lifetime": {
+    "title": "Yörünge ömrü",
+    "estimate": "Tahmin",
+    "range": "Güneş etkinliğine göre aralık",
+    "decayRate": "Şu anki irtifa kaybı",
+    "reentry": "Atmosfere giriş",
+    "chart": "Zamanla yerberi yüksekliği",
+    "chartAxis": "km / gün",
+    "inputs": "Girdiler",
+    "density": "Yerberide hava yoğunluğu",
+    "ballistic": "Balistik katsayı",
+    "spaceWeather": "Uzay havası",
+    "noaaLive": "NOAA SWPC, canlı",
+    "noLiveData": "canlı veri yok",
+    "f107avg": "F10.7, 81 gün ort.",
+    "dragUnknown": "Bu TLE'deki sürüklenme terimi sıfır ya da kullanılamayacak kadar küçük; ömür buradan tahmin edilemez.",
+    "note": "TLE sürüklenme terimi ve sabit üstel atmosferle yapılan kaba bir tahmin. Gerçek bozunma güneş döngüsüne, duruşa ve manevralara bağlıdır; ISS ya da Starlink gibi manevra yapan uydular bu takvime göre düşmez.",
+    "unit": {
+      "day": "{n} gün",
+      "month": "{n} ay",
+      "year": "{n} yıl",
+      "beyond": "> {n} yıl"
+    }
+  },
+  "conj": {
+    "setup": "Tarama",
+    "threshold": "Eşik",
+    "window": "İleriye",
+    "run": "Taramayı başlat",
+    "running": "Taranıyor…",
+    "runningHint": "Yörüngesi yaklaşabilecek her nesne ilerletiliyor. Birkaç saniye sürebilir.",
+    "results": "Sonuçlar",
+    "idle": "Yüklü katalogda bu nesneye yakın geçen nesneleri arar.",
+    "none": "Önümüzdeki {h} saatte {km} km'den yakına gelen nesne yok.",
+    "took": "{s} sn",
+    "relSpeed": "Δv",
+    "kind": {
+      "payload": "faydalı yük",
+      "debris": "enkaz",
+      "rocket_body": "roket gövdesi",
+      "unknown": "bilinmiyor"
+    },
+    "note": "TLE tabanlı bir tarama, çarpışma değerlendirmesi değil. TLE konumları bir kilometre ya da daha fazla sapabilir; burada küçük bir mesafe görmek bakmaya değer demektir, tahmin değildir."
+  },
+  "observer": {
+    "title": "Konumunuz",
+    "set": "Konum gir",
+    "none": "Girilmedi",
+    "needed": "Konumunuz gerekiyor.",
+    "intro": "Geçişler, bakış açıları ve Doppler bu nokta için hesaplanır.",
+    "useDevice": "Cihazın konumunu kullan",
+    "locating": "Konum alınıyor…",
+    "myLocation": "Konumum",
+    "cities": "Ya da bir şehir seçin",
+    "manual": "Ya da elle girin",
+    "lat": "Enlem °",
+    "lon": "Boylam °",
+    "alt": "Yükseklik m",
+    "label": "Ad (isteğe bağlı)",
+    "clear": "Konumu unut",
+    "invalid": "Enlem −90 ile 90, boylam −180 ile 180 arasında olmalı.",
+    "geoUnsupported": "Bu tarayıcı konum paylaşamıyor.",
+    "geoDenied": "Konum izni verilmedi.",
+    "geoFailed": "Konum alınamadı. Tekrar deneyin ya da bir şehir seçin.",
+    "privacy": "Yalnızca bu tarayıcıda saklanır, hiçbir sunucuya gönderilmez."
+  },
+  "settings": {
+    "title": "Ayarlar",
+    "general": "Genel",
+    "language": "Dil",
+    "clock": "Saatler",
+    "clockHint": "Uygulamadaki tüm saatlere uygulanır",
+    "observer": "Konum",
+    "minElevation": "Yükseliş maskesi",
+    "minElevationHint": "Geçiş sayılan en düşük yükseliş",
+    "globe": "Küre",
+    "basemap": "Harita",
+    "basemapDark": "Koyu",
+    "basemapImagery": "Uydu görüntüsü",
+    "showOrbit": "Seçili nesnenin yörüngesi",
+    "showGroundTrack": "Yer izi",
+    "showFootprint": "Kapsama dairesi",
+    "showFootprintHint": "Nesnenin maske açısının üstünde göründüğü alan",
+    "nightShadow": "Gece/gündüz gölgesi",
+    "autoRotate": "Boştayken yavaşça döndür",
+    "shortcuts": "Klavye"
+  },
+  "shortcuts": {
+    "search": "ara",
+    "play": "oynat / durdur",
+    "hour": "±1 saat",
+    "day": "±1 gün",
+    "speed": "yavaş / hızlı",
+    "now": "şimdiye dön",
+    "follow": "seçiliyi takip et",
+    "deselect": "seçimi kaldır"
+  },
+  "compassMode": {
+    "enter": "Gökyüzüne doğrult",
+    "exit": "Gökyüzü görünümünden çık",
+    "denied": "Bu cihazda hareket sensörleri kapalı ya da yok."
+  },
+  "about": {
+    "title": "Hakkında",
+    "what": "OrbitView, herkese açık uydu kataloğunu tarayıcınızda SGP4 ile ilerletir ve 3B bir küre üzerinde gösterir. Bir nesne seçtiğinizde üzerinizden geçişlerini, Doppler kaymasını, yörünge elemanlarını, ömür tahminini ve yakın geçişlerini görürsünüz.",
+    "accuracy": "Doğruluk TLE'lerin doğruluğu kadardır: taze bir LEO eleman setinde yaklaşık bir kilometre, yaşlandıkça günde birkaç kilometre kötüleşir. Gözlem planlamak ya da anten doğrultmak için yeterli; operasyon için değil.",
+    "sources": "Veri",
+    "srcTle": "Yörüngeler: CelesTrak GP verisi (ayarlıysa Space-Track)",
+    "srcWeather": "Güneş akısı ve Kp: NOAA Uzay Havası Tahmin Merkezi",
+    "srcMap": "Harita karoları: Esri",
+    "srcSgp4": "Yayıcı: satellite.js (SGP4/SDP4)",
+    "author": "Mehmet Gümüş tarafından geliştirildi. MIT lisanslı, kaynak kodu GitHub'da:",
+    "mapCredit": "Harita © Esri, HERE, Garmin, OpenStreetMap katkıcıları · Görüntü © Esri, Maxar"
+  },
+  "errors": {
+    "computation": "Hesaplama başarısız oldu. Başka bir nesne ya da zaman deneyin.",
+    "noTle": "Bu nesnenin eleman seti yok.",
+    "globeTitle": "Küre açılamadı",
+    "globeBody": "3B görünüm bir hatayla durdu. Uygulamanın geri kalanı çalışıyor; yeniden yüklemek genelde düzeltir.",
+    "noWebgl": "Bu tarayıcı ya da cihaz 3B küre için gereken WebGL'i sağlamıyor. Güncel bir Chrome, Firefox ya da Safari deneyin veya donanım hızlandırmayı açın."
+  }
 }

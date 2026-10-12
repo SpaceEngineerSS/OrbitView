@@ -1,83 +1,93 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-
-type Locale = 'en' | 'tr';
-
-interface LocaleContextType {
-    locale: Locale;
-    setLocale: (locale: Locale) => void;
-    t: (key: string) => string;
-}
-
-const LocaleContext = createContext<LocaleContextType | null>(null);
-
-// Import messages statically for client-side use
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import enMessages from '../../messages/en.json';
 import trMessages from '../../messages/tr.json';
 
-const messages: Record<Locale, typeof enMessages> = {
-    en: enMessages,
-    tr: trMessages
-};
+export type Locale = 'en' | 'tr';
 
-function getNestedValue(obj: Record<string, unknown>, path: string): string {
-    const keys = path.split('.');
-    let current: unknown = obj;
+type Vars = Record<string, string | number>;
 
-    for (const key of keys) {
-        if (current && typeof current === 'object' && key in current) {
-            current = (current as Record<string, unknown>)[key];
+interface LocaleContextValue {
+    locale: Locale;
+    setLocale: (locale: Locale) => void;
+    /** Look up a dotted key; `{name}` placeholders are filled from `vars`. */
+    t: (key: string, vars?: Vars) => string;
+    /** Intl locale tag used for numbers and dates */
+    intl: string;
+}
+
+const MESSAGES: Record<Locale, unknown> = { en: enMessages, tr: trMessages };
+const STORAGE_KEY = 'orbitview-locale';
+
+function lookup(tree: unknown, key: string): string | undefined {
+    let node = tree;
+    for (const part of key.split('.')) {
+        if (node && typeof node === 'object' && part in node) {
+            node = (node as Record<string, unknown>)[part];
         } else {
-            return path; // Return key if not found
+            return undefined;
         }
     }
-
-    return typeof current === 'string' ? current : path;
+    return typeof node === 'string' ? node : undefined;
 }
+
+function interpolate(text: string, vars?: Vars): string {
+    if (!vars) return text;
+    return text.replace(/\{(\w+)\}/g, (m, name: string) => (name in vars ? String(vars[name]) : m));
+}
+
+const LocaleContext = createContext<LocaleContextValue | null>(null);
 
 export function LocaleProvider({ children }: { children: ReactNode }) {
     const [locale, setLocaleState] = useState<Locale>('en');
 
     useEffect(() => {
-        // Load saved locale from localStorage
-        const savedLocale = localStorage.getItem('orbitview-locale') as Locale;
-        if (savedLocale && (savedLocale === 'en' || savedLocale === 'tr')) {
-            setLocaleState(savedLocale);
-        } else {
-            // Detect browser language
-            const browserLang = navigator.language.split('-')[0];
-            if (browserLang === 'tr') {
-                setLocaleState('tr');
-            }
+        let initial: Locale = 'en';
+        try {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved === 'en' || saved === 'tr') initial = saved;
+            else if (navigator.language.toLowerCase().startsWith('tr')) initial = 'tr';
+        } catch {
+            if (navigator.language.toLowerCase().startsWith('tr')) initial = 'tr';
         }
+        setLocaleState(initial);
     }, []);
 
-    const setLocale = (newLocale: Locale) => {
-        setLocaleState(newLocale);
-        localStorage.setItem('orbitview-locale', newLocale);
-    };
+    useEffect(() => {
+        document.documentElement.lang = locale;
+    }, [locale]);
 
-    const t = (key: string): string => {
-        return getNestedValue(messages[locale] as unknown as Record<string, unknown>, key);
-    };
+    const setLocale = useCallback((next: Locale) => {
+        setLocaleState(next);
+        try { localStorage.setItem(STORAGE_KEY, next); } catch { /* private mode */ }
+    }, []);
 
-    return (
-        <LocaleContext.Provider value={{ locale, setLocale, t }}>
-            {children}
-        </LocaleContext.Provider>
-    );
+    const t = useCallback((key: string, vars?: Vars) => {
+        const text = lookup(MESSAGES[locale], key) ?? lookup(MESSAGES.en, key);
+        if (text === undefined) {
+            if (process.env.NODE_ENV !== 'production') console.warn(`[i18n] missing key: ${key}`);
+            return key;
+        }
+        return interpolate(text, vars);
+    }, [locale]);
+
+    const value = useMemo<LocaleContextValue>(() => ({
+        locale,
+        setLocale,
+        t,
+        intl: locale === 'tr' ? 'tr-TR' : 'en-GB',
+    }), [locale, setLocale, t]);
+
+    return <LocaleContext.Provider value={value}>{children}</LocaleContext.Provider>;
 }
 
-export function useLocale() {
-    const context = useContext(LocaleContext);
-    if (!context) {
-        throw new Error('useLocale must be used within a LocaleProvider');
-    }
-    return context;
+export function useLocale(): LocaleContextValue {
+    const ctx = useContext(LocaleContext);
+    if (!ctx) throw new Error('useLocale must be used within LocaleProvider');
+    return ctx;
 }
 
-export function useTranslations() {
-    const { t } = useLocale();
-    return t;
+export function useT() {
+    return useLocale().t;
 }

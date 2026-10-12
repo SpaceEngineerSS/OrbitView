@@ -1,235 +1,230 @@
 @import "tailwindcss";
 
-/* ===== ORBITAL GLASS 3.0 Design System ===== */
-/* Theme: "Dark Glass & Neon Aurora" */
-
+/*
+ * OrbitView console palette.
+ *
+ * One accent (amber) that always means "this is the thing you selected or
+ * the action you can take". Everything else is graphite and bone. No blur,
+ * no glow, no gradients: panels are flat surfaces separated by 1px rules,
+ * like the instrument pages I modelled this on.
+ */
 :root {
-  /* Core Background */
-  --space-black: #030305;
-  --deep-space: #050507;
+  --c-bg: #101215;
+  --c-surface: #15171a;
+  --c-raised: #1c1f23;
+  --c-rule: #2b2f35;
+  --c-rule-strong: #3a3f46;
 
-  /* Neon Palette */
-  --neon-blue: #00f3ff;
-  --neon-purple: #bc13fe;
-  --neon-alert: #ff003c;
+  --c-text: #e8e4da;
+  --c-text-dim: #8d9097;
+  --c-text-faint: #5d6168;
 
-  /* Glass System */
-  --glass-bg: rgba(5, 5, 7, 0.6);
-  --glass-border: rgba(255, 255, 255, 0.1);
-  --glass-highlight: rgba(255, 255, 255, 0.05);
+  --c-accent: #f2a33a;
+  --c-accent-ink: #1a1306;
+  --c-accent-dim: #8a5f24;
 
-  /* Fonts */
-  --font-heading: var(--font-rajdhani), sans-serif;
-  --font-body: var(--font-inter), sans-serif;
+  --c-alert: #d9534f;
+  --c-warn: #e07b39;
+  --c-ok: #7fb069;
+
+  /* Orbit regime colours used on the globe and in legends */
+  --c-leo: #9fb3c8;
+  --c-meo: #8fb39a;
+  --c-geo: #c9b8a0;
+  --c-heo: #b9a3c4;
+  --c-debris: #6b6f76;
+  --c-station: #e8e4da;
+
+  --radius: 2px;
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+  --dur: 140ms;
+
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+
+  /* Stacking order, lowest first */
+  --z-globe: 0;
+  --z-hud: 10;
+  --z-sheet: 20;
+  --z-nav: 30;
+  --z-overlay: 40;
+  --z-dialog: 50;
+  --z-toast: 60;
+
+  color-scheme: dark;
 }
 
 @theme inline {
-  --color-space-black: var(--space-black);
-  --color-deep-space: var(--deep-space);
-  --color-neon-blue: var(--neon-blue);
-  --color-neon-purple: var(--neon-purple);
-  --color-neon-alert: var(--neon-alert);
+  --color-bg: var(--c-bg);
+  --color-surface: var(--c-surface);
+  --color-raised: var(--c-raised);
+  --color-rule: var(--c-rule);
+  --color-rule-strong: var(--c-rule-strong);
+  --color-ink: var(--c-text);
+  --color-dim: var(--c-text-dim);
+  --color-faint: var(--c-text-faint);
+  --color-accent: var(--c-accent);
+  --color-accent-ink: var(--c-accent-ink);
+  --color-accent-dim: var(--c-accent-dim);
+  --color-alert: var(--c-alert);
+  --color-warn: var(--c-warn);
+  --color-ok: var(--c-ok);
 
-  --font-rajdhani: var(--font-rajdhani);
-  --font-inter: var(--font-inter);
+  --font-sans: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, "SFMono-Regular", monospace;
+
+  --radius-xs: var(--radius);
+  --radius-sm: var(--radius);
+  --radius-md: var(--radius);
 }
 
-/* ===== Starfield Background ===== */
+html,
 body {
-  background-color: var(--space-black);
-  color: #fff;
-  font-family: var(--font-body);
+  height: 100%;
+}
+
+body {
+  background: var(--c-bg);
+  color: var(--c-text);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.45;
   overflow: hidden;
-  /* App-like feel */
-  position: relative;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
 }
 
-/* Fixed Starfield to prevent repaint */
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: -2;
-  background:
-    radial-gradient(1px 1px at 10% 10%, #fff, transparent),
-    radial-gradient(1px 1px at 20% 20%, #fff, transparent),
-    radial-gradient(1px 1px at 30% 30%, #fff, transparent),
-    radial-gradient(2px 2px at 40% 40%, #fff, transparent),
-    radial-gradient(1px 1px at 50% 50%, #fff, transparent),
-    radial-gradient(1px 1px at 60% 60%, #fff, transparent),
-    radial-gradient(2px 2px at 70% 70%, #fff, transparent),
-    radial-gradient(1px 1px at 80% 80%, #fff, transparent),
-    radial-gradient(1px 1px at 90% 90%, #fff, transparent);
-  background-size: 550px 550px;
-  opacity: 0.3;
+::selection {
+  background: var(--c-accent);
+  color: var(--c-accent-ink);
 }
 
-/* Aurora Borealis Effect */
-body::after {
-  content: "";
-  position: fixed;
-  top: -50%;
-  left: -50%;
-  right: -50%;
-  bottom: -50%;
-  z-index: -1;
-  background:
-    radial-gradient(circle at 50% 50%, rgba(188, 19, 254, 0.05) 0%, transparent 50%),
-    radial-gradient(circle at 80% 20%, rgba(0, 243, 255, 0.05) 0%, transparent 40%);
-  animation: aurora-move 60s linear infinite;
-  pointer-events: none;
+:focus-visible {
+  outline: 1px solid var(--c-accent);
+  outline-offset: 1px;
 }
 
-@keyframes aurora-move {
-  0% {
-    transform: rotate(0deg);
-  }
-
-  100% {
-    transform: rotate(360deg);
-  }
+/* Numbers never jitter when they change */
+.num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "zero" 1;
 }
 
-/* ===== Custom Scrollbar (Stealth Mode) ===== */
-* {
+/* Small caps label used above every readout */
+.label {
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--c-text-dim);
+}
+
+/* Thin, quiet scrollbars */
+.scroll {
+  overflow-y: auto;
+  overscroll-behavior: contain;
   scrollbar-width: thin;
-  scrollbar-color: rgba(0, 243, 255, 0.2) transparent;
+  scrollbar-color: var(--c-rule-strong) transparent;
+}
+.scroll::-webkit-scrollbar {
+  width: 6px;
+}
+.scroll::-webkit-scrollbar-thumb {
+  background: var(--c-rule-strong);
 }
 
-*::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
+/* Tick-mark rule used as a section divider (the one ornament we allow) */
+.ticks {
+  height: 5px;
+  background-image: repeating-linear-gradient(
+    to right,
+    var(--c-rule-strong) 0 1px,
+    transparent 1px 8px
+  );
 }
 
-*::-webkit-scrollbar-track {
+/*
+ * The globe sits in a fixed region whose edges follow the layout, so the
+ * Cesium viewer is never recreated when the layout switches.
+ * Phone: between the top bar (48) and the bottom nav (56).
+ * Tablet: header 44, footer 52, inspector 360 on the right.
+ * Desktop: plus the 232 px catalog on the left.
+ */
+.globe-region {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: calc(48px + var(--safe-top));
+  bottom: calc(56px + var(--safe-bottom));
+}
+@media (min-width: 768px) {
+  .globe-region {
+    top: 44px;
+    bottom: 52px;
+    right: 360px;
+  }
+}
+@media (min-width: 1024px) {
+  .globe-region {
+    left: 232px;
+  }
+}
+
+/* Range input used as the time scrubber */
+.scrubber {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: ew-resize;
+  margin: 0;
+}
+.scrubber::-webkit-slider-runnable-track {
+  height: 24px;
   background: transparent;
 }
-
-*::-webkit-scrollbar-thumb {
-  background-color: rgba(0, 243, 255, 0.2);
-  border-radius: 20px;
+.scrubber::-moz-range-track {
+  height: 24px;
+  background: transparent;
+}
+.scrubber::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 10px;
+  height: 22px;
+  margin-top: 1px;
+  background: var(--c-accent);
+  border: 2px solid var(--c-bg);
+  border-radius: 1px;
+}
+.scrubber::-moz-range-thumb {
+  width: 10px;
+  height: 22px;
+  background: var(--c-accent);
+  border: 2px solid var(--c-bg);
+  border-radius: 1px;
 }
 
-*::-webkit-scrollbar-thumb:hover {
-  background-color: var(--neon-blue);
+/* Cesium: remove its own chrome, we draw our own */
+.cesium-widget-credits,
+.cesium-viewer-bottom,
+.cesium-viewer-toolbar,
+.cesium-viewer-animationContainer,
+.cesium-viewer-timelineContainer,
+.cesium-viewer-fullscreenContainer {
+  display: none !important;
+}
+.cesium-widget canvas {
+  outline: none;
 }
 
-/* ===== Typography Utilities ===== */
-.font-rajdhani {
-  font-family: var(--font-heading);
-}
-
-.text-glow {
-  text-shadow: 0 0 10px rgba(0, 243, 255, 0.5);
-}
-
-.text-neon-purple {
-  text-shadow: 0 0 10px rgba(188, 19, 254, 0.5);
-}
-
-.border-glow {
-  box-shadow: 0 0 10px rgba(0, 243, 255, 0.3);
-}
-
-.bg-glow {
-  box-shadow: 0 0 20px rgba(0, 243, 255, 0.1);
-}
-
-/* ===== Utilities ===== */
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-
-.no-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-
-.mask-gradient-right {
-  mask-image: linear-gradient(to right, black 85%, transparent 100%);
-  -webkit-mask-image: linear-gradient(to right, black 85%, transparent 100%);
-}
-
-/* ===== Premium Glassmorphism & UI Classes ===== */
-.glass-panel {
-  background: rgba(5, 5, 7, 0.55);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
-}
-
-.glass-panel-premium {
-  background: rgba(5, 5, 7, 0.75);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.6), 0 0 20px rgba(0, 243, 255, 0.15);
-}
-
-/* ===== Mobile Navigation & Overlay Classes ===== */
-.mobile-tab-bar {
-  position: fixed;
-  bottom: 1rem;
-  left: 1rem;
-  right: 1rem;
-  z-index: 50;
-  background: rgba(5, 5, 7, 0.7);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 1.25rem;
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5), 0 0 15px rgba(0, 243, 255, 0.1);
-  overflow: hidden;
-}
-
-.mobile-search-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 50;
-  background: rgba(3, 3, 5, 0.96);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  display: flex;
-  flex-direction: column;
-}
-
-.mobile-bottom-sheet {
-  position: fixed;
-  left: 1rem;
-  right: 1rem;
-  z-index: 45;
-  background: rgba(5, 5, 7, 0.85);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-top-left-radius: 1.5rem;
-  border-top-right-radius: 1.5rem;
-  border-bottom-left-radius: 1rem;
-  border-bottom-right-radius: 1rem;
-  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.6), 0 0 20px rgba(0, 243, 255, 0.05);
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-}
-
-.tap-target {
-  min-width: 44px;
-  min-height: 44px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* ===== Slow Rotation animation for Compass ===== */
-@keyframes spin-slow {
-  from {
-    transform: rotate(0deg);
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
   }
-  to {
-    transform: rotate(360deg);
-  }
-}
-.animate-spin-slow {
-  animation: spin-slow 8s linear infinite;
 }
