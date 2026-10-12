@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { CloudWarning, ArrowClockwise, Flag, Check } from "@phosphor-icons/react";
-import { useSatcatStore, countByOwner } from "@/store/satcatStore";
+import { useSatcatStore, countByOwner, matchesCountry } from "@/store/satcatStore";
 import { COUNTRY_FILTERS } from "@/lib/satcat";
 import { useCountryName } from "@/components/analysis/IdentityCard";
 import { useAppStore, type FilterKey } from "@/store/appStore";
@@ -89,8 +89,14 @@ export function FilterChips({ className }: { className?: string }) {
     const favorites = useAppStore((s) => s.favorites);
     const filter = useAppStore((s) => s.filter);
     const setFilter = useAppStore((s) => s.setFilter);
+    const country = useAppStore((s) => s.country);
+    const owners = useSatcatStore((s) => s.owners);
     const kinds = useSatcatStore((s) => s.kinds);
-    const counts = useMemo(() => countByFilter(objects, new Set(favorites), kinds), [objects, favorites, kinds]);
+    // Counts within the chosen country, so the chips match what is drawn.
+    const counts = useMemo(() => {
+        const pool = country && owners ? objects.filter((o) => matchesCountry(o.id, country, owners)) : objects;
+        return countByFilter(pool, new Set(favorites), kinds);
+    }, [objects, favorites, kinds, country, owners]);
 
     return (
         <div className={cx("scroll-fade-x flex gap-1.5 overflow-x-auto [scrollbar-width:none] -mx-1 pl-1 py-1", className)}>

@@ -129,9 +129,13 @@ export const useAppStore = create<AppState>()(
             storage: createJSONStorage(() => localStorage),
             // Hydrated explicitly below, only in the browser.
             skipHydration: true,
-            partialize: (s) => ({ observer: s.observer, settings: s.settings, favorites: s.favorites, filter: s.filter, country: s.country }),
+            // The country filter is not kept: it depends on the satellite
+            // catalog, which loads later (or not at all), and a globe that
+            // opens with 40 of 30,000 objects looks broken.
+            partialize: (s) => ({ observer: s.observer, settings: s.settings, favorites: s.favorites, filter: s.filter }),
             merge: (persisted, current) => {
-                const p = (persisted ?? {}) as Partial<AppState>;
+                const { country: _dropped, ...p } = (persisted ?? {}) as Partial<AppState>;
+                void _dropped;
                 return { ...current, ...p, settings: { ...DEFAULT_SETTINGS, ...(p.settings ?? {}) } };
             },
         }

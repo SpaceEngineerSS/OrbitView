@@ -40,10 +40,14 @@ export const useSatcatStore = create<SatcatState>((set, get) => ({
     },
 }));
 
-/** Country filter test; with no country chosen everything passes. */
+/**
+ * Country filter test. With no country chosen, or while the satellite
+ * catalog isn't loaded (or failed), everything passes: we can't tell, and
+ * hiding the whole globe is worse than not filtering.
+ */
 export function matchesCountry(id: string, country: string | null, owners: Map<string, string> | null): boolean {
-    if (!country) return true;
-    return owners?.get(id) === country;
+    if (!country || !owners) return true;
+    return owners.get(id) === country;
 }
 
 export function countByOwner(ids: string[], owners: Map<string, string> | null): Map<string, number> {
