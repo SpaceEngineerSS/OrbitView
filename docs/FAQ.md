@@ -1,9 +1,17 @@
 # FAQ
 
-**Why is the next pass listed as "radio only"?**
-The satellite is above your horizon but either in Earth's shadow or passing
-in daylight, so you won't see it with your eyes. You can still hear it if it
-transmits. Visible passes are green.
+**Why is the next pass listed as "not visible"?**
+The satellite is above your horizon but either in Earth's shadow for the whole
+pass or passing in daylight, so you won't see it with your eyes. Passes marked
+"sunlit" are green: the satellite is in sunlight while your sky is dark for at
+least part of the pass. Whether you can actually see it depends on how big
+and bright it is.
+
+**Why does "Space stations" show only two objects?**
+There are two crewed stations in orbit: the ISS and China's Tiangong.
+CelesTrak's "stations" list also has the ISS modules catalogued separately,
+cargo and crew vehicles, and small satellites released from the ISS. Those are
+still in the catalog and in search, under their orbit (LEO).
 
 **The pass time is a few seconds off from another site.**
 Small differences come from different element sets (they're updated several

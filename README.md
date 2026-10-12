@@ -26,18 +26,20 @@ from scratch.
 ## What it does
 
 - **Live catalog.** The active satellites (and, with a Space-Track account, the
-  full catalog including debris) drawn on a 3D globe and updated 20 times a
-  second. Colour shows the orbit: low Earth orbit in sky blue, MEO teal, GEO
-  violet, highly elliptical pink, stations yellow.
+  full catalog including debris) drawn on a 3D globe, redrawn when something
+  moves (up to about 15 times a second, not at all while paused). Colour shows
+  the orbit: low Earth orbit in sky blue, MEO teal, geostationary violet,
+  highly elliptical pink, debris grey; the two crewed stations (ISS and
+  Tiangong) are yellow.
 - **Passes over you.** For any object, the passes in the next 48 hours from
   your location: rise and set times to half a second, maximum elevation,
-  direction, and whether you'll actually see it (satellite in sunlight, your sky
-  dark). A strip shows all of them at once, with night shaded.
+  direction, and whether it is sunlit while your sky is dark — at any point
+  of the pass, not only at its highest. A strip shows all of them at once, with night shaded.
 - **What matters now.** The first card changes with the situation:
   *overhead now, sets in 3 min*; *visible pass at 21:42, up to 63°*; or simply
   the next pass.
 - **Doppler.** Received frequency and shift for common downlinks (ISS voice and
-  APRS, NOAA APT, Meteor LRPT, GPS L1, Ku band) or any frequency you type, plus
+  APRS, Meteor LRPT, GPS L1, Ku band) or any frequency you type, plus
   the shift curve across the next pass.
 - **Orbit.** Mean elements, perigee/apogee, period, inclination and how old the
   element set is.

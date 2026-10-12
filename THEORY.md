@@ -119,9 +119,13 @@ its real rise time, and a pass still in progress at the end of the window is
 followed until it sets. An object that never sets (a geostationary satellite
 in view) is reported as one pass covering the window.
 
-**Visibility.** A pass is marked visible when, at culmination, the satellite
-is sunlit and the Sun is more than 6° below the observer's horizon (civil
-twilight). Shadow uses a cylindrical Earth-shadow model, which is accurate to
+**Visibility.** A pass is marked sunlit when, at any moment of the pass, the
+satellite is in sunlight and the Sun is more than 6° below the observer's
+horizon (civil twilight). The pass is checked every 30 s plus its ends and
+culmination: evening passes often enter the shadow before their highest
+point. The app says "sunlit in a dark sky" rather than "visible" because it
+doesn't estimate brightness — a small cubesat can be sunlit and still far too
+faint to see. Shadow uses a cylindrical Earth-shadow model, which is accurate to
 a few seconds at the shadow boundary.
 
 Not modelled: atmospheric refraction (≈ 0.5° at the horizon, so real rises are

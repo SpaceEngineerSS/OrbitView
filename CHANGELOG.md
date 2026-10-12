@@ -31,6 +31,27 @@ from scratch.
 - The inter-satellite link search missed most pairs between 1000 and 2500 km.
   It drew nothing, so it was removed.
 
+### Fixed — labels
+- "Space stations" counted all 19 objects in CelesTrak's stations list
+  (modules, cargo ships, cubesats, a piece of debris). It now means the ISS
+  and Tiangong.
+- Unidentified new launches ("OBJECT A") were counted as debris; with the
+  satellite catalog loaded, debris and rocket bodies come from its object type.
+- Geostationary needs an inclination under 5°; inclined geosynchronous
+  satellites (BeiDou IGSO, QZSS) are no longer listed as GEO. Every object now
+  has exactly one regime, so the chips add up to the whole catalog.
+- The GNSS filter missed GLONASS ("COSMOS … (7xx)"), Galileo and NavIC NVS.
+- A pass is marked sunlit if any part of it is, not only the culmination.
+  "Visible"/"Radio only" are now "Sunlit"/"Not visible": the app doesn't
+  estimate brightness, and debris doesn't transmit.
+- Doppler no longer defaults to the ISS voice frequency for every object and
+  is hidden for debris; the NOAA APT preset is gone (NOAA 15/18/19 are retired).
+- Lifetime badge follows the estimated lifetime (weeks / months / years /
+  long-lived) instead of the perigee height.
+- "TLEs 13 min old" was the download time; it now says "Updated 13 min ago".
+- Featured: NOAA 21 replaces the retired NOAA 19, and GOES 19 (GOES-East
+  since 2025) replaces GOES 16.
+
 ### Fixed — data
 - A failed TLE group no longer returns the default catalog under that group's
   name (which could label every satellite as a space station for two hours).

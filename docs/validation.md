@@ -35,6 +35,7 @@ GEO satellite showed about 3 km/s of range rate, roughly 100 kHz at 12 GHz.
 | Maximum elevation | 5-second samples across the pass | none higher than reported + 0.01° |
 | Pass already in progress at window start | — | flagged, starts at the window |
 | Pass still in progress at window end | the same pass in a wider window | same LOS to 2 s |
+| "Sunlit" flag over three days | 5-second scan of sunlight and sky darkness | any sunlit stretch over 30 s is flagged; nothing in shadow is |
 
 ## Lifetime
 
@@ -45,6 +46,7 @@ GEO satellite showed about 3 km/s of range rate, roughly 100 kHz at 12 GHz.
 | Lower perigee | shorter lifetime |
 | B* = 0 | "drag not measurable" |
 | 1200 km perigee | beyond the 25-year horizon |
+| Badge | weeks / months / years / long-lived from the lifetime, not the perigee |
 
 ## Close approaches
 
@@ -65,6 +67,16 @@ GEO satellite showed about 3 km/s of range rate, roughly 100 kHz at 12 GHz.
 | SATCAT parsing | decayed objects dropped, quoted names, radar size |
 | Night window (Istanbul) | Sun below −6° just inside both edges, above it just before dusk |
 | Shared pass cache | one calculation per key; previous result shown while a new window loads |
+
+## Catalog labels — `catalog.test.ts`
+
+| What | Assertion |
+|---|---|
+| Space stations | exactly the ISS and Tiangong, not modules, vehicles, cubesats or "ISS DEB" |
+| Regime | geostationary needs i < 5°; BeiDou IGSO and QZSS are MEO; Molniya HEO; broken lines don't crash |
+| Debris | "OBJECT A" is not debris; SATCAT's object type wins over the name |
+| Chip counts | LEO + MEO + GEO + HEO + debris = everything, with and without SATCAT |
+| GNSS | real catalog names of GPS, GLONASS (incl. K), Galileo, BeiDou, QZSS, NavIC |
 
 ## Data layer — `tle.test.ts`, `db.test.ts`, `SpaceWeather.test.ts`, `route.test.ts`
 

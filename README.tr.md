@@ -27,17 +27,18 @@ baştan dikkatle gözden geçirdim (aşağıda yazdığım birkaç gerçek düze
 ## Neler yapıyor
 
 - **Canlı katalog.** Aktif uydular (Space-Track hesabıyla enkaz dahil tüm
-  katalog) 3B kürede, saniyede 20 kez güncelleniyor. Renk yörüngeyi gösteriyor:
-  alçak yörünge açık mavi, orta yörünge camgöbeği, yer eşzamanlı mor, yüksek
-  eliptik pembe, istasyonlar sarı.
+  katalog) 3B kürede; bir şey hareket ettikçe yeniden çiziliyor (saniyede en
+  fazla 15 kez civarı, duraklatınca hiç). Renk yörüngeyi gösteriyor: alçak
+  yörünge açık mavi, orta yörünge camgöbeği, yer durağan mor, yüksek eliptik
+  pembe, enkaz gri; iki insanlı istasyon (ISS ve Tiangong) sarı.
 - **Üzerinizden geçişler.** Seçtiğiniz nesnenin konumunuzdan önümüzdeki 48
   saatteki geçişleri: yarım saniye hassasiyetle doğuş ve batış, en yüksek açı,
-  yön ve gerçekten görüp göremeyeceğiniz (uydu güneş altında, sizin
-  gökyüzünüz karanlık). Hepsi gece bölümleri gölgeli tek bir şeritte.
+  yön ve sizin gökyüzünüz karanlıkken uydunun güneş altında olup olmadığı —
+  yalnız en yüksek noktada değil, geçişin herhangi bir anında. Hepsi gece bölümleri gölgeli tek bir şeritte.
 - **Şu an önemli olan.** İlk kart duruma göre değişiyor: *şu an tepede, 3 dk
   sonra batıyor*; *görünür geçiş 21:42, en fazla 63°*; ya da sadece sıradaki
   geçiş.
-- **Doppler.** Bilinen iniş frekansları (ISS ses ve APRS, NOAA APT, Meteor LRPT,
+- **Doppler.** Bilinen iniş frekansları (ISS ses ve APRS, Meteor LRPT,
   GPS L1, Ku bandı) ya da yazdığınız herhangi bir frekans için alınan frekans ve
   kayma; sıradaki geçiş boyunca kayma eğrisi.
 - **Yörünge.** Ortalama elemanlar, yerberi/yeröte, periyot, eğim ve eleman
