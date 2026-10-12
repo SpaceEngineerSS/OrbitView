@@ -6,6 +6,7 @@ import { passToIcs, escapeText, fold } from '../ics';
 import { parseSatcatCsv, splitCsv, rowToInfo } from '../satcat';
 import { nightWindow, sunElevation, tonightPasses } from '../tonight';
 import { ensurePasses, passSnapshot } from '@/hooks/useAnalysis';
+import { matchesCountry } from '@/store/satcatStore';
 
 const ISS1 = '1 25544U 98067A   23351.58334491  .00016717  00000-0  30142-3 0  9999';
 const ISS2 = '2 25544  51.6416 250.7541 0004124 163.7645 282.8447 15.49520176430335';
@@ -148,5 +149,17 @@ describe('shared pass cache', () => {
         expect(passSnapshot('k|1', 'k').status).toBe('ready');
         ensurePasses('k|2', 'k', () => new Promise(() => {}));
         expect(passSnapshot('k|2', 'k').status).toBe('ready'); // previous window still shown
+    });
+});
+
+describe('country filter', () => {
+    const owners = new Map([['39522', 'TURK'], ['25544', 'ISS']]);
+    it('filters by owner once the satellite catalog is loaded', () => {
+        expect(matchesCountry('39522', 'TURK', owners)).toBe(true);
+        expect(matchesCountry('25544', 'TURK', owners)).toBe(false);
+    });
+    it('hides nothing while the catalog is missing (v4.0 drew an empty globe)', () => {
+        expect(matchesCountry('25544', 'TURK', null)).toBe(true);
+        expect(matchesCountry('25544', null, null)).toBe(true);
     });
 });
