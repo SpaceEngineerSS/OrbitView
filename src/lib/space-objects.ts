@@ -1,5 +1,5 @@
 import * as Cesium from "cesium";
-import { SatelliteData } from "./tle";
+import { SatelliteData, SatelliteCategory } from "./tle";
 
 export type SpaceObjectType = 'TLE' | 'EPHEMERIS';
 
@@ -19,7 +19,10 @@ export interface SpaceObject {
         description?: string;
     };
     // Common
+    /** Orbit regime / display category (LEO, MEO, GEO, HEO, DEBRIS, ...) used by UI filters */
     category?: string;
+    /** Catalog group assigned at load time in tle.ts (station, starlink, cubesat, active) */
+    group?: SatelliteCategory;
     // Professional Metadata
     mass?: number;
     dimensions?: string;
@@ -49,7 +52,7 @@ export const convertToSpaceObject = (sat: SatelliteData): SpaceObject => {
         } else {
             category = 'MEO/HEO';
         }
-    } catch (e) {
+    } catch {
         category = 'SAT';
     }
 
@@ -62,6 +65,8 @@ export const convertToSpaceObject = (sat: SatelliteData): SpaceObject => {
             line2: sat.line2
         },
         category,
+        // Preserve the catalog category from tle.ts instead of discarding it
+        group: sat.category,
         mass: sat.mass,
         dimensions: sat.dimensions,
         frequencies: sat.frequencies
