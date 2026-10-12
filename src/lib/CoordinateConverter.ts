@@ -14,6 +14,8 @@
  *     4th Edition, Chapter 3: Coordinate Systems. ISBN: 978-1881883180
  */
 
+import * as satellite from 'satellite.js';
+
 // WGS-84 Constants
 const WGS84 = {
     a: 6378.137,              // Semi-major axis (km)
@@ -50,42 +52,19 @@ export interface GeodeticCoordinates {
 }
 
 /**
- * Calculate Greenwich Mean Sidereal Time (GMST)
- * @param date - UTC date/time
- * @returns GMST in radians
+ * Greenwich Mean Sidereal Time.
+ *
+ * Delegates to satellite.js (IAU-82 model, the same one SGP4 uses) so that
+ * every frame conversion in the app agrees with the propagator.
+ * @returns GMST in radians, 0..2π
  */
 export function calculateGMST(date: Date): number {
-    // Julian Date
-    const jd = dateToJulianDate(date);
-
-    // Julian centuries from J2000.0
-    const T = (jd - 2451545.0) / 36525.0;
-
-    // GMST at 0h UT (degrees)
-    const gmst0 = 100.4606184 + 36000.77004 * T + 0.000387933 * T * T - T * T * T / 38710000;
-
-    // Add fraction of day
-    const ut1Fraction = ((date.getUTCHours() + date.getUTCMinutes() / 60 + date.getUTCSeconds() / 3600) / 24);
-    const gmstDegrees = gmst0 + 360.98564724 * ut1Fraction;
-
-    // Normalize to 0-360 and convert to radians
-    return ((gmstDegrees % 360 + 360) % 360) * (Math.PI / 180);
+    return satellite.gstime(date);
 }
 
 function dateToJulianDate(date: Date): number {
-    const y = date.getUTCFullYear();
-    const m = date.getUTCMonth() + 1;
-    const d = date.getUTCDate();
-    const h = date.getUTCHours() + date.getUTCMinutes() / 60 + date.getUTCSeconds() / 3600;
-
-    const a = Math.floor((14 - m) / 12);
-    const y1 = y + 4800 - a;
-    const m1 = m + 12 * a - 3;
-
-    const jd = d + Math.floor((153 * m1 + 2) / 5) + 365 * y1 + Math.floor(y1 / 4)
-        - Math.floor(y1 / 100) + Math.floor(y1 / 400) - 32045 + h / 24 - 0.5;
-
-    return jd;
+    // Unix epoch (1970-01-01T00:00Z) is JD 2440587.5; keeps millisecond precision.
+    return date.getTime() / 86_400_000 + 2440587.5;
 }
 
 /**
@@ -139,33 +118,27 @@ export function ecfToEci(ecf: ECFCoordinates, date: Date): ECICoordinates {
 }
 
 /**
- * Convert ECF to Geodetic coordinates
+ * Convert ECF to Geodetic coordinates (WGS-84).
+ * Iterates on latitude and computes height with a formula that stays
+ * well-conditioned at the poles (no division by cos φ).
  */
 export function ecfToGeodetic(ecf: ECFCoordinates): GeodeticCoordinates {
-    const x = ecf.x;
-    const y = ecf.y;
-    const z = ecf.z;
+    const { x, y, z } = ecf;
+    const p = Math.hypot(x, y);
+    const longitude = Math.atan2(y, x) * (180 / Math.PI);
 
-    const p = Math.sqrt(x * x + y * y);
-
-    // Longitude
-    let longitude = Math.atan2(y, x) * (180 / Math.PI);
-
-    // Iterative solution for latitude and altitude
     let lat = Math.atan2(z, p * (1 - WGS84.e2));
-    let alt = 0;
-
-    for (let i = 0; i < 10; i++) {
+    let N = WGS84.a;
+    for (let i = 0; i < 6; i++) {
         const sinLat = Math.sin(lat);
-        const N = WGS84.a / Math.sqrt(1 - WGS84.e2 * sinLat * sinLat);
-        alt = p / Math.cos(lat) - N;
-        lat = Math.atan2(z, p * (1 - WGS84.e2 * N / (N + alt)));
+        N = WGS84.a / Math.sqrt(1 - WGS84.e2 * sinLat * sinLat);
+        lat = Math.atan2(z + N * WGS84.e2 * sinLat, p);
     }
+    const sinLat = Math.sin(lat);
+    const cosLat = Math.cos(lat);
+    const altitude = p * cosLat + z * sinLat - WGS84.a * Math.sqrt(1 - WGS84.e2 * sinLat * sinLat);
 
-    const latitude = lat * (180 / Math.PI);
-    const altitude = alt;
-
-    return { latitude, longitude, altitude };
+    return { latitude: lat * (180 / Math.PI), longitude, altitude };
 }
 
 /**

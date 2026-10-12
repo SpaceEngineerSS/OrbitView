@@ -1,235 +1,257 @@
 @import "tailwindcss";
 
-/* ===== ORBITAL GLASS 3.0 Design System ===== */
-/* Theme: "Dark Glass & Neon Aurora" */
-
+/*
+ * OrbitView design tokens.
+ *
+ * Light and dark both exist; with no explicit choice we follow the system.
+ * Colour is used for meaning (pass visible, upcoming, in shadow, warning),
+ * not decoration. Surfaces are separated by elevation and spacing rather
+ * than outlines.
+ */
 :root {
-  /* Core Background */
-  --space-black: #030305;
-  --deep-space: #050507;
+  --bg: #eef0f5;
+  --card: #ffffff;
+  --card-2: #f4f5f8;
+  --fill: rgba(118, 120, 135, 0.12);
+  --fill-strong: rgba(118, 120, 135, 0.2);
+  --separator: rgba(60, 62, 75, 0.1);
 
-  /* Neon Palette */
-  --neon-blue: #00f3ff;
-  --neon-purple: #bc13fe;
-  --neon-alert: #ff003c;
+  --text: #101218;
+  --text-2: #636878;
+  --text-3: #9a9eab;
 
-  /* Glass System */
-  --glass-bg: rgba(5, 5, 7, 0.6);
-  --glass-border: rgba(255, 255, 255, 0.1);
-  --glass-highlight: rgba(255, 255, 255, 0.05);
+  --accent: #3466f2;
+  --accent-soft: rgba(52, 102, 242, 0.12);
+  --on-accent: #ffffff;
 
-  /* Fonts */
-  --font-heading: var(--font-rajdhani), sans-serif;
-  --font-body: var(--font-inter), sans-serif;
+  --green: #1c9a53;
+  --green-soft: rgba(28, 154, 83, 0.12);
+  --indigo: #5b57d9;
+  --indigo-soft: rgba(91, 87, 217, 0.12);
+  --orange: #e57c12;
+  --orange-soft: rgba(229, 124, 18, 0.13);
+  --red: #dc3b40;
+  --red-soft: rgba(220, 59, 64, 0.12);
+
+  /* Orbit regimes (also drawn on the globe) */
+  --leo: #4fb6f0;
+  --meo: #2bbfae;
+  --geo: #9d85f6;
+  --heo: #ec6aae;
+  --station: #f6c94c;
+  --debris: #8d909b;
+
+  --shadow-1: 0 1px 2px rgba(16, 18, 24, 0.06), 0 2px 8px rgba(16, 18, 24, 0.05);
+  --shadow-2: 0 2px 6px rgba(16, 18, 24, 0.08), 0 14px 36px rgba(16, 18, 24, 0.14);
+  --shadow-3: 0 6px 16px rgba(16, 18, 24, 0.12), 0 24px 64px rgba(16, 18, 24, 0.22);
+
+  --r-card: 20px;
+  --r-control: 12px;
+
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+
+  --z-globe: 0;
+  --z-hud: 10;
+  --z-sheet: 20;
+  --z-overlay: 40;
+  --z-dialog: 50;
+
+  color-scheme: light;
+}
+
+/* Dark: an explicit choice, or the system when the user hasn't chosen */
+:root[data-theme="dark"] {
+  --bg: #050608;
+  --card: #1b1c20;
+  --card-2: #25262b;
+  --fill: rgba(130, 134, 150, 0.18);
+  --fill-strong: rgba(130, 134, 150, 0.28);
+  --separator: rgba(130, 134, 150, 0.18);
+
+  --text: #f4f5f8;
+  --text-2: #9b9fab;
+  --text-3: #6c707b;
+
+  --accent: #6a90ff;
+  --accent-soft: rgba(106, 144, 255, 0.18);
+  --on-accent: #0b0d12;
+
+  --green: #3fcf7b;
+  --green-soft: rgba(63, 207, 123, 0.16);
+  --indigo: #8b88ff;
+  --indigo-soft: rgba(139, 136, 255, 0.18);
+  --orange: #ffa245;
+  --orange-soft: rgba(255, 162, 69, 0.16);
+  --red: #ff6b6f;
+  --red-soft: rgba(255, 107, 111, 0.16);
+
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4), 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-2: 0 2px 6px rgba(0, 0, 0, 0.45), 0 14px 36px rgba(0, 0, 0, 0.5);
+  --shadow-3: 0 6px 16px rgba(0, 0, 0, 0.5), 0 24px 64px rgba(0, 0, 0, 0.6);
+
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --bg: #050608;
+    --card: #1b1c20;
+    --card-2: #25262b;
+    --fill: rgba(130, 134, 150, 0.18);
+    --fill-strong: rgba(130, 134, 150, 0.28);
+    --separator: rgba(130, 134, 150, 0.18);
+    --text: #f4f5f8;
+    --text-2: #9b9fab;
+    --text-3: #6c707b;
+    --accent: #6a90ff;
+    --accent-soft: rgba(106, 144, 255, 0.18);
+    --on-accent: #0b0d12;
+    --green: #3fcf7b;
+    --green-soft: rgba(63, 207, 123, 0.16);
+    --indigo: #8b88ff;
+    --indigo-soft: rgba(139, 136, 255, 0.18);
+    --orange: #ffa245;
+    --orange-soft: rgba(255, 162, 69, 0.16);
+    --red: #ff6b6f;
+    --red-soft: rgba(255, 107, 111, 0.16);
+    --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4), 0 2px 8px rgba(0, 0, 0, 0.3);
+    --shadow-2: 0 2px 6px rgba(0, 0, 0, 0.45), 0 14px 36px rgba(0, 0, 0, 0.5);
+    --shadow-3: 0 6px 16px rgba(0, 0, 0, 0.5), 0 24px 64px rgba(0, 0, 0, 0.6);
+    color-scheme: dark;
+  }
 }
 
 @theme inline {
-  --color-space-black: var(--space-black);
-  --color-deep-space: var(--deep-space);
-  --color-neon-blue: var(--neon-blue);
-  --color-neon-purple: var(--neon-purple);
-  --color-neon-alert: var(--neon-alert);
+  --color-bg: var(--bg);
+  --color-card: var(--card);
+  --color-card-2: var(--card-2);
+  --color-fill: var(--fill);
+  --color-fill-strong: var(--fill-strong);
+  --color-separator: var(--separator);
+  --color-ink: var(--text);
+  --color-ink-2: var(--text-2);
+  --color-ink-3: var(--text-3);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-on-accent: var(--on-accent);
+  --color-green: var(--green);
+  --color-green-soft: var(--green-soft);
+  --color-indigo: var(--indigo);
+  --color-indigo-soft: var(--indigo-soft);
+  --color-orange: var(--orange);
+  --color-orange-soft: var(--orange-soft);
+  --color-red: var(--red);
+  --color-red-soft: var(--red-soft);
 
-  --font-rajdhani: var(--font-rajdhani);
-  --font-inter: var(--font-inter);
+  --font-sans: var(--font-ui), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  --shadow-card: var(--shadow-1);
+  --shadow-float: var(--shadow-2);
+  --shadow-pop: var(--shadow-3);
+
+  --radius-card: var(--r-card);
+  --radius-control: var(--r-control);
 }
 
-/* ===== Starfield Background ===== */
+html,
 body {
-  background-color: var(--space-black);
-  color: #fff;
-  font-family: var(--font-body);
-  overflow: hidden;
-  /* App-like feel */
-  position: relative;
+  height: 100%;
 }
 
-/* Fixed Starfield to prevent repaint */
-body::before {
-  content: "";
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.4;
+  letter-spacing: -0.005em;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
+  font-variant-numeric: tabular-nums;
+}
+
+::selection {
+  background: var(--accent-soft);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Big figures: narrower width axis so long numbers fit, tight tracking */
+.figure {
+  font-variation-settings: "wdth" 82;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+.scroll {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--fill-strong) transparent;
+}
+
+/* The globe fills the screen; panels float over it. */
+.globe-region {
   position: fixed;
   inset: 0;
-  z-index: -2;
-  background:
-    radial-gradient(1px 1px at 10% 10%, #fff, transparent),
-    radial-gradient(1px 1px at 20% 20%, #fff, transparent),
-    radial-gradient(1px 1px at 30% 30%, #fff, transparent),
-    radial-gradient(2px 2px at 40% 40%, #fff, transparent),
-    radial-gradient(1px 1px at 50% 50%, #fff, transparent),
-    radial-gradient(1px 1px at 60% 60%, #fff, transparent),
-    radial-gradient(2px 2px at 70% 70%, #fff, transparent),
-    radial-gradient(1px 1px at 80% 80%, #fff, transparent),
-    radial-gradient(1px 1px at 90% 90%, #fff, transparent);
-  background-size: 550px 550px;
-  opacity: 0.3;
+  background: #020306;
 }
 
-/* Aurora Borealis Effect */
-body::after {
-  content: "";
-  position: fixed;
-  top: -50%;
-  left: -50%;
-  right: -50%;
-  bottom: -50%;
-  z-index: -1;
-  background:
-    radial-gradient(circle at 50% 50%, rgba(188, 19, 254, 0.05) 0%, transparent 50%),
-    radial-gradient(circle at 80% 20%, rgba(0, 243, 255, 0.05) 0%, transparent 40%);
-  animation: aurora-move 60s linear infinite;
-  pointer-events: none;
+/* Range input used as the time scrubber */
+.scrubber {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+  margin: 0;
 }
-
-@keyframes aurora-move {
-  0% {
-    transform: rotate(0deg);
-  }
-
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
-/* ===== Custom Scrollbar (Stealth Mode) ===== */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(0, 243, 255, 0.2) transparent;
-}
-
-*::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
-}
-
-*::-webkit-scrollbar-track {
+.scrubber::-webkit-slider-runnable-track {
+  height: 28px;
   background: transparent;
 }
-
-*::-webkit-scrollbar-thumb {
-  background-color: rgba(0, 243, 255, 0.2);
-  border-radius: 20px;
+.scrubber::-moz-range-track {
+  height: 28px;
+  background: transparent;
+}
+.scrubber::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 4px;
+  height: 28px;
+  background: var(--text);
+  border-radius: 2px;
+}
+.scrubber::-moz-range-thumb {
+  width: 4px;
+  height: 28px;
+  background: var(--text);
+  border: 0;
+  border-radius: 2px;
 }
 
-*::-webkit-scrollbar-thumb:hover {
-  background-color: var(--neon-blue);
+/* Cesium: hide its own chrome, we draw our own */
+.cesium-widget-credits,
+.cesium-viewer-bottom,
+.cesium-viewer-toolbar,
+.cesium-viewer-animationContainer,
+.cesium-viewer-timelineContainer,
+.cesium-viewer-fullscreenContainer {
+  display: none !important;
+}
+.cesium-widget canvas {
+  outline: none;
 }
 
-/* ===== Typography Utilities ===== */
-.font-rajdhani {
-  font-family: var(--font-heading);
-}
-
-.text-glow {
-  text-shadow: 0 0 10px rgba(0, 243, 255, 0.5);
-}
-
-.text-neon-purple {
-  text-shadow: 0 0 10px rgba(188, 19, 254, 0.5);
-}
-
-.border-glow {
-  box-shadow: 0 0 10px rgba(0, 243, 255, 0.3);
-}
-
-.bg-glow {
-  box-shadow: 0 0 20px rgba(0, 243, 255, 0.1);
-}
-
-/* ===== Utilities ===== */
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-
-.no-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-
-.mask-gradient-right {
-  mask-image: linear-gradient(to right, black 85%, transparent 100%);
-  -webkit-mask-image: linear-gradient(to right, black 85%, transparent 100%);
-}
-
-/* ===== Premium Glassmorphism & UI Classes ===== */
-.glass-panel {
-  background: rgba(5, 5, 7, 0.55);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
-}
-
-.glass-panel-premium {
-  background: rgba(5, 5, 7, 0.75);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.6), 0 0 20px rgba(0, 243, 255, 0.15);
-}
-
-/* ===== Mobile Navigation & Overlay Classes ===== */
-.mobile-tab-bar {
-  position: fixed;
-  bottom: 1rem;
-  left: 1rem;
-  right: 1rem;
-  z-index: 50;
-  background: rgba(5, 5, 7, 0.7);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 1.25rem;
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5), 0 0 15px rgba(0, 243, 255, 0.1);
-  overflow: hidden;
-}
-
-.mobile-search-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 50;
-  background: rgba(3, 3, 5, 0.96);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  display: flex;
-  flex-direction: column;
-}
-
-.mobile-bottom-sheet {
-  position: fixed;
-  left: 1rem;
-  right: 1rem;
-  z-index: 45;
-  background: rgba(5, 5, 7, 0.85);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-top-left-radius: 1.5rem;
-  border-top-right-radius: 1.5rem;
-  border-bottom-left-radius: 1rem;
-  border-bottom-right-radius: 1rem;
-  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.6), 0 0 20px rgba(0, 243, 255, 0.05);
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-}
-
-.tap-target {
-  min-width: 44px;
-  min-height: 44px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* ===== Slow Rotation animation for Compass ===== */
-@keyframes spin-slow {
-  from {
-    transform: rotate(0deg);
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
   }
-  to {
-    transform: rotate(360deg);
-  }
-}
-.animate-spin-slow {
-  animation: spin-slow 8s linear infinite;
 }

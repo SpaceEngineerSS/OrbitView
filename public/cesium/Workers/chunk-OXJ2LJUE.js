@@ -1,1 +1,0 @@
-var e=Object.freeze({NONE:0,GEODESIC:1,RHUMB:2});export{e as a};

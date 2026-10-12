@@ -1,57 +1,40 @@
-# OrbitView Deployment Guide
+# Deployment
 
-This document provides instructions on how to deploy OrbitView to various platforms.
+OrbitView runs on Vercel (that's where the live site is), but it's a normal
+Next.js app and runs anywhere Node.js 20 does.
 
-## 🚀 Quick Deploy to Vercel
+## Vercel
 
-OrbitView is optimized for Vercel.
+1. Import the repository. The framework is detected as Next.js; no build
+   settings need changing (`vercel.json` only pins the framework).
+2. Optionally add `SPACETRACK_USER` and `SPACETRACK_PASS` under
+   *Settings → Environment Variables*.
+3. Deploy.
 
-1.  **Fork the repository** to your GitHub account.
-2.  **Create a new project** in the [Vercel Dashboard](https://vercel.com/dashboard).
-3.  **Import your fork**.
-4.  **Configure Environment Variables**:
-    -   `SPACETRACK_USER`: Your Space-Track.org email (optional)
-    -   `SPACETRACK_PASS`: Your Space-Track.org password (optional)
-    -   `NEXT_PUBLIC_APP_URL`: `https://orbitview.vercel.app`
-5.  **Click Deploy**.
+The install step runs `postinstall`, which copies Cesium's static files into
+`public/cesium` before the build.
 
-## 🐳 Docker Deployment (Self-Hosting)
+`/api/tle` responses carry `s-maxage` headers, so Vercel's CDN serves the
+catalog for two hours between upstream fetches. That keeps CelesTrak and
+Space-Track happy regardless of traffic.
 
-You can run OrbitView using Docker.
+## Any Node host
 
 ```bash
-# Build the image
-docker build -t orbitview .
-
-# Run the container
-docker run -p 3000:3000 \
-  -e SPACETRACK_USER=your_user \
-  -e SPACETRACK_PASS=your_pass \
-  orbitview
+npm ci
+npm run build
+npm start          # listens on PORT, default 3000
 ```
 
-## 🔧 Manual Server Deployment
+Put a cache in front that respects `Cache-Control: s-maxage` if you expect
+traffic; otherwise the in-memory cache (two hours per group, per process)
+still applies.
 
-1.  **Clone and Install**:
-    ```bash
-    git clone https://github.com/SpaceEngineerSS/orbitview.git
-    cd orbitview
-    npm install
-    ```
-2.  **Build**:
-    ```bash
-    npm run build
-    ```
-3.  **Start**:
-    ```bash
-    npm start
-    ```
+## After deploying
 
----
-
-## 👨‍💻 Developer Support
-
-Developed by **Mehmet Gümüş**.
-For custom deployment assistance, visit [spacegumus.com.tr](https://spacegumus.com.tr).
-
-*Last Updated: 2026-02-12*
+- Open the site and check the bottom-left line: it should say how many
+  objects are loaded and how old the TLEs are.
+- Open `/api/tle?group=stations` and look at `X-Source` and `X-Fetched-At`.
+- The service worker (`/sw.js`) is only registered in production builds. Its
+  cache names include the version, so a new release replaces the old caches on
+  activation.

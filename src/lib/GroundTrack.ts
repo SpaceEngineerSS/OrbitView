@@ -50,6 +50,7 @@
  */
 
 import * as satellite from 'satellite.js';
+import { getSatrec, stateAt } from './orbit';
 
 export interface GroundTrackPoint {
     latitude: number;
@@ -82,7 +83,7 @@ export function calculateGroundTrack(
     pastMinutes: number = 45,
     stepSeconds: number = 60
 ): GroundTrackResult {
-    const satrec = satellite.twoline2satrec(tle1, tle2);
+    const satrec = getSatrec(tle1, tle2);
 
     const pastTrack: GroundTrackPoint[] = [];
     const futureTrack: GroundTrackPoint[] = [];
@@ -116,33 +117,13 @@ export function calculateGroundTrack(
     return { pastTrack, futureTrack, currentPosition };
 }
 
-/**
- * Get satellite position at a specific time
- */
 function getSatellitePosition(
     satrec: satellite.SatRec,
     time: Date
 ): GroundTrackPoint | null {
-    try {
-        const positionAndVelocity = satellite.propagate(satrec, time);
-
-        if (!positionAndVelocity || typeof positionAndVelocity.position === 'boolean') {
-            return null;
-        }
-
-        const positionEci = positionAndVelocity.position;
-        const gmst = satellite.gstime(time);
-        const positionGd = satellite.eciToGeodetic(positionEci, gmst);
-
-        return {
-            latitude: satellite.degreesLat(positionGd.latitude),
-            longitude: satellite.degreesLong(positionGd.longitude),
-            altitude: positionGd.height,
-            time
-        };
-    } catch {
-        return null;
-    }
+    const s = stateAt(satrec, time);
+    if (!s) return null;
+    return { latitude: s.latitudeDeg, longitude: s.longitudeDeg, altitude: s.altitudeKm, time };
 }
 
 /**

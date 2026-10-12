@@ -54,3 +54,6 @@ lint-output.txt
 
 # Local certificates
 certificates/
+
+# Cesium runtime assets, copied from node_modules on install
+/public/cesium/

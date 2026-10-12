@@ -1,7 +1,9 @@
-import * as Cesium from "cesium";
-import { SatelliteData } from "./tle";
+import { SatelliteData, SatelliteCategory } from "./tle";
 
-export type SpaceObjectType = 'TLE' | 'EPHEMERIS';
+export type SpaceObjectType = 'TLE';
+
+/** Orbit regime from the mean elements; every object gets exactly one. */
+export type OrbitRegime = 'LEO' | 'MEO' | 'GEO' | 'HEO';
 
 export interface SpaceObject {
     id: string;
@@ -12,47 +14,47 @@ export interface SpaceObject {
         line1: string;
         line2: string;
     };
-    // Ephemeris Data (Optional - for deep space)
-    ephemeris?: {
-        positionProperty: Cesium.SampledPositionProperty;
-        modelUrl?: string; // For Module C (True Scale Models)
-        description?: string;
-    };
     // Common
+    /** Display category: the orbit regime, or DEBRIS when the name says so */
     category?: string;
+    /** Orbit regime, independent of what the object is */
+    regime?: OrbitRegime;
+    /** Catalog group assigned at load time in tle.ts (station, starlink, cubesat, active) */
+    group?: SatelliteCategory;
     // Professional Metadata
     mass?: number;
     dimensions?: string;
     frequencies?: string[];
 }
 
+/**
+ * Regime from line 2 of a TLE. GEO means geostationary: one rev per sidereal
+ * day, nearly circular and nearly equatorial. Inclined geosynchronous orbits
+ * (BeiDou/NavIC IGSO, QZSS) are not geostationary and count as MEO here.
+ */
+export function orbitRegime(line2: string): OrbitRegime {
+    const n = parseFloat(line2.substring(52, 63));     // revs per day
+    const e = parseFloat('0.' + line2.substring(26, 33).trim());
+    const i = parseFloat(line2.substring(8, 16));       // degrees
+    if (!Number.isFinite(n) || !Number.isFinite(e)) return 'MEO';
+    if (n > 11.25) return 'LEO';
+    if (e > 0.25) return 'HEO';                         // Molniya, Tundra, GTO
+    if (n > 0.9 && n < 1.1 && e < 0.1 && Number.isFinite(i) && i < 5) return 'GEO';
+    return 'MEO';
+}
+
+/**
+ * Debris guessed from the name, used until SATCAT's object type is loaded.
+ * "OBJECT A" etc. are new, not yet identified launches — usually payloads.
+ */
+export function debrisByName(name: string): boolean {
+    const u = name.toUpperCase();
+    return u.includes(' DEB') || u.includes('R/B') || u.includes('ROCKET BODY') || u.includes('DEBRIS');
+}
+
 // Helper to convert legacy SatelliteData to SpaceObject
 export const convertToSpaceObject = (sat: SatelliteData): SpaceObject => {
-    // Determine category based on TLE
-    let category = 'LEO';
-    try {
-        const line2 = sat.line2;
-        const meanMotion = parseFloat(line2.substring(52, 63)); // revs per day
-        const eccentricity = parseFloat('0.' + line2.substring(26, 33));
-        const name = sat.name.toUpperCase();
-
-        if (name.includes("DEBRIS") || name.includes("ROCKET BODY") || name.includes(" DEB") || name.includes("R/B") || name.includes("OBJECT ")) {
-            category = 'DEBRIS';
-        } else if (meanMotion > 11.25) {
-            category = 'LEO';
-        } else if (meanMotion > 0.9 && meanMotion < 1.1 && eccentricity < 0.1) {
-            category = 'GEO';
-        } else if (eccentricity > 0.25) {
-            category = 'HEO'; // High eccentricity (Molniya etc.)
-        } else if (meanMotion >= 1.1 && meanMotion <= 11.25) {
-            category = 'MEO';
-        } else {
-            category = 'MEO/HEO';
-        }
-    } catch (e) {
-        category = 'SAT';
-    }
-
+    const regime = orbitRegime(sat.line2);
     return {
         id: sat.id,
         name: sat.name,
@@ -61,7 +63,10 @@ export const convertToSpaceObject = (sat: SatelliteData): SpaceObject => {
             line1: sat.line1,
             line2: sat.line2
         },
-        category,
+        category: debrisByName(sat.name) ? 'DEBRIS' : regime,
+        regime,
+        // Preserve the catalog category from tle.ts instead of discarding it
+        group: sat.category,
         mass: sat.mass,
         dimensions: sat.dimensions,
         frequencies: sat.frequencies

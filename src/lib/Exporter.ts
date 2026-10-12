@@ -1,200 +1,88 @@
-import { SpaceObject } from "./space-objects";
-
 /**
- * Data Exporter Module
- * Exports satellite TLE and computed orbital data to CSV/JSON formats
- * 
- * @module Exporter
+ * Ephemeris export.
+ *
+ * Writes a table of SGP4 positions for the selected object, starting at the
+ * simulation time, plus the TLE and mean elements it came from. CSV for
+ * spreadsheets, JSON for scripts.
  */
 
-export interface TelemetryRecord {
-    timestamp: Date;
-    latitude: number;
-    longitude: number;
-    altitude: number;
-    velocity: number;
+import type { SpaceObject } from './space-objects';
+import { getSatrec, stateAt, elementsFromSatrec, type OrbitalElements } from './orbit';
+
+export interface EphemerisRow {
+    time: string;          // ISO 8601 UTC
+    latitudeDeg: number;
+    longitudeDeg: number;
+    altitudeKm: number;
+    xKm: number; yKm: number; zKm: number;          // TEME
+    vxKmS: number; vyKmS: number; vzKmS: number;    // TEME
 }
 
-export interface ExportData {
-    satellite: {
-        id: string;
-        name: string;
-        type: string;
-        tle?: {
-            line1: string;
-            line2: string;
-        };
-    };
-    currentTelemetry?: TelemetryRecord;
-    telemetryHistory?: TelemetryRecord[];
-    exportedAt: string;
-}
-
-export type ExportFormat = 'csv' | 'json';
-
-/**
- * Formats a number with fixed decimal places
- */
-function formatNumber(num: number, decimals: number = 4): string {
-    return num.toFixed(decimals);
-}
-
-/**
- * Escapes a string for CSV format
- */
-function escapeCSV(str: string): string {
-    if (str.includes(',') || str.includes('"') || str.includes('\n')) {
-        return `"${str.replace(/"/g, '""')}"`;
+export function buildEphemeris(obj: SpaceObject, start: Date, minutes: number, stepSeconds: number): EphemerisRow[] {
+    if (!obj.tle) return [];
+    const rec = getSatrec(obj.tle.line1, obj.tle.line2);
+    const rows: EphemerisRow[] = [];
+    for (let s = 0; s <= minutes * 60; s += stepSeconds) {
+        const t = new Date(start.getTime() + s * 1000);
+        const st = stateAt(rec, t);
+        if (!st) continue;
+        rows.push({
+            time: t.toISOString(),
+            latitudeDeg: st.latitudeDeg,
+            longitudeDeg: st.longitudeDeg,
+            altitudeKm: st.altitudeKm,
+            xKm: st.positionEci.x, yKm: st.positionEci.y, zKm: st.positionEci.z,
+            vxKmS: st.velocityEci.x, vyKmS: st.velocityEci.y, vzKmS: st.velocityEci.z,
+        });
     }
-    return str;
+    return rows;
 }
 
-/**
- * Exports satellite data to CSV format
- * 
- * @param satellite - The satellite object
- * @param telemetry - Current telemetry data
- * @param history - Optional telemetry history
- * @returns CSV string
- */
-export function exportToCSV(
-    satellite: SpaceObject,
-    telemetry?: { lat: number; lon: number; alt: number; velocity: number },
-    history?: TelemetryRecord[]
-): string {
-    const lines: string[] = [];
+const f = (n: number, d: number) => n.toFixed(d);
 
-    // Header comment
-    lines.push('# OrbitView Satellite Export');
-    lines.push(`# Generated: ${new Date().toISOString()}`);
-    lines.push(`# Satellite: ${satellite.name} (NORAD ID: ${satellite.id})`);
-    lines.push('');
-
-    // Satellite metadata
-    lines.push('## SATELLITE INFO');
-    lines.push('Field,Value');
-    lines.push(`NORAD_ID,${satellite.id}`);
-    lines.push(`Name,${escapeCSV(satellite.name)}`);
-    lines.push(`Type,${satellite.type}`);
-
-    if (satellite.tle) {
-        lines.push(`TLE_Line1,${escapeCSV(satellite.tle.line1)}`);
-        lines.push(`TLE_Line2,${escapeCSV(satellite.tle.line2)}`);
+export function ephemerisToCSV(obj: SpaceObject, rows: EphemerisRow[]): string {
+    const lines = [
+        `# OrbitView ephemeris — ${obj.name} (NORAD ${obj.id})`,
+        `# Propagator: SGP4 (satellite.js). Position/velocity frame: TEME. Lat/lon: WGS-84.`,
+        `# TLE line 1: ${obj.tle?.line1 ?? ''}`,
+        `# TLE line 2: ${obj.tle?.line2 ?? ''}`,
+        'time_utc,lat_deg,lon_deg,alt_km,x_km,y_km,z_km,vx_km_s,vy_km_s,vz_km_s',
+    ];
+    for (const r of rows) {
+        lines.push([
+            r.time, f(r.latitudeDeg, 5), f(r.longitudeDeg, 5), f(r.altitudeKm, 3),
+            f(r.xKm, 3), f(r.yKm, 3), f(r.zKm, 3), f(r.vxKmS, 6), f(r.vyKmS, 6), f(r.vzKmS, 6),
+        ].join(','));
     }
-    lines.push('');
-
-    // Current telemetry
-    if (telemetry) {
-        lines.push('## CURRENT TELEMETRY');
-        lines.push('Timestamp,Latitude,Longitude,Altitude_km,Velocity_km_s');
-        lines.push(`${new Date().toISOString()},${formatNumber(telemetry.lat)},${formatNumber(telemetry.lon)},${formatNumber(telemetry.alt, 2)},${formatNumber(telemetry.velocity, 4)}`);
-        lines.push('');
-    }
-
-    // Telemetry history
-    if (history && history.length > 0) {
-        lines.push('## TELEMETRY HISTORY');
-        lines.push('Timestamp,Latitude,Longitude,Altitude_km,Velocity_km_s');
-        for (const record of history) {
-            lines.push(
-                `${record.timestamp.toISOString()},${formatNumber(record.latitude)},${formatNumber(record.longitude)},${formatNumber(record.altitude, 2)},${formatNumber(record.velocity, 4)}`
-            );
-        }
-    }
-
-    return lines.join('\n');
+    return lines.join('\n') + '\n';
 }
 
-/**
- * Exports satellite data to JSON format
- * 
- * @param satellite - The satellite object
- * @param telemetry - Current telemetry data
- * @param history - Optional telemetry history
- * @returns JSON string
- */
-export function exportToJSON(
-    satellite: SpaceObject,
-    telemetry?: { lat: number; lon: number; alt: number; velocity: number },
-    history?: TelemetryRecord[]
-): string {
-    const data: ExportData = {
-        satellite: {
-            id: satellite.id,
-            name: satellite.name,
-            type: satellite.type,
-            tle: satellite.tle ? {
-                line1: satellite.tle.line1,
-                line2: satellite.tle.line2
-            } : undefined
-        },
-        currentTelemetry: telemetry ? {
-            timestamp: new Date(),
-            latitude: telemetry.lat,
-            longitude: telemetry.lon,
-            altitude: telemetry.alt,
-            velocity: telemetry.velocity
-        } : undefined,
-        telemetryHistory: history,
-        exportedAt: new Date().toISOString()
-    };
-
-    return JSON.stringify(data, null, 2);
+export function ephemerisToJSON(obj: SpaceObject, rows: EphemerisRow[]): string {
+    let elements: OrbitalElements | null = null;
+    if (obj.tle) elements = elementsFromSatrec(getSatrec(obj.tle.line1, obj.tle.line2));
+    return JSON.stringify({
+        object: { noradId: obj.id, name: obj.name },
+        tle: obj.tle ?? null,
+        elements,
+        frame: { position: 'TEME', geodetic: 'WGS-84' },
+        generator: 'OrbitView 4.0.0',
+        rows,
+    }, null, 2);
 }
 
-/**
- * Triggers a file download in the browser
- * 
- * @param content - File content as string
- * @param filename - Name of the file to download
- * @param mimeType - MIME type of the file
- */
 export function downloadFile(content: string, filename: string, mimeType: string): void {
-    const blob = new Blob([content], { type: mimeType });
-    const url = URL.createObjectURL(blob);
-
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
-    // Clean up
-    setTimeout(() => URL.revokeObjectURL(url), 100);
+    const url = URL.createObjectURL(new Blob([content], { type: mimeType }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-/**
- * Exports satellite data with automatic file download
- * 
- * @param format - Export format ('csv' or 'json')
- * @param satellite - The satellite object
- * @param telemetry - Current telemetry data
- * @param history - Optional telemetry history
- */
-export function exportSatelliteData(
-    format: ExportFormat,
-    satellite: SpaceObject,
-    telemetry?: { lat: number; lon: number; alt: number; velocity: number },
-    history?: TelemetryRecord[]
-): void {
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-    const safeFileName = satellite.name.replace(/[^a-zA-Z0-9]/g, '_');
-
-    if (format === 'csv') {
-        const content = exportToCSV(satellite, telemetry, history);
-        const filename = `${safeFileName}_${satellite.id}_${timestamp}.csv`;
-        downloadFile(content, filename, 'text/csv;charset=utf-8');
-    } else {
-        const content = exportToJSON(satellite, telemetry, history);
-        const filename = `${safeFileName}_${satellite.id}_${timestamp}.json`;
-        downloadFile(content, filename, 'application/json');
-    }
+export function safeFileName(obj: SpaceObject, ext: string, start: Date): string {
+    const name = obj.name.replace(/[^A-Za-z0-9]+/g, '_').replace(/^_|_$/g, '');
+    const stamp = start.toISOString().slice(0, 16).replace(/[:T]/g, '');
+    return `${name}_${obj.id}_${stamp}.${ext}`;
 }
-
-export default {
-    exportToCSV,
-    exportToJSON,
-    exportSatelliteData,
-    downloadFile
-};

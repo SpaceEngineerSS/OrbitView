@@ -1,70 +1,64 @@
-# Installation Guide
+# Installation
 
-Follow these steps to set up OrbitView on your local development environment.
+## Requirements
 
-## 📋 Prerequisites
+- Node.js 20 or newer (I develop on 22)
+- npm 10
+- A browser with WebGL 2 for the globe
 
-Before you begin, ensure you have the following installed:
+## Steps
 
-- **Node.js**: version 18.17.0 or higher.
-- **npm**: version 9.x or higher (or Yarn/pnpm).
-- **Git**: For cloning the repository.
-- **Cesium Ion Token**: (Optional but recommended for high-res terrain) Get one at [cesium.com/ion](https://cesium.com/ion/).
-
-## 🛠️ Step-by-Step Setup
-
-### 1. Clone the Repository
 ```bash
-git clone https://github.com/SpaceEngineerSS/orbitview.git
-cd orbitview
-```
-
-### 2. Install Dependencies
-We recommend using `npm` for consistency:
-```bash
+git clone https://github.com/SpaceEngineerSS/OrbitView.git
+cd OrbitView
 npm install
-```
-
-### 3. Environment Configuration
-Copy the example environment file and customize it:
-```bash
-cp .env.example .env.local
-```
-Edit `.env.local` to include your Space-Track credentials if you have them. See [CONFIGURATION.md](./CONFIGURATION.md) for details on available variables.
-
-### 4. Run Development Server
-```bash
 npm run dev
 ```
-The application will be accessible at [http://localhost:3000](http://localhost:3000).
 
-## 🏗️ Production Build
+`npm install` runs `scripts/copy-cesium.mjs`, which copies Cesium's web
+workers, shaders and textures from `node_modules/cesium/Build/Cesium` into
+`public/cesium`. That folder isn't committed; if it's ever missing (for
+example after `npm ci --ignore-scripts`), run the script by hand:
 
-To build the application for production use:
 ```bash
-npm run build
-npm start
+node scripts/copy-cesium.mjs
 ```
 
-## 🐋 Docker Installation
+Open http://localhost:3000. The first load downloads the catalog (a few MB);
+after that it comes from the browser's IndexedDB and is refreshed in the
+background.
 
-If you prefer using Docker:
+## Optional: Space-Track
 
-1. **Build the image**:
-   ```bash
-   docker build -t orbitview .
-   ```
+Without credentials the app uses CelesTrak (about 16,000 active objects).
+With a free [Space-Track](https://www.space-track.org) account you get the
+whole catalog, debris included (over 30,000 objects):
 
-2. **Run the container**:
-   ```bash
-   docker run -p 3000:3000 --env-file .env orbitview
-   ```
+```bash
+cp .env.example .env.local
+# then fill in SPACETRACK_USER and SPACETRACK_PASS
+```
 
----
+See [CONFIGURATION.md](CONFIGURATION.md) for every variable.
 
-## 👨‍💻 Developer Support
+## Checks
 
-Developed by **Mehmet Gümüş**.
-For installation issues, contact [contact@spacegumus.com.tr](mailto:contact@spacegumus.com.tr) or visit [spacegumus.com.tr](https://spacegumus.com.tr).
+```bash
+npm run check     # TypeScript, ESLint, Jest
+npm run build     # production build
+```
 
-*Last Updated: 2026-02-12*
+## Troubleshooting
+
+**The globe is black or shows an error card.** The browser or GPU doesn't
+provide WebGL. Turn on hardware acceleration, or try a current Chrome,
+Firefox or Safari.
+
+**Only about 20 objects, "showing older data".** CelesTrak refused the
+download, usually because the same group was fetched from your address
+recently. Wait an hour or two, or add Space-Track credentials.
+
+**Fonts or modules fail to resolve in dev.** `next.config.ts` pins
+`turbopack.root` to the project folder for this reason; if you moved the
+project inside another one that has its own `package-lock.json`, keep that
+setting.

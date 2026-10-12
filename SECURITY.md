@@ -1,75 +1,39 @@
-# Security Policy
+# Security
 
-## Supported Versions
+## Supported versions
 
-| Version | Supported          |
-| ------- | ------------------ |
-| 1.x.x   | :white_check_mark: |
+Only the latest release (currently 4.x) gets fixes. The live site always runs
+the latest `main`.
 
-## Reporting a Vulnerability
+## Reporting a problem
 
-We take the security of OrbitView seriously. If you believe you have found a security vulnerability, please report it to us as described below.
+Please don't open a public issue for security problems. Email
+**security@spacegumus.com.tr** with:
 
-### How to Report
+- what the issue is and where (file, route or URL),
+- how to reproduce it,
+- what an attacker could do with it.
 
-**Please do not report security vulnerabilities through public GitHub issues.**
+I'll reply within a few days and keep you updated until it's fixed. If you
+want credit in the changelog, say how you'd like to be named.
 
-Instead, please report them via email to:
+## What there is to protect
 
-📧 **security@spacegumus.com.tr**
+OrbitView has no user accounts and stores nothing about visitors on the
+server. The parts worth looking at:
 
-Or you can contact the developer directly:
+- **`/api/tle`** — the only server endpoint. It calls CelesTrak and, if
+  configured, Space-Track with credentials from environment variables. Those
+  credentials are never sent to the browser.
+- **The browser** — location, settings and favourites live in `localStorage`;
+  the catalog in IndexedDB. Nothing is sent anywhere else.
+- **Headers** — CSP, `X-Frame-Options: DENY` and a narrow
+  `Permissions-Policy` are set in `next.config.ts`.
 
-🌐 **Website:** [spacegumus.com.tr](https://spacegumus.com.tr)  
-🐙 **GitHub:** [OrbitVieW](https://github.com/SpaceEngineerSS/OrbitVieW)
+## If you self-host
 
-### What to Include
-
-Please include the following information in your report:
-
-- Type of vulnerability (e.g., XSS, CSRF, data exposure)
-- Full paths of source file(s) related to the vulnerability
-- Location of the affected source code (tag/branch/commit or direct URL)
-- Step-by-step instructions to reproduce the issue
-- Proof-of-concept or exploit code (if possible)
-- Impact of the issue, including how an attacker might exploit it
-
-### Response Timeline
-
-- **Initial Response:** Within 48 hours
-- **Status Update:** Within 7 days
-- **Resolution Target:** Within 30 days (depending on complexity)
-
-### Safe Harbor
-
-We consider security research conducted in accordance with this policy to be:
-
-- Authorized in accordance with the Computer Fraud and Abuse Act (CFAA)
-- Exempt from DMCA restrictions
-- Lawful, helpful, and performed in good faith
-
-We will not pursue civil action or initiate a complaint to law enforcement for accidental, good faith violations of this policy.
-
-## Security Best Practices for Users
-
-### API Credentials
-
-If you're using Space-Track.org credentials:
-
-1. **Never commit credentials** to version control
-2. Store credentials in environment variables
-3. Use `.env.local` for local development
-4. Rotate credentials if exposed
-
-### Self-Hosting
-
-If deploying OrbitView yourself:
-
-1. Always use HTTPS in production
-2. Keep dependencies updated
-3. Configure proper CORS headers
-4. Enable rate limiting for API routes
-
----
-
-*This security policy was last updated on 2026-02-12.*
+- Keep `SPACETRACK_USER` / `SPACETRACK_PASS` in environment variables, never in
+  the repository. Rotate them if they leak.
+- Serve over HTTPS.
+- Keep a cache that honours `s-maxage` in front of `/api/tle` so a traffic
+  spike doesn't turn into upstream requests.
