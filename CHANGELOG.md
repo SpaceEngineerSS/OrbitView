@@ -32,6 +32,13 @@ from scratch.
   It drew nothing, so it was removed.
 
 ### Fixed — after release
+- On repeat visits no satellite was drawn. The service worker cached the
+  bundler's worker bootstrap, which tells workers apart only by its #fragment
+  (ignored by the Cache API), so the position worker ran the analysis code.
+  Worker scripts now bypass the service worker; workers also announce
+  themselves before the page sends them work.
+- The country filter is no longer remembered between visits, and without the
+  satellite catalog it hides nothing.
 - The country filter is our own list (a sheet on phones) instead of a native
   select, whose pop-up was white and unreadable in dark mode. It has a search.
 - Tonight takes the bright objects from the loaded catalog instead of a
