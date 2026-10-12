@@ -125,9 +125,7 @@ class PropagationEngine {
         this.spare = undefined;
         this.ids = tle.map((o) => o.id);
         this.sats = tle.map((o) => ({ id: o.id, name: o.name, line1: o.tle!.line1, line2: o.tle!.line2 }));
-        let debug = false;
-        try { debug = localStorage.getItem('orbitview-debug') === '1'; } catch { /* no storage */ }
-        this.sendFrame({ type: 'init', generation: this.generation, sats: this.sats, debug });
+        this.sendFrame({ type: 'init', generation: this.generation, sats: this.sats });
         if (this.analysis) this.sendAnalysis({ type: 'init', sats: this.sats });
     }
 

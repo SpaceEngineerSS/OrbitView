@@ -16,7 +16,7 @@ export interface TLEInitData {
 /* Frame worker (satellite.worker.ts) */
 
 export type FrameInbound =
-    | { type: 'init'; generation: number; sats: TLEInitData[]; debug?: boolean }
+    | { type: 'init'; generation: number; sats: TLEInitData[] }
     | { type: 'visible'; generation: number; indices: Int32Array }
     | { type: 'update'; generation: number; time: number; buffer?: ArrayBuffer };
 
