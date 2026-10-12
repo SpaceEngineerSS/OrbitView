@@ -32,9 +32,9 @@
     "check": "tsc --noEmit && eslint && jest"
   },
   "dependencies": {
+    "@phosphor-icons/react": "^2.1.10",
     "cesium": "^1.135.0",
-    "framer-motion": "^12.34.0",
-    "lucide-react": "^0.554.0",
+    "motion": "^13.4.4",
     "next": "^16.3.8",
     "react": "19.2.0",
     "react-dom": "19.2.0",

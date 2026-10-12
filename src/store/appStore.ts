@@ -13,6 +13,7 @@ export interface Observer extends ObserverGeodetic {
 }
 
 export interface Settings {
+    theme: 'system' | 'light' | 'dark';
     showOrbit: boolean;
     showGroundTrack: boolean;
     showFootprint: boolean;
@@ -24,12 +25,13 @@ export interface Settings {
 }
 
 export const DEFAULT_SETTINGS: Settings = {
+    theme: 'system',
     showOrbit: true,
     showGroundTrack: true,
     showFootprint: true,
     showNightShadow: true,
     autoRotate: false,
-    basemap: 'dark',
+    basemap: 'imagery',
     clock: 'utc',
     minElevation: 10,
 };

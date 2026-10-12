@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useId, useRef, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { AnimatePresence, motion } from "framer-motion";
-import { X } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
+import { X, Info } from "@phosphor-icons/react";
 import { IconButton } from "./Button";
 import { cx } from "./cx";
 import { useBackClose } from "@/hooks/useBackClose";
@@ -21,8 +21,8 @@ interface DialogProps {
 const FOCUSABLE = 'a[href],button:not([disabled]),input:not([disabled]),select,textarea,[tabindex]:not([tabindex="-1"])';
 
 /**
- * Modal dialog: centred on desktop, full-width from the bottom on phones.
- * Escape and the Android back button close it; focus stays inside while open.
+ * Modal: a centred card on desktop, a sheet rising from the bottom on phones.
+ * Escape and the Android back button close it; focus stays inside.
  */
 export function Dialog({ open, onClose, title, closeLabel, children, footer, width = "md" }: DialogProps) {
     const ref = useRef<HTMLDivElement>(null);
@@ -34,7 +34,6 @@ export function Dialog({ open, onClose, title, closeLabel, children, footer, wid
         const prev = document.activeElement as HTMLElement | null;
         const el = ref.current;
         requestAnimationFrame(() => el?.querySelector<HTMLElement>(FOCUSABLE)?.focus());
-
         const onKey = (e: KeyboardEvent) => {
             if (e.key === "Escape") { e.stopPropagation(); onClose(); return; }
             if (e.key !== "Tab" || !el) return;
@@ -58,9 +57,9 @@ export function Dialog({ open, onClose, title, closeLabel, children, footer, wid
             {open && (
                 <div className="fixed inset-0 flex items-end md:items-center justify-center" style={{ zIndex: "var(--z-dialog)" }}>
                     <motion.div
-                        className="absolute inset-0 bg-[#0b0c0e]/75"
+                        className="absolute inset-0 bg-black/40"
                         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                        transition={{ duration: 0.14 }}
+                        transition={{ duration: 0.2 }}
                         onClick={onClose}
                     />
                     <motion.div
@@ -68,26 +67,44 @@ export function Dialog({ open, onClose, title, closeLabel, children, footer, wid
                         role="dialog"
                         aria-modal="true"
                         aria-labelledby={titleId}
-                        initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 12 }}
-                        transition={{ duration: 0.16, ease: [0.2, 0, 0, 1] }}
+                        initial={{ opacity: 0, y: 40, scale: 0.98 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 40, scale: 0.98 }}
+                        transition={{ type: "spring", stiffness: 420, damping: 36 }}
                         className={cx(
-                            "relative flex flex-col w-full max-h-[88dvh] bg-surface border border-rule-strong",
-                            "md:mx-4 pb-[var(--safe-bottom)] md:pb-0",
+                            "relative flex flex-col w-full max-h-[90dvh] bg-card shadow-pop",
+                            "rounded-t-[28px] md:rounded-[28px] md:mx-4 pb-[var(--safe-bottom)] md:pb-0",
                             width === "sm" && "md:max-w-sm",
                             width === "md" && "md:max-w-lg",
                             width === "lg" && "md:max-w-2xl"
                         )}
                     >
-                        <header className="flex items-center justify-between h-11 pl-4 pr-1.5 border-b border-rule shrink-0">
-                            <h2 id={titleId} className="text-[13px] font-medium tracking-wide">{title}</h2>
-                            <IconButton label={closeLabel} onClick={onClose}><X size={16} strokeWidth={1.5} /></IconButton>
+                        <div aria-hidden className="md:hidden mx-auto mt-2 h-[5px] w-9 rounded-full bg-fill-strong" />
+                        <header className="flex items-center justify-between pl-5 pr-3 pt-3 pb-1 shrink-0">
+                            <h2 id={titleId} className="text-[19px] font-semibold tracking-tight">{title}</h2>
+                            <IconButton label={closeLabel} size="sm" onClick={onClose}><X size={16} weight="bold" /></IconButton>
                         </header>
-                        <div className="flex-1 min-h-0 scroll px-4 py-3">{children}</div>
-                        {footer && <footer className="flex justify-end gap-2 px-4 py-3 border-t border-rule shrink-0">{footer}</footer>}
+                        <div className="flex-1 min-h-0 scroll px-5 pt-2 pb-5">{children}</div>
+                        {footer && <footer className="flex justify-end gap-2 px-5 pb-5 shrink-0">{footer}</footer>}
                     </motion.div>
                 </div>
             )}
         </AnimatePresence>,
         document.body
+    );
+}
+
+/** Small "i" button that opens the honest fine print for a card. */
+export function InfoButton({ title, closeLabel, children }: { title: string; closeLabel: string; children: ReactNode }) {
+    const [open, setOpen] = useState(false);
+    return (
+        <>
+            <IconButton label={title} size="sm" variant="ghost" onClick={() => setOpen(true)}>
+                <Info size={18} />
+            </IconButton>
+            <Dialog open={open} onClose={() => setOpen(false)} title={title} closeLabel={closeLabel} width="sm">
+                <div className="text-[14px] leading-relaxed text-ink-2 space-y-3">{children}</div>
+            </Dialog>
+        </>
     );
 }

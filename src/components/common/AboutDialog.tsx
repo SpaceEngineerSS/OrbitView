@@ -1,5 +1,6 @@
 "use client";
 
+import { GithubLogo } from "@phosphor-icons/react";
 import { useUiStore } from "@/store/uiStore";
 import { useT } from "@/hooks/useLocale";
 import { Dialog } from "@/components/ui/Dialog";
@@ -7,35 +8,31 @@ import { LogoMark } from "./Logo";
 
 export const APP_VERSION = "4.0.0";
 
-/** About, data sources and attribution. Also reused on the mobile Settings tab. */
+/** About, data sources and attribution. Reused in the phone's settings sheet. */
 export function AboutBody() {
     const t = useT();
     return (
-        <div className="text-[12.5px] leading-relaxed text-dim space-y-3">
+        <div className="text-[14px] leading-relaxed text-ink-2 space-y-4">
             <div className="flex items-center gap-3 text-ink">
-                <LogoMark size={28} />
+                <LogoMark size={52} />
                 <div>
-                    <div className="text-[14px] font-semibold tracking-[0.12em]">ORBITVIEW</div>
-                    <div className="num text-[11px] text-dim">v{APP_VERSION}</div>
+                    <div className="text-[20px] font-semibold tracking-tight">OrbitView</div>
+                    <div className="text-[13px] text-ink-2">{t("about.version", { v: APP_VERSION })}</div>
                 </div>
             </div>
             <p>{t("about.what")}</p>
             <p>{t("about.accuracy")}</p>
-            <div>
-                <h3 className="label mb-1">{t("about.sources")}</h3>
-                <ul className="space-y-0.5">
-                    <li>{t("about.srcTle")}</li>
-                    <li>{t("about.srcWeather")}</li>
-                    <li>{t("about.srcMap")}</li>
-                    <li>{t("about.srcSgp4")}</li>
-                </ul>
+            <div className="rounded-[16px] bg-card-2 px-4 py-3 space-y-1">
+                <div className="text-[13px] font-semibold text-ink">{t("about.sources")}</div>
+                <p>{t("about.srcTle")}</p>
+                <p>{t("about.srcWeather")}</p>
+                <p>{t("about.srcMap")}</p>
+                <p>{t("about.srcSgp4")}</p>
             </div>
-            <p>
-                {t("about.author")}{" "}
-                <a className="text-accent hover:underline underline-offset-2" href="https://github.com/SpaceEngineerSS/OrbitView" target="_blank" rel="noreferrer">
-                    github.com/SpaceEngineerSS/OrbitView
-                </a>
-            </p>
+            <a className="inline-flex items-center gap-2 font-semibold text-accent" href="https://github.com/SpaceEngineerSS/OrbitView" target="_blank" rel="noreferrer">
+                <GithubLogo size={18} weight="fill" /> SpaceEngineerSS/OrbitView
+            </a>
+            <p className="text-[12px] text-ink-3">{t("about.author")} · {t("about.mapCredit")}</p>
         </div>
     );
 }

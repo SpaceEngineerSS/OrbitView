@@ -1,6 +1,6 @@
 "use client";
 
-import { MapPin } from "lucide-react";
+import { MapPin } from "@phosphor-icons/react";
 import { useT } from "@/hooks/useLocale";
 import { Button } from "@/components/ui/Button";
 import { useUiStore } from "@/store/uiStore";
@@ -10,11 +10,15 @@ export default function ObserverPrompt() {
     const t = useT();
     const open = useUiStore((s) => s.openDialog);
     return (
-        <div className="flex items-center justify-between gap-3">
-            <p className="text-[12px] text-dim">{t("observer.needed")}</p>
-            <Button size="sm" icon={<MapPin size={13} strokeWidth={1.5} />} onClick={() => open("observer")}>
-                {t("observer.set")}
-            </Button>
+        <div className="flex items-center gap-3">
+            <div className="h-10 w-10 shrink-0 rounded-full bg-accent-soft text-accent flex items-center justify-center">
+                <MapPin size={20} weight="fill" />
+            </div>
+            <div className="flex-1 min-w-0">
+                <div className="text-[15px] font-semibold">{t("observer.neededTitle")}</div>
+                <div className="text-[13px] text-ink-2">{t("observer.needed")}</div>
+            </div>
+            <Button size="sm" variant="filled" onClick={() => open("observer")}>{t("observer.set")}</Button>
         </div>
     );
 }

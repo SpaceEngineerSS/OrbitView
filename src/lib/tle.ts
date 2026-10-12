@@ -44,7 +44,10 @@ export const TLE_MAX_AGE_MS = 3600 * 1000; // 1 hour
 
 const CATALOG_GROUPS: ReadonlyArray<{ group: string; category: SatelliteCategory }> = [
   { group: 'stations', category: 'station' }, // priority: wins on duplicate IDs
-  { group: 'active', category: 'active' },
+  // The server's default chain: Space-Track when configured, else CelesTrak
+  // "active", else its own stale copy. Asking for "active" directly would
+  // skip Space-Track and fail outright whenever CelesTrak rate-limits us.
+  { group: 'default', category: 'active' },
 ];
 const DEFAULT_CATEGORY: SatelliteCategory = 'active';
 const VALID_CATEGORIES: ReadonlySet<string> = new Set<SatelliteCategory>(['station', 'starlink', 'cubesat', 'active']);

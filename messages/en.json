@@ -69,13 +69,14 @@
     "ephemeris": "Ephemeris export",
     "span": "Span",
     "step": "Step",
-    "ephemerisNote": "Starts at the simulation time. Positions are SGP4 in the TEME frame, plus WGS-84 latitude, longitude and height."
+    "ephemerisNote": "Starts at the simulation time. Positions are SGP4 in the TEME frame, plus WGS-84 latitude, longitude and height.",
+    "title": "Data & export"
   },
   "time": {
     "title": "Simulation time",
-    "live": "LIVE",
-    "paused": "PAUSED",
-    "offset": "OFFSET",
+    "live": "Live",
+    "paused": "Paused",
+    "offset": "Offset",
     "local": "Local",
     "now": "Now",
     "play": "Play",
@@ -172,12 +173,19 @@
     "maxEl": "Max",
     "duration": "Length",
     "path": "Path",
-    "visibleShort": "VIS",
+    "visibleShort": "Visible",
     "visibleHint": "Visible to the eye: the satellite is in sunlight while your sky is dark",
     "skyplot": "Sky plot",
     "skyplotLegend": "Centre is straight up, the rim is the horizon. Circle: rise, square: set.",
     "jumpTo": "Jump to this pass →",
-    "note": "Times are from SGP4 with the current TLE, refined to half a second. Atmospheric refraction is ignored, so very low passes rise a little earlier in reality. * started before the window."
+    "note": "Times are from SGP4 with the current TLE, refined to half a second. Atmospheric refraction is ignored, so very low passes rise a little earlier in reality. * started before the window.",
+    "count": "{n} passes",
+    "visibleCount": "{n} visible",
+    "stripLabel": "Passes over the next 48 hours",
+    "legendVisible": "Visible",
+    "legendRadio": "Radio only",
+    "legendNight": "Night",
+    "radioOnly": "Radio only"
   },
   "doppler": {
     "frequency": "Downlink frequency",
@@ -198,7 +206,10 @@
     "approaching": "approaching",
     "receding": "moving away",
     "curveTitle": "Shift across the next pass",
-    "note": "Uses the satellite's velocity relative to the rotating Earth. First-order Doppler; relativistic terms are below 1 Hz at these frequencies."
+    "note": "Uses the satellite's velocity relative to the rotating Earth. First-order Doppler; relativistic terms are below 1 Hz at these frequencies.",
+    "title": "Doppler",
+    "atRise": "At rise",
+    "atSet": "At set"
   },
   "elements": {
     "title": "Mean elements",
@@ -240,6 +251,13 @@
       "month": "{n} months",
       "year": "{n} years",
       "beyond": "> {n} years"
+    },
+    "reentryAround": "Re-entry around {d}",
+    "risk": {
+      "critical": "Decaying fast",
+      "high": "Low orbit",
+      "medium": "Some drag",
+      "low": "Stable"
     }
   },
   "conj": {
@@ -260,13 +278,14 @@
       "rocket_body": "rocket body",
       "unknown": "unknown"
     },
-    "note": "A TLE-based screen, not a collision assessment. TLE positions can be off by a kilometre or more, so a small miss distance here is a reason to look, not a prediction."
+    "note": "A TLE-based screen, not a collision assessment. TLE positions can be off by a kilometre or more, so a small miss distance here is a reason to look, not a prediction.",
+    "title": "Close approaches"
   },
   "observer": {
     "title": "Your location",
     "set": "Set location",
     "none": "Not set",
-    "needed": "Needs your location.",
+    "needed": "Add your location to see passes and Doppler.",
     "intro": "Passes, look angles and Doppler are worked out for this point.",
     "useDevice": "Use this device's location",
     "locating": "Locating…",
@@ -282,7 +301,8 @@
     "geoUnsupported": "This browser can't share a location.",
     "geoDenied": "Location permission was refused.",
     "geoFailed": "Couldn't get a position fix. Try again or pick a city.",
-    "privacy": "Stored only in this browser. Nothing is sent to a server."
+    "privacy": "Stored only in this browser. Nothing is sent to a server.",
+    "neededTitle": "Where are you?"
   },
   "settings": {
     "title": "Settings",
@@ -303,7 +323,11 @@
     "showFootprintHint": "Where the object is above the elevation mask",
     "nightShadow": "Day/night shading",
     "autoRotate": "Slowly rotate when idle",
-    "shortcuts": "Keyboard"
+    "shortcuts": "Keyboard",
+    "theme": "Appearance",
+    "themeSystem": "Auto",
+    "themeLight": "Light",
+    "themeDark": "Dark"
   },
   "shortcuts": {
     "search": "search",
@@ -330,7 +354,8 @@
     "srcMap": "Map tiles: Esri",
     "srcSgp4": "Propagator: satellite.js (SGP4/SDP4)",
     "author": "Built by Mehmet Gümüş. MIT licence, source on GitHub:",
-    "mapCredit": "Map © Esri, HERE, Garmin, OpenStreetMap contributors · Imagery © Esri, Maxar"
+    "mapCredit": "Map © Esri, HERE, Garmin, OpenStreetMap contributors · Imagery © Esri, Maxar",
+    "version": "Version {v}"
   },
   "errors": {
     "computation": "The calculation failed. Try another object or time.",
@@ -338,5 +363,23 @@
     "globeTitle": "Globe unavailable",
     "globeBody": "The 3D view stopped with an error. The rest of the app still works; reloading usually fixes it.",
     "noWebgl": "This browser or device doesn't provide WebGL, which the 3D globe needs. Try a current Chrome, Firefox or Safari, or turn on hardware acceleration."
+  },
+  "hero": {
+    "overhead": "Overhead now",
+    "overheadVisible": "Overhead now · visible",
+    "setsIn": "Sets in {d}",
+    "nowAt": "{el}° up, bearing {az}°",
+    "arcLabel": "Position along the current pass",
+    "visiblePass": "Visible pass",
+    "inAndMax": "in {d} · up to {el}°",
+    "position": "Over",
+    "aboveHorizon": "Above your horizon",
+    "belowHorizon": "Below your horizon"
+  },
+  "orbit": {
+    "title": "Orbit",
+    "shape": "Orbit shape to scale",
+    "ageDays": "{n} days old",
+    "meanElements": "Mean elements"
   }
 }

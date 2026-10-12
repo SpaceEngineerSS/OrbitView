@@ -84,12 +84,12 @@ export function featured(byId: Map<string, SpaceObject>): SpaceObject[] {
 
 /** Colour of an object on the globe, by orbit regime. Mirrors the CSS tokens. */
 export const REGIME_COLORS: Record<string, string> = {
-    station: '#e8e4da',
-    LEO: '#9fb3c8',
-    MEO: '#8fb39a',
-    GEO: '#c9b8a0',
-    HEO: '#b9a3c4',
-    DEBRIS: '#6b6f76',
+    station: '#f6c94c',
+    LEO: '#4fb6f0',
+    MEO: '#2bbfae',
+    GEO: '#9d85f6',
+    HEO: '#ec6aae',
+    DEBRIS: '#8d909b',
 };
 
 export function regimeColor(o: SpaceObject): string {

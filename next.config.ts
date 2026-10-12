@@ -38,6 +38,7 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   // Don't write AGENTS.md / CLAUDE.md into the repo on `next dev`.
   agentRules: false,
+  devIndicators: false,
   // Pin the workspace root. Without it Turbopack can pick up a lockfile in a
   // parent folder and fail to resolve fonts and modules.
   turbopack: {

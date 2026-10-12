@@ -11,15 +11,15 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
 
     return (
         <html lang="en">
-            <body style={{ margin: 0, minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#101215", color: "#e8e4da", fontFamily: "ui-sans-serif, system-ui, sans-serif" }}>
-                <div style={{ maxWidth: 360, border: "1px solid #2b2f35", background: "#15171a", padding: 20 }}>
-                    <div style={{ fontSize: 11, letterSpacing: "0.08em", color: "#d9534f", textTransform: "uppercase" }}>OrbitView · error</div>
-                    <p style={{ fontSize: 14, lineHeight: 1.5, color: "#8d9097" }}>
+            <body style={{ margin: 0, minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#eef0f5", color: "#101218", fontFamily: "ui-sans-serif, system-ui, sans-serif" }}>
+                <div style={{ maxWidth: 360, background: "#ffffff", padding: 24, borderRadius: 24, boxShadow: "0 14px 36px rgba(16,18,24,0.14)" }}>
+                    <div style={{ fontSize: 19, fontWeight: 600 }}>OrbitView</div>
+                    <p style={{ fontSize: 14, lineHeight: 1.5, color: "#636878" }}>
                         Something broke while loading the page. / Sayfa yüklenirken bir hata oluştu.
                     </p>
-                    {error.digest && <p style={{ fontFamily: "ui-monospace, monospace", fontSize: 11, color: "#5d6168" }}>{error.digest}</p>}
+                    {error.digest && <p style={{ fontFamily: "ui-monospace, monospace", fontSize: 11, color: "#9a9eab" }}>{error.digest}</p>}
                     <button type="button" onClick={reset}
-                        style={{ height: 32, padding: "0 12px", background: "#1c1f23", color: "#e8e4da", border: "1px solid #3a3f46", borderRadius: 2, cursor: "pointer" }}>
+                        style={{ height: 40, padding: "0 18px", background: "#3466f2", color: "#ffffff", border: 0, borderRadius: 999, fontWeight: 600, cursor: "pointer" }}>
                         Try again / Tekrar dene
                     </button>
                 </div>

@@ -1,14 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { LocateFixed } from "lucide-react";
+import { NavigationArrow } from "@phosphor-icons/react";
 import { useAppStore } from "@/store/appStore";
 import { useUiStore } from "@/store/uiStore";
 import { useT } from "@/hooks/useLocale";
 import { Dialog } from "@/components/ui/Dialog";
 import { Button } from "@/components/ui/Button";
 import { TextInput } from "@/components/ui/Controls";
-import { Note } from "@/components/ui/Panel";
+import { Note } from "@/components/ui/Card";
 
 const CITIES = [
     { name: "İstanbul", lat: 41.0082, lon: 28.9784, alt: 40 },
@@ -83,53 +83,53 @@ export default function ObserverDialog() {
             closeLabel={t("common.close")}
             footer={
                 <>
-                    {observer && <Button variant="ghost" onClick={() => { setObserver(null); close(); }}>{t("observer.clear")}</Button>}
-                    <Button variant="accent" onClick={save}>{t("common.save")}</Button>
+                    {observer && <Button variant="plain" onClick={() => { setObserver(null); close(); }}>{t("observer.clear")}</Button>}
+                    <Button variant="filled" onClick={save}>{t("common.save")}</Button>
                 </>
             }
         >
-            <p className="text-[12.5px] text-dim mb-3">{t("observer.intro")}</p>
+            <p className="text-[14px] text-ink-2 mb-4">{t("observer.intro")}</p>
 
-            <Button icon={<LocateFixed size={14} strokeWidth={1.5} />} onClick={locate} disabled={locating} className="w-full">
+            <Button variant="tinted" size="lg" icon={<NavigationArrow size={18} weight="fill" />} onClick={locate} disabled={locating} className="w-full">
                 {locating ? t("observer.locating") : t("observer.useDevice")}
             </Button>
 
-            <div className="label mt-4 mb-1.5">{t("observer.cities")}</div>
+            <div className="text-[13px] font-semibold text-ink-2 mt-5 mb-2">{t("observer.cities")}</div>
             <div className="flex flex-wrap gap-1.5">
                 {CITIES.map((c) => (
                     <button
                         key={c.name}
                         type="button"
                         onClick={() => { setLat(String(c.lat)); setLon(String(c.lon)); setAlt(String(c.alt)); setLabel(c.name); }}
-                        className="h-7 px-2 border border-rule-strong rounded-[2px] text-[12px] text-dim hover:text-ink hover:border-dim"
+                        className={label === c.name ? "h-8 px-3 rounded-full text-[13px] font-semibold bg-accent text-on-accent" : "h-8 px-3 rounded-full text-[13px] font-semibold bg-fill text-ink hover:bg-fill-strong"}
                     >
                         {c.name}
                     </button>
                 ))}
             </div>
 
-            <div className="label mt-4 mb-1.5">{t("observer.manual")}</div>
+            <div className="text-[13px] font-semibold text-ink-2 mt-5 mb-2">{t("observer.manual")}</div>
             <div className="grid grid-cols-3 gap-2">
                 <label className="block">
-                    <span className="text-[11px] text-dim">{t("observer.lat")}</span>
-                    <TextInput inputMode="decimal" value={lat} onChange={(e) => setLat(e.target.value)} className="num" placeholder="41.0082" />
+                    <span className="block text-[12px] text-ink-2 mb-1">{t("observer.lat")}</span>
+                    <TextInput inputMode="decimal" value={lat} onChange={(e) => setLat(e.target.value)} placeholder="41.0082" />
                 </label>
                 <label className="block">
-                    <span className="text-[11px] text-dim">{t("observer.lon")}</span>
-                    <TextInput inputMode="decimal" value={lon} onChange={(e) => setLon(e.target.value)} className="num" placeholder="28.9784" />
+                    <span className="block text-[12px] text-ink-2 mb-1">{t("observer.lon")}</span>
+                    <TextInput inputMode="decimal" value={lon} onChange={(e) => setLon(e.target.value)} placeholder="28.9784" />
                 </label>
                 <label className="block">
-                    <span className="text-[11px] text-dim">{t("observer.alt")}</span>
-                    <TextInput inputMode="decimal" value={alt} onChange={(e) => setAlt(e.target.value)} className="num" />
+                    <span className="block text-[12px] text-ink-2 mb-1">{t("observer.alt")}</span>
+                    <TextInput inputMode="decimal" value={alt} onChange={(e) => setAlt(e.target.value)} />
                 </label>
             </div>
             <label className="block mt-2">
-                <span className="text-[11px] text-dim">{t("observer.label")}</span>
+                <span className="block text-[12px] text-ink-2 mb-1">{t("observer.label")}</span>
                 <TextInput value={label} onChange={(e) => setLabel(e.target.value)} maxLength={40} />
             </label>
 
-            {error && <div className="mt-3"><Note tone="warn">{error}</Note></div>}
-            <p className="mt-3 text-[11.5px] text-faint">{t("observer.privacy")}</p>
+            {error && <p className="mt-3 text-[14px] text-red">{error}</p>}
+            <Note className="mt-3">{t("observer.privacy")}</Note>
         </Dialog>
     );
 }

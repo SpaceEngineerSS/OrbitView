@@ -21,7 +21,7 @@ function GlobePlaceholder() {
     const t = useT();
     return (
         <div className="absolute inset-0 flex items-center justify-center">
-            <span className="num text-[12px] text-dim">{t("app.loadingGlobe")}</span>
+            <span className="text-[14px] font-medium text-white/70">{t("app.loadingGlobe")}</span>
         </div>
     );
 }
@@ -29,18 +29,14 @@ function GlobePlaceholder() {
 export default function Home() {
     useAppBoot();
     const isMobile = useIsMobile();
-    const mobileTab = useUiStore((s) => s.mobileTab);
     const compass = useUiStore((s) => s.compass);
     const setCompass = useUiStore((s) => s.setCompass);
 
-    // On phones the catalog/settings tabs cover the globe completely.
-    const globeHidden = isMobile === true && mobileTab !== "globe";
-
     return (
-        <main className="fixed inset-0 bg-bg overflow-hidden">
+        <main className="fixed inset-0 overflow-hidden bg-[#020306]">
             <div className="globe-region" style={{ zIndex: "var(--z-globe)" }}>
                 <GlobeBoundary>
-                    <Globe paused={globeHidden} compass={compass} onCompassExit={() => setCompass(false)} />
+                    <Globe compass={compass} onCompassExit={() => setCompass(false)} />
                 </GlobeBoundary>
             </div>
 
@@ -48,8 +44,8 @@ export default function Home() {
             {isMobile === true && <MobileShell />}
 
             <ObserverDialog />
-            <SettingsDialog />
-            <AboutDialog />
+            {isMobile === false && <SettingsDialog />}
+            {isMobile === false && <AboutDialog />}
         </main>
     );
 }

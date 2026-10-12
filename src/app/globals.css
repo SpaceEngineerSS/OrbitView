@@ -1,83 +1,156 @@
 @import "tailwindcss";
 
 /*
- * OrbitView console palette.
+ * OrbitView design tokens.
  *
- * One accent (amber) that always means "this is the thing you selected or
- * the action you can take". Everything else is graphite and bone. No blur,
- * no glow, no gradients: panels are flat surfaces separated by 1px rules,
- * like the instrument pages I modelled this on.
+ * Light and dark both exist; with no explicit choice we follow the system.
+ * Colour is used for meaning (pass visible, upcoming, in shadow, warning),
+ * not decoration. Surfaces are separated by elevation and spacing rather
+ * than outlines.
  */
 :root {
-  --c-bg: #101215;
-  --c-surface: #15171a;
-  --c-raised: #1c1f23;
-  --c-rule: #2b2f35;
-  --c-rule-strong: #3a3f46;
+  --bg: #eef0f5;
+  --card: #ffffff;
+  --card-2: #f4f5f8;
+  --fill: rgba(118, 120, 135, 0.12);
+  --fill-strong: rgba(118, 120, 135, 0.2);
+  --separator: rgba(60, 62, 75, 0.1);
 
-  --c-text: #e8e4da;
-  --c-text-dim: #8d9097;
-  --c-text-faint: #5d6168;
+  --text: #101218;
+  --text-2: #636878;
+  --text-3: #9a9eab;
 
-  --c-accent: #f2a33a;
-  --c-accent-ink: #1a1306;
-  --c-accent-dim: #8a5f24;
+  --accent: #3466f2;
+  --accent-soft: rgba(52, 102, 242, 0.12);
+  --on-accent: #ffffff;
 
-  --c-alert: #d9534f;
-  --c-warn: #e07b39;
-  --c-ok: #7fb069;
+  --green: #1c9a53;
+  --green-soft: rgba(28, 154, 83, 0.12);
+  --indigo: #5b57d9;
+  --indigo-soft: rgba(91, 87, 217, 0.12);
+  --orange: #e57c12;
+  --orange-soft: rgba(229, 124, 18, 0.13);
+  --red: #dc3b40;
+  --red-soft: rgba(220, 59, 64, 0.12);
 
-  /* Orbit regime colours used on the globe and in legends */
-  --c-leo: #9fb3c8;
-  --c-meo: #8fb39a;
-  --c-geo: #c9b8a0;
-  --c-heo: #b9a3c4;
-  --c-debris: #6b6f76;
-  --c-station: #e8e4da;
+  /* Orbit regimes (also drawn on the globe) */
+  --leo: #4fb6f0;
+  --meo: #2bbfae;
+  --geo: #9d85f6;
+  --heo: #ec6aae;
+  --station: #f6c94c;
+  --debris: #8d909b;
 
-  --radius: 2px;
-  --ease: cubic-bezier(0.2, 0, 0, 1);
-  --dur: 140ms;
+  --shadow-1: 0 1px 2px rgba(16, 18, 24, 0.06), 0 2px 8px rgba(16, 18, 24, 0.05);
+  --shadow-2: 0 2px 6px rgba(16, 18, 24, 0.08), 0 14px 36px rgba(16, 18, 24, 0.14);
+  --shadow-3: 0 6px 16px rgba(16, 18, 24, 0.12), 0 24px 64px rgba(16, 18, 24, 0.22);
+
+  --r-card: 20px;
+  --r-control: 12px;
 
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
-  --safe-left: env(safe-area-inset-left, 0px);
-  --safe-right: env(safe-area-inset-right, 0px);
 
-  /* Stacking order, lowest first */
   --z-globe: 0;
   --z-hud: 10;
   --z-sheet: 20;
-  --z-nav: 30;
   --z-overlay: 40;
   --z-dialog: 50;
-  --z-toast: 60;
+
+  color-scheme: light;
+}
+
+/* Dark: an explicit choice, or the system when the user hasn't chosen */
+:root[data-theme="dark"] {
+  --bg: #050608;
+  --card: #1b1c20;
+  --card-2: #25262b;
+  --fill: rgba(130, 134, 150, 0.18);
+  --fill-strong: rgba(130, 134, 150, 0.28);
+  --separator: rgba(130, 134, 150, 0.18);
+
+  --text: #f4f5f8;
+  --text-2: #9b9fab;
+  --text-3: #6c707b;
+
+  --accent: #6a90ff;
+  --accent-soft: rgba(106, 144, 255, 0.18);
+  --on-accent: #0b0d12;
+
+  --green: #3fcf7b;
+  --green-soft: rgba(63, 207, 123, 0.16);
+  --indigo: #8b88ff;
+  --indigo-soft: rgba(139, 136, 255, 0.18);
+  --orange: #ffa245;
+  --orange-soft: rgba(255, 162, 69, 0.16);
+  --red: #ff6b6f;
+  --red-soft: rgba(255, 107, 111, 0.16);
+
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4), 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-2: 0 2px 6px rgba(0, 0, 0, 0.45), 0 14px 36px rgba(0, 0, 0, 0.5);
+  --shadow-3: 0 6px 16px rgba(0, 0, 0, 0.5), 0 24px 64px rgba(0, 0, 0, 0.6);
 
   color-scheme: dark;
 }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --bg: #050608;
+    --card: #1b1c20;
+    --card-2: #25262b;
+    --fill: rgba(130, 134, 150, 0.18);
+    --fill-strong: rgba(130, 134, 150, 0.28);
+    --separator: rgba(130, 134, 150, 0.18);
+    --text: #f4f5f8;
+    --text-2: #9b9fab;
+    --text-3: #6c707b;
+    --accent: #6a90ff;
+    --accent-soft: rgba(106, 144, 255, 0.18);
+    --on-accent: #0b0d12;
+    --green: #3fcf7b;
+    --green-soft: rgba(63, 207, 123, 0.16);
+    --indigo: #8b88ff;
+    --indigo-soft: rgba(139, 136, 255, 0.18);
+    --orange: #ffa245;
+    --orange-soft: rgba(255, 162, 69, 0.16);
+    --red: #ff6b6f;
+    --red-soft: rgba(255, 107, 111, 0.16);
+    --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4), 0 2px 8px rgba(0, 0, 0, 0.3);
+    --shadow-2: 0 2px 6px rgba(0, 0, 0, 0.45), 0 14px 36px rgba(0, 0, 0, 0.5);
+    --shadow-3: 0 6px 16px rgba(0, 0, 0, 0.5), 0 24px 64px rgba(0, 0, 0, 0.6);
+    color-scheme: dark;
+  }
+}
 
 @theme inline {
-  --color-bg: var(--c-bg);
-  --color-surface: var(--c-surface);
-  --color-raised: var(--c-raised);
-  --color-rule: var(--c-rule);
-  --color-rule-strong: var(--c-rule-strong);
-  --color-ink: var(--c-text);
-  --color-dim: var(--c-text-dim);
-  --color-faint: var(--c-text-faint);
-  --color-accent: var(--c-accent);
-  --color-accent-ink: var(--c-accent-ink);
-  --color-accent-dim: var(--c-accent-dim);
-  --color-alert: var(--c-alert);
-  --color-warn: var(--c-warn);
-  --color-ok: var(--c-ok);
+  --color-bg: var(--bg);
+  --color-card: var(--card);
+  --color-card-2: var(--card-2);
+  --color-fill: var(--fill);
+  --color-fill-strong: var(--fill-strong);
+  --color-separator: var(--separator);
+  --color-ink: var(--text);
+  --color-ink-2: var(--text-2);
+  --color-ink-3: var(--text-3);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-on-accent: var(--on-accent);
+  --color-green: var(--green);
+  --color-green-soft: var(--green-soft);
+  --color-indigo: var(--indigo);
+  --color-indigo-soft: var(--indigo-soft);
+  --color-orange: var(--orange);
+  --color-orange-soft: var(--orange-soft);
+  --color-red: var(--red);
+  --color-red-soft: var(--red-soft);
 
-  --font-sans: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-plex-mono), ui-monospace, "SFMono-Regular", monospace;
+  --font-sans: var(--font-ui), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
 
-  --radius-xs: var(--radius);
-  --radius-sm: var(--radius);
-  --radius-md: var(--radius);
+  --shadow-card: var(--shadow-1);
+  --shadow-float: var(--shadow-2);
+  --shadow-pop: var(--shadow-3);
+
+  --radius-card: var(--r-card);
+  --radius-control: var(--r-control);
 }
 
 html,
@@ -86,92 +159,48 @@ body {
 }
 
 body {
-  background: var(--c-bg);
-  color: var(--c-text);
+  background: var(--bg);
+  color: var(--text);
   font-family: var(--font-sans);
-  font-size: 14px;
-  line-height: 1.45;
+  font-size: 15px;
+  line-height: 1.4;
+  letter-spacing: -0.005em;
   overflow: hidden;
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent;
   overscroll-behavior: none;
+  font-variant-numeric: tabular-nums;
 }
 
 ::selection {
-  background: var(--c-accent);
-  color: var(--c-accent-ink);
+  background: var(--accent-soft);
 }
 
 :focus-visible {
-  outline: 1px solid var(--c-accent);
-  outline-offset: 1px;
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
-/* Numbers never jitter when they change */
-.num {
-  font-family: var(--font-mono);
-  font-variant-numeric: tabular-nums;
-  font-feature-settings: "zero" 1;
+/* Big figures: narrower width axis so long numbers fit, tight tracking */
+.figure {
+  font-variation-settings: "wdth" 82;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1;
 }
 
-/* Small caps label used above every readout */
-.label {
-  font-size: 10.5px;
-  font-weight: 500;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--c-text-dim);
-}
-
-/* Thin, quiet scrollbars */
 .scroll {
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-width: thin;
-  scrollbar-color: var(--c-rule-strong) transparent;
-}
-.scroll::-webkit-scrollbar {
-  width: 6px;
-}
-.scroll::-webkit-scrollbar-thumb {
-  background: var(--c-rule-strong);
+  scrollbar-color: var(--fill-strong) transparent;
 }
 
-/* Tick-mark rule used as a section divider (the one ornament we allow) */
-.ticks {
-  height: 5px;
-  background-image: repeating-linear-gradient(
-    to right,
-    var(--c-rule-strong) 0 1px,
-    transparent 1px 8px
-  );
-}
-
-/*
- * The globe sits in a fixed region whose edges follow the layout, so the
- * Cesium viewer is never recreated when the layout switches.
- * Phone: between the top bar (48) and the bottom nav (56).
- * Tablet: header 44, footer 52, inspector 360 on the right.
- * Desktop: plus the 232 px catalog on the left.
- */
+/* The globe fills the screen; panels float over it. */
 .globe-region {
   position: fixed;
-  left: 0;
-  right: 0;
-  top: calc(48px + var(--safe-top));
-  bottom: calc(56px + var(--safe-bottom));
-}
-@media (min-width: 768px) {
-  .globe-region {
-    top: 44px;
-    bottom: 52px;
-    right: 360px;
-  }
-}
-@media (min-width: 1024px) {
-  .globe-region {
-    left: 232px;
-  }
+  inset: 0;
+  background: #020306;
 }
 
 /* Range input used as the time scrubber */
@@ -179,35 +208,33 @@ body {
   -webkit-appearance: none;
   appearance: none;
   background: transparent;
-  cursor: ew-resize;
+  cursor: pointer;
   margin: 0;
 }
 .scrubber::-webkit-slider-runnable-track {
-  height: 24px;
+  height: 28px;
   background: transparent;
 }
 .scrubber::-moz-range-track {
-  height: 24px;
+  height: 28px;
   background: transparent;
 }
 .scrubber::-webkit-slider-thumb {
   -webkit-appearance: none;
-  width: 10px;
-  height: 22px;
-  margin-top: 1px;
-  background: var(--c-accent);
-  border: 2px solid var(--c-bg);
-  border-radius: 1px;
+  width: 4px;
+  height: 28px;
+  background: var(--text);
+  border-radius: 2px;
 }
 .scrubber::-moz-range-thumb {
-  width: 10px;
-  height: 22px;
-  background: var(--c-accent);
-  border: 2px solid var(--c-bg);
-  border-radius: 1px;
+  width: 4px;
+  height: 28px;
+  background: var(--text);
+  border: 0;
+  border-radius: 2px;
 }
 
-/* Cesium: remove its own chrome, we draw our own */
+/* Cesium: hide its own chrome, we draw our own */
 .cesium-widget-credits,
 .cesium-viewer-bottom,
 .cesium-viewer-toolbar,

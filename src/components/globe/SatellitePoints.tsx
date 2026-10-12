@@ -7,27 +7,37 @@ import { useAppStore } from "@/store/appStore";
 import { useTelemetryStore } from "@/store/telemetryStore";
 import { getEngine } from "@/lib/propagation";
 import { matchesFilter, regimeColor } from "@/lib/catalog";
+import type { SpaceObject } from "@/lib/space-objects";
 import { getSatrec, stateAt, lookAngles } from "@/lib/orbit";
 import { calculateSunPosition, isSatelliteSunlit } from "@/lib/CoordinateConverter";
 
-const SELECTED = Cesium.Color.fromCssColorString("#f2a33a");
-const OUTLINE = Cesium.Color.fromCssColorString("#101215");
-const LABEL_BG = Cesium.Color.fromCssColorString("#15171a").withAlpha(0.92);
-const LABEL_FG = Cesium.Color.fromCssColorString("#e8e4da");
+const SELECTED = Cesium.Color.WHITE;
+const RING = Cesium.Color.fromCssColorString("#6a90ff");
+const OUTLINE = Cesium.Color.fromCssColorString("#020306");
+const LABEL_BG = Cesium.Color.fromCssColorString("#1b1c20").withAlpha(0.92);
+const LABEL_FG = Cesium.Color.fromCssColorString("#f4f5f8");
 const LABEL_OFFSET = new Cesium.Cartesian2(10, -10);
 const NO_SCALE = new Cesium.NearFarScalar(1e6, 1.0, 1e8, 1.0);
 const FRAME_MS = 50;
 
-function monoFont(): string {
-    const fam = getComputedStyle(document.body).getPropertyValue("--font-plex-mono").trim();
-    return `500 12px ${fam || "monospace"}`;
+function labelFont(): string {
+    const fam = getComputedStyle(document.body).getPropertyValue("--font-ui").trim();
+    return `600 13px ${fam || "system-ui"}, sans-serif`;
+}
+
+/** Regime colour; the dense LEO cloud is slightly translucent so it doesn't drown the globe. */
+function baseColor(o: SpaceObject): Cesium.Color {
+    const c = Cesium.Color.fromCssColorString(regimeColor(o));
+    if (o.group === "station") return c;
+    return o.category === "LEO" || o.category === "DEBRIS" ? c.withAlpha(0.7) : c;
 }
 
 /** Stations stand out a little; debris recedes. */
 function basePixelSize(o: { group?: string; category?: string }): number {
-    if (o.group === "station") return 5;
+    if (o.group === "station") return 6;
     if (o.category === "DEBRIS") return 2;
-    return 2.5;
+    if (o.category === "LEO") return 2.5;
+    return 3.5;
 }
 
 /** Bigger pick box on touch screens, where a fingertip is ~40 px wide. */
@@ -78,7 +88,7 @@ export default function SatellitePoints() {
                 id,
                 show: false,
                 pixelSize: basePixelSize(o),
-                color: Cesium.Color.fromCssColorString(regimeColor(o)),
+                color: baseColor(o),
                 outlineColor: OUTLINE,
                 outlineWidth: 0,
                 scaleByDistance: NO_SCALE,
@@ -138,11 +148,11 @@ export default function SatellitePoints() {
             const o = byId.get(id)!;
             const base = basePixelSize(o);
             if (on && kind === "sel") {
-                p.pixelSize = 9; p.color = SELECTED; p.outlineWidth = 2;
+                p.pixelSize = 11; p.color = SELECTED; p.outlineColor = RING; p.outlineWidth = 3;
             } else if (on && kind === "hover") {
-                p.pixelSize = Math.max(base, 6); p.outlineWidth = 1;
+                p.pixelSize = Math.max(base, 7); p.outlineColor = OUTLINE; p.outlineWidth = 1.5;
             } else {
-                p.pixelSize = base; p.outlineWidth = 0; p.color = Cesium.Color.fromCssColorString(regimeColor(o));
+                p.pixelSize = base; p.outlineWidth = 0; p.outlineColor = OUTLINE; p.color = baseColor(o);
             }
         };
         restyle(selectedId, true, "sel");
@@ -159,7 +169,7 @@ export default function SatellitePoints() {
         if (!labels) return;
         labels.removeAll();
         const byId = useAppStore.getState().byId;
-        const font = monoFont();
+        const font = labelFont();
         const add = (id: string | null) => {
             if (!id) return;
             const o = byId.get(id);
@@ -169,10 +179,10 @@ export default function SatellitePoints() {
                 position: Cesium.Cartesian3.ZERO,
                 text: o.name,
                 font,
-                fillColor: id === selectedId ? SELECTED : LABEL_FG,
+                fillColor: LABEL_FG,
                 showBackground: true,
                 backgroundColor: LABEL_BG,
-                backgroundPadding: new Cesium.Cartesian2(6, 3),
+                backgroundPadding: new Cesium.Cartesian2(8, 5),
                 pixelOffset: LABEL_OFFSET,
                 horizontalOrigin: Cesium.HorizontalOrigin.LEFT,
                 verticalOrigin: Cesium.VerticalOrigin.BOTTOM,

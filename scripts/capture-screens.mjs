@@ -1,99 +1,112 @@
-import puppeteer from 'puppeteer';
-import path from 'path';
-import fs from 'fs';
-import { fileURLToPath } from 'url';
+// Takes the screenshots used in the README and docs.
+//
+//   npm run dev            (in another terminal)
+//   npm run docs:snap      (BASE_URL=http://localhost:3000 by default)
+//
+// Every shot uses a fixed simulation time and observer so they can be
+// retaken after a UI change and still line up. Output: docs/img/*.png
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import puppeteer from "puppeteer";
+import { mkdirSync } from "node:fs";
+import { join, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 
-const OUTPUT_DIR = path.resolve(__dirname, '../public/screenshots');
-const URL = 'http://localhost:3001'; // Make sure the app is running!
+const BASE = process.env.BASE_URL ?? "http://localhost:3000";
+const OUT = join(dirname(fileURLToPath(import.meta.url)), "..", "docs", "img");
+const TIME = process.env.SNAP_TIME ?? "2026-10-12T18:20:00Z";
+const ISTANBUL = { latitude: 41.0082, longitude: 28.9784, altitude: 40, label: "İstanbul" };
 
-if (!fs.existsSync(OUTPUT_DIR)) {
-    fs.mkdirSync(OUTPUT_DIR, { recursive: true });
+mkdirSync(OUT, { recursive: true });
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+/** Persisted app state, written before the page loads. */
+function seed(page, locale, extra = {}) {
+    const state = {
+        state: {
+            observer: ISTANBUL,
+            settings: {
+                showOrbit: true, showGroundTrack: true, showFootprint: true, showNightShadow: true,
+                autoRotate: false, basemap: "dark", clock: "utc", minElevation: 10,
+            },
+            favorites: ["25544", "20580"],
+            filter: "all",
+            ...extra,
+        },
+        version: 1,
+    };
+    return page.evaluateOnNewDocument((s, l) => {
+        localStorage.setItem("orbitview-v4", s);
+        localStorage.setItem("orbitview-locale", l);
+    }, JSON.stringify(state), locale);
 }
 
-async function capture() {
-    console.log('🚀 Launching browser for screenshot capture...');
-    const browser = await puppeteer.launch({
-        headless: "new",
-        args: [
-            '--no-sandbox',
-            '--disable-setuid-sandbox',
-            '--disable-web-security',
-            '--window-size=1920,1080'
-        ],
-        defaultViewport: null,
-    });
+async function open(page, query) {
+    await page.goto(`${BASE}/?t=${encodeURIComponent(TIME)}${query}`, { waitUntil: "networkidle2", timeout: 120_000 });
+    await page.waitForSelector(".globe-region canvas", { timeout: 60_000 });
+    // Catalog in, first frames drawn, tiles settled.
+    await page.waitForFunction(() => !document.body.innerText.match(/Loading catalog|Katalog yükleniyor/), { timeout: 60_000 });
+    await sleep(6000);
+}
 
-    const page = await browser.newPage();
+async function pauseClock(page) {
+    // Space toggles play/pause; stopping the clock keeps every shot at TIME.
+    await page.keyboard.press("Space");
+    await sleep(300);
+}
 
-    // Set a user agent to avoid bot detection if necessary, though localhost is fine
-    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+async function tab(page, id) {
+    await page.click(`[data-tab="${id}"]`);
+    await sleep(2500);
+}
 
-    try {
-        console.log(`🌐 Navigating to ${URL}...`);
-        // Wait until network is idle to ensure assets are loaded
-        const response = await page.goto(URL, { waitUntil: 'networkidle0', timeout: 90000 });
+async function shoot(page, name) {
+    await page.screenshot({ path: join(OUT, `${name}.png`) });
+    console.log(`saved docs/img/${name}.png`);
+}
 
-        if (response?.status() !== 200) {
-            console.warn(`⚠️ Page loaded with status ${response?.status()}`);
-        }
+const browser = await puppeteer.launch({
+    headless: true,
+    args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist", "--hide-scrollbars"],
+});
 
-        // --- 1. Desktop Capture ---
-        console.log('📸 Capturing Desktop View...');
-        await page.setViewport({ width: 1920, height: 1080 });
+try {
+    for (const locale of ["en", "tr"]) {
+        const suffix = locale === "en" ? "" : "-tr";
 
-        // Wait for Cesium Canvas explicitly
-        await page.waitForSelector('canvas', { timeout: 30000 });
-        console.log('   - Canvas detected');
+        // Desktop
+        const desk = await browser.newPage();
+        await desk.setViewport({ width: 1600, height: 900, deviceScaleFactor: 1 });
+        await seed(desk, locale);
 
-        // Wait for Fly-in Animation (Start + 4s duration) + Tile Loading
-        console.log('   - Waiting for cinematic fly-in & tiles...');
-        await new Promise(r => setTimeout(r, 12000));
+        await open(desk, "");
+        await pauseClock(desk);
+        await shoot(desk, `desktop-overview${suffix}`);
 
-        await page.screenshot({
-            path: path.join(OUTPUT_DIR, 'desktop-preview.png'),
-            fullPage: false
-        });
-        console.log('✅ Desktop screenshot saved.');
+        await open(desk, "&sat=25544");
+        await pauseClock(desk);
+        await shoot(desk, `desktop-iss${suffix}`);
+        await tab(desk, "passes");
+        await shoot(desk, `desktop-passes${suffix}`);
+        await tab(desk, "doppler");
+        await shoot(desk, `desktop-doppler${suffix}`);
+        await tab(desk, "lifetime");
+        await shoot(desk, `desktop-lifetime${suffix}`);
+        await desk.close();
 
-        // --- 2. Mobile Capture (iPhone 14 Pro dims) ---
-        console.log('📱 Capturing Mobile View...');
-        await page.setViewport({ width: 393, height: 852, isMobile: true, hasTouch: true });
-
-        // Reload to trigger mobile-specific logic (e.g. Globe resolution reduction)
-        await page.reload({ waitUntil: 'networkidle0' });
-
-        await page.waitForSelector('canvas', { timeout: 30000 });
-        console.log('   - Mobile Canvas detected');
-
-        // Wait again for mobile reload + animation
-        await new Promise(r => setTimeout(r, 12000));
-
-        await page.screenshot({
-            path: path.join(OUTPUT_DIR, 'mobile-preview.png'),
-            fullPage: false
-        });
-        console.log('✅ Mobile screenshot saved.');
-
-    } catch (error) {
-        console.error('❌ Error capturing screenshots:', error);
-
-        // Take an error screenshot to see what's happening
-        try {
-            await page.screenshot({
-                path: path.join(OUTPUT_DIR, 'debug-error.png'),
-                fullPage: true
-            });
-            console.log('📸 Saved debug-error.png');
-        } catch (e) {
-            console.error('Could not save debug screenshot');
-        }
-    } finally {
-        await browser.close();
-        console.log('✨ Done.');
+        // Phone
+        const phone = await browser.newPage();
+        await phone.setViewport({ width: 390, height: 844, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+        await seed(phone, locale);
+        await open(phone, "&sat=25544");
+        await pauseClock(phone);
+        await shoot(phone, `mobile-peek${suffix}`);
+        await phone.click('button[data-grip="1"]');
+        await sleep(800);
+        await tab(phone, "passes");
+        await shoot(phone, `mobile-passes${suffix}`);
+        await phone.close();
     }
+} finally {
+    await browser.close();
 }
-
-capture();

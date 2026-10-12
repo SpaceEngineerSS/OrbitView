@@ -7,10 +7,10 @@ import { useAppStore, useSelectedObject } from "@/store/appStore";
 import { getSatrec, stateAt, elementsFromSatrec } from "@/lib/orbit";
 import { orbitRingEcf, calculateFootprintRadius, generateFootprintCircle } from "@/lib/GroundTrack";
 
-const ORBIT = Cesium.Color.fromCssColorString("#f2a33a").withAlpha(0.85);
-const TRACK_AHEAD = Cesium.Color.fromCssColorString("#e8e4da").withAlpha(0.55);
-const TRACK_BEHIND = Cesium.Color.fromCssColorString("#8d9097").withAlpha(0.35);
-const FOOTPRINT = Cesium.Color.fromCssColorString("#f2a33a").withAlpha(0.45);
+const ORBIT = Cesium.Color.fromCssColorString("#8fb0ff").withAlpha(0.95);
+const TRACK_AHEAD = Cesium.Color.WHITE.withAlpha(0.7);
+const TRACK_BEHIND = Cesium.Color.WHITE.withAlpha(0.3);
+const FOOTPRINT = Cesium.Color.fromCssColorString("#ffc94d").withAlpha(0.75);
 const LIFT_M = 6_000; // keep surface lines above the ellipsoid so chords don't sink
 
 const toCart = (v: { x: number; y: number; z: number }) => new Cesium.Cartesian3(v.x * 1000, v.y * 1000, v.z * 1000);
@@ -35,10 +35,10 @@ export default function SelectedTrack() {
     useEffect(() => {
         if (!rec) return;
         const lines = viewer.scene.primitives.add(new Cesium.PolylineCollection()) as Cesium.PolylineCollection;
-        const ring = lines.add({ width: 1.5, material: Cesium.Material.fromType("Color", { color: ORBIT }), show: false });
-        const ahead = lines.add({ width: 1, material: Cesium.Material.fromType("Color", { color: TRACK_AHEAD }), show: false });
+        const ring = lines.add({ width: 2, material: Cesium.Material.fromType("Color", { color: ORBIT }), show: false });
+        const ahead = lines.add({ width: 1.5, material: Cesium.Material.fromType("Color", { color: TRACK_AHEAD }), show: false });
         const behind = lines.add({ width: 1, material: Cesium.Material.fromType("Color", { color: TRACK_BEHIND }), show: false });
-        const foot = lines.add({ width: 1, material: Cesium.Material.fromType("Color", { color: FOOTPRINT }), show: false });
+        const foot = lines.add({ width: 1.5, material: Cesium.Material.fromType("Color", { color: FOOTPRINT }), show: false });
 
         const periodMs = elementsFromSatrec(rec).periodMin * 60_000;
         // GEO rings hardly change; LEO rings need refreshing as the Earth turns.

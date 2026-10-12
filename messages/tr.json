@@ -69,13 +69,14 @@
     "ephemeris": "Efemeris dışa aktarma",
     "span": "Süre",
     "step": "Adım",
-    "ephemerisNote": "Simülasyon zamanından başlar. Konumlar TEME çerçevesinde SGP4 çıktısıdır; yanında WGS-84 enlem, boylam ve yükseklik var."
+    "ephemerisNote": "Simülasyon zamanından başlar. Konumlar TEME çerçevesinde SGP4 çıktısıdır; yanında WGS-84 enlem, boylam ve yükseklik var.",
+    "title": "Veri ve dışa aktarma"
   },
   "time": {
     "title": "Simülasyon zamanı",
-    "live": "CANLI",
-    "paused": "DURDU",
-    "offset": "KAYIK",
+    "live": "Canlı",
+    "paused": "Durdu",
+    "offset": "Kayık",
     "local": "Yerel",
     "now": "Şimdi",
     "play": "Oynat",
@@ -172,12 +173,19 @@
     "maxEl": "Maks",
     "duration": "Süre",
     "path": "Yön",
-    "visibleShort": "GÖZ",
+    "visibleShort": "Görünür",
     "visibleHint": "Çıplak gözle görülebilir: uydu güneş altında, sizin gökyüzünüz karanlık",
     "skyplot": "Gökyüzü haritası",
     "skyplotLegend": "Merkez tam tepe, kenar ufuk. Daire: doğuş, kare: batış.",
     "jumpTo": "Bu geçişe git →",
-    "note": "Saatler güncel TLE ile SGP4'ten hesaplanır ve yarım saniyeye kadar inceltilir. Atmosferik kırılma hesaba katılmaz; çok alçak geçişler gerçekte biraz daha erken doğar. * pencereden önce başlamış."
+    "note": "Saatler güncel TLE ile SGP4'ten hesaplanır ve yarım saniyeye kadar inceltilir. Atmosferik kırılma hesaba katılmaz; çok alçak geçişler gerçekte biraz daha erken doğar. * pencereden önce başlamış.",
+    "count": "{n} geçiş",
+    "visibleCount": "{n} görünür",
+    "stripLabel": "Önümüzdeki 48 saatteki geçişler",
+    "legendVisible": "Görünür",
+    "legendRadio": "Yalnız radyo",
+    "legendNight": "Gece",
+    "radioOnly": "Yalnız radyo"
   },
   "doppler": {
     "frequency": "İniş frekansı",
@@ -198,7 +206,10 @@
     "approaching": "yaklaşıyor",
     "receding": "uzaklaşıyor",
     "curveTitle": "Sıradaki geçiş boyunca kayma",
-    "note": "Uydunun dönen Dünya'ya göre hızı kullanılır. Birinci derece Doppler; bu frekanslarda göreli etkiler 1 Hz'in altında kalır."
+    "note": "Uydunun dönen Dünya'ya göre hızı kullanılır. Birinci derece Doppler; bu frekanslarda göreli etkiler 1 Hz'in altında kalır.",
+    "title": "Doppler",
+    "atRise": "Doğuşta",
+    "atSet": "Batışta"
   },
   "elements": {
     "title": "Ortalama elemanlar",
@@ -240,6 +251,13 @@
       "month": "{n} ay",
       "year": "{n} yıl",
       "beyond": "> {n} yıl"
+    },
+    "reentryAround": "Atmosfere giriş ≈ {d}",
+    "risk": {
+      "critical": "Hızla alçalıyor",
+      "high": "Alçak yörünge",
+      "medium": "Biraz sürüklenme",
+      "low": "Kararlı"
     }
   },
   "conj": {
@@ -260,13 +278,14 @@
       "rocket_body": "roket gövdesi",
       "unknown": "bilinmiyor"
     },
-    "note": "TLE tabanlı bir tarama, çarpışma değerlendirmesi değil. TLE konumları bir kilometre ya da daha fazla sapabilir; burada küçük bir mesafe görmek bakmaya değer demektir, tahmin değildir."
+    "note": "TLE tabanlı bir tarama, çarpışma değerlendirmesi değil. TLE konumları bir kilometre ya da daha fazla sapabilir; burada küçük bir mesafe görmek bakmaya değer demektir, tahmin değildir.",
+    "title": "Yakın geçişler"
   },
   "observer": {
     "title": "Konumunuz",
     "set": "Konum gir",
     "none": "Girilmedi",
-    "needed": "Konumunuz gerekiyor.",
+    "needed": "Geçişler ve Doppler için konumunuzu girin.",
     "intro": "Geçişler, bakış açıları ve Doppler bu nokta için hesaplanır.",
     "useDevice": "Cihazın konumunu kullan",
     "locating": "Konum alınıyor…",
@@ -282,7 +301,8 @@
     "geoUnsupported": "Bu tarayıcı konum paylaşamıyor.",
     "geoDenied": "Konum izni verilmedi.",
     "geoFailed": "Konum alınamadı. Tekrar deneyin ya da bir şehir seçin.",
-    "privacy": "Yalnızca bu tarayıcıda saklanır, hiçbir sunucuya gönderilmez."
+    "privacy": "Yalnızca bu tarayıcıda saklanır, hiçbir sunucuya gönderilmez.",
+    "neededTitle": "Neredesiniz?"
   },
   "settings": {
     "title": "Ayarlar",
@@ -303,7 +323,11 @@
     "showFootprintHint": "Nesnenin maske açısının üstünde göründüğü alan",
     "nightShadow": "Gece/gündüz gölgesi",
     "autoRotate": "Boştayken yavaşça döndür",
-    "shortcuts": "Klavye"
+    "shortcuts": "Klavye",
+    "theme": "Görünüm",
+    "themeSystem": "Otomatik",
+    "themeLight": "Açık",
+    "themeDark": "Koyu"
   },
   "shortcuts": {
     "search": "ara",
@@ -330,7 +354,8 @@
     "srcMap": "Harita karoları: Esri",
     "srcSgp4": "Yayıcı: satellite.js (SGP4/SDP4)",
     "author": "Mehmet Gümüş tarafından geliştirildi. MIT lisanslı, kaynak kodu GitHub'da:",
-    "mapCredit": "Harita © Esri, HERE, Garmin, OpenStreetMap katkıcıları · Görüntü © Esri, Maxar"
+    "mapCredit": "Harita © Esri, HERE, Garmin, OpenStreetMap katkıcıları · Görüntü © Esri, Maxar",
+    "version": "Sürüm {v}"
   },
   "errors": {
     "computation": "Hesaplama başarısız oldu. Başka bir nesne ya da zaman deneyin.",
@@ -338,5 +363,23 @@
     "globeTitle": "Küre açılamadı",
     "globeBody": "3B görünüm bir hatayla durdu. Uygulamanın geri kalanı çalışıyor; yeniden yüklemek genelde düzeltir.",
     "noWebgl": "Bu tarayıcı ya da cihaz 3B küre için gereken WebGL'i sağlamıyor. Güncel bir Chrome, Firefox ya da Safari deneyin veya donanım hızlandırmayı açın."
+  },
+  "hero": {
+    "overhead": "Şu an tepede",
+    "overheadVisible": "Şu an tepede · görünür",
+    "setsIn": "{d} sonra batıyor",
+    "nowAt": "{el}° yükseklikte, {az}° yönünde",
+    "arcLabel": "Geçişteki konumu",
+    "visiblePass": "Görünür geçiş",
+    "inAndMax": "{d} sonra · en fazla {el}°",
+    "position": "Konum",
+    "aboveHorizon": "Ufkunuzun üstünde",
+    "belowHorizon": "Ufkunuzun altında"
+  },
+  "orbit": {
+    "title": "Yörünge",
+    "shape": "Ölçekli yörünge şekli",
+    "ageDays": "{n} günlük",
+    "meanElements": "Ortalama elemanlar"
   }
 }

@@ -39,8 +39,8 @@ const BASEMAPS = {
     },
 } as const;
 
-const BACKGROUND = Cesium.Color.fromCssColorString("#0b0c0e");
-const GLOBE_BASE = Cesium.Color.fromCssColorString("#1c1f23");
+const BACKGROUND = Cesium.Color.fromCssColorString("#020306");
+const GLOBE_BASE = Cesium.Color.fromCssColorString("#0d1b2a");
 
 interface GlobeProps {
     /** Stop rendering (e.g. a full-screen panel covers the globe on mobile) */
@@ -70,15 +70,16 @@ export default function Globe({ paused = false, compass = false, onCompassExit }
             infoBox: false,
             fullscreenButton: false,
             creditContainer: document.createElement("div"),
-            skyBox: false,
-            skyAtmosphere: false,
             contextOptions: { webgl: { powerPreference: "high-performance" } },
         });
 
         const scene = v.scene;
         scene.backgroundColor = BACKGROUND;
         scene.globe.baseColor = GLOBE_BASE;
-        scene.globe.showGroundAtmosphere = false;
+        // Photographic look: thin atmosphere at the limb and over the ground, stars behind.
+        scene.globe.showGroundAtmosphere = true;
+        if (scene.skyAtmosphere) scene.skyAtmosphere.show = true;
+        scene.globe.atmosphereLightIntensity = 12;
         scene.fog.enabled = false;
         if (scene.sun) scene.sun.show = false;
         if (scene.moon) scene.moon.show = false;

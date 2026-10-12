@@ -11,13 +11,26 @@ import { getEngine } from "@/lib/propagation";
  * Start-up work for the page:
  *  - restore persisted settings/observer/favourites
  *  - load the catalog (cached first, then refreshed in the background)
- *  - keep ?sat=<NORAD id> in the URL in sync with the selection
+ *  - keep ?sat=<NORAD id> in the URL in sync with the selection; ?t= sets the start time
  *  - global keyboard shortcuts
  */
 export function useAppBoot() {
     // Persisted state
     useEffect(() => {
         void useAppStore.persist.rehydrate();
+    }, []);
+
+    // Theme: no attribute = follow the system (handled in CSS)
+    useEffect(() => {
+        const apply = (theme: string) => {
+            const root = document.documentElement;
+            if (theme === "light" || theme === "dark") root.dataset.theme = theme;
+            else delete root.dataset.theme;
+        };
+        apply(useAppStore.getState().settings.theme);
+        return useAppStore.subscribe((s, prev) => {
+            if (s.settings.theme !== prev.settings.theme) apply(s.settings.theme);
+        });
     }, []);
 
     // Hand every new catalog to the propagation worker immediately (store
@@ -50,6 +63,13 @@ export function useAppBoot() {
             if (!cancelled) setCatalogStatus("error", err instanceof Error ? err.message : String(err));
         });
         return () => { cancelled = true; };
+    }, []);
+
+    // Deep link: ?t=<ISO time> starts the simulation at that moment
+    useEffect(() => {
+        const t = new URLSearchParams(location.search).get("t");
+        const ms = t ? Date.parse(t) : NaN;
+        if (Number.isFinite(ms)) useTimelineStore.getState().seek(new Date(ms));
     }, []);
 
     // Deep link: select ?sat= once the catalog is in, then mirror the selection into the URL

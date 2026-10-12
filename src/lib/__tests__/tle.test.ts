@@ -64,7 +64,7 @@ beforeEach(() => {
 describe('tle catalog loading', () => {
     it('falls back to network when the IndexedDB read fails', async () => {
         dbMock.getTLE.mockRejectedValue(new Error('IDB broken'));
-        global.fetch = routeFetch({ stations: { body: ISS }, active: { body: `${ISS}\n${HST}` } }) as unknown as typeof fetch;
+        global.fetch = routeFetch({ stations: { body: ISS }, default: { body: `${ISS}\n${HST}` } }) as unknown as typeof fetch;
         const { fetchActiveSatellites } = loadTle();
         const sats = await fetchActiveSatellites();
         expect(sats.map(s => s.id).sort()).toEqual(['20580', '25544']);
@@ -75,7 +75,7 @@ describe('tle catalog loading', () => {
     it('still returns downloaded data when the IndexedDB write fails', async () => {
         dbMock.getTLE.mockResolvedValue(null);
         dbMock.putTLE.mockRejectedValue(new DOMException('quota', 'QuotaExceededError'));
-        global.fetch = routeFetch({ stations: { body: ISS }, active: { body: HST } }) as unknown as typeof fetch;
+        global.fetch = routeFetch({ stations: { body: ISS }, default: { body: HST } }) as unknown as typeof fetch;
         const { fetchSatelliteCatalog } = loadTle();
         const result = await fetchSatelliteCatalog();
         expect(result.objects).toHaveLength(2);
@@ -85,7 +85,7 @@ describe('tle catalog loading', () => {
 
     it('fetches stations and active in parallel and dedupes concurrent calls', async () => {
         dbMock.getTLE.mockResolvedValue(null);
-        const fetchMock = routeFetch({ stations: { body: ISS }, active: { body: HST } });
+        const fetchMock = routeFetch({ stations: { body: ISS }, default: { body: HST } });
         global.fetch = fetchMock as unknown as typeof fetch;
         const { fetchActiveSatellites } = loadTle();
         const [a, b] = await Promise.all([fetchActiveSatellites(), fetchActiveSatellites()]);
@@ -96,7 +96,7 @@ describe('tle catalog loading', () => {
 
     it('does not persist a partial refresh (one group failed)', async () => {
         dbMock.getTLE.mockResolvedValue(null);
-        global.fetch = routeFetch({ stations: { body: ISS }, active: { status: 502 } }) as unknown as typeof fetch;
+        global.fetch = routeFetch({ stations: { body: ISS }, default: { status: 502 } }) as unknown as typeof fetch;
         const { fetchSatelliteCatalog } = loadTle();
         const result = await fetchSatelliteCatalog();
         expect(result.objects).toHaveLength(1);
@@ -136,7 +136,7 @@ describe('tle catalog loading', () => {
     it('complete background refresh is persisted and delivered via onUpdate', async () => {
         const old = Date.now() - 2 * 3600 * 1000;
         dbMock.getTLE.mockResolvedValue({ timestamp: old, raw: `${ISS}\n${HST}`, count: 2 });
-        global.fetch = routeFetch({ stations: { body: ISS }, active: { body: `${HST}\n${SL}` } }) as unknown as typeof fetch;
+        global.fetch = routeFetch({ stations: { body: ISS }, default: { body: `${HST}\n${SL}` } }) as unknown as typeof fetch;
         const onUpdate = jest.fn();
         const { fetchSatelliteCatalog } = loadTle();
         await fetchSatelliteCatalog({ onUpdate });
@@ -155,7 +155,7 @@ describe('tle catalog loading', () => {
         dbMock.getTLE.mockResolvedValue(null);
         global.fetch = routeFetch({
             stations: { body: ISS, headers: { 'X-Group': 'stations', 'X-Source': 'celestrak-stations', 'X-Stale': '1' } },
-            active: { body: HST },
+            default: { body: HST },
         }) as unknown as typeof fetch;
         const { fetchSatelliteCatalog } = loadTle();
         const result = await fetchSatelliteCatalog();
@@ -168,7 +168,7 @@ describe('tle catalog loading', () => {
         dbMock.getTLE.mockResolvedValue(null);
         global.fetch = routeFetch({
             stations: { body: HST, headers: { 'X-Group': 'default', 'X-Source': 'embedded' } },
-            active: { body: HST },
+            default: { body: HST },
         }) as unknown as typeof fetch;
         const { fetchSatelliteCatalog } = loadTle();
         const result = await fetchSatelliteCatalog();
