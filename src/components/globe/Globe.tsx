@@ -11,10 +11,12 @@ import * as Cesium from "cesium";
 import "cesium/Build/Cesium/Widgets/widgets.css";
 import { useAppStore } from "@/store/appStore";
 import { useTimelineStore } from "@/store/timelineStore";
+import { usePerfStore, useLowPower } from "@/store/perfStore";
 import SatellitePoints from "./SatellitePoints";
 import SelectedTrack from "./SelectedTrack";
 import ObserverMarker from "./ObserverMarker";
 import CompassView from "./CompassView";
+import SatelliteModel from "./SatelliteModel";
 
 if (typeof window !== "undefined") {
     (window as unknown as { CESIUM_BASE_URL: string }).CESIUM_BASE_URL = "/cesium";
@@ -43,13 +45,11 @@ const BACKGROUND = Cesium.Color.fromCssColorString("#020306");
 const GLOBE_BASE = Cesium.Color.fromCssColorString("#0d1b2a");
 
 interface GlobeProps {
-    /** Stop rendering (e.g. a full-screen panel covers the globe on mobile) */
-    paused?: boolean;
     compass?: boolean;
     onCompassExit?: () => void;
 }
 
-export default function Globe({ paused = false, compass = false, onCompassExit }: GlobeProps) {
+export default function Globe({ compass = false, onCompassExit }: GlobeProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const [viewer, setViewer] = useState<Cesium.Viewer | null>(null);
 
@@ -70,7 +70,11 @@ export default function Globe({ paused = false, compass = false, onCompassExit }
             infoBox: false,
             fullscreenButton: false,
             creditContainer: document.createElement("div"),
-            contextOptions: { webgl: { powerPreference: "high-performance" } },
+            // Don't wake a laptop's discrete GPU for a globe and some points.
+            contextOptions: { webgl: { powerPreference: "default" } },
+            // Draw only when something changed; layers call requestRender().
+            requestRenderMode: true,
+            maximumRenderTimeChange: Infinity,
         });
 
         const scene = v.scene;
@@ -97,12 +101,50 @@ export default function Globe({ paused = false, compass = false, onCompassExit }
             destination: Cesium.Cartesian3.fromDegrees(obs?.longitude ?? 30, obs?.latitude ?? 25, 22_000_000),
         });
 
+        // Measure real render cost so slow devices drop to the light profile.
+        // Frames while map tiles are still streaming in are much slower than
+        // steady state, so skip the first seconds and any frame with tiles pending.
+        let renderStart = 0;
+        const measureFrom = performance.now() + 5000;
+        const offPre = scene.preRender.addEventListener(() => { renderStart = performance.now(); });
+        const offPost = scene.postRender.addEventListener(() => {
+            if (renderStart > measureFrom && scene.globe.tilesLoaded) usePerfStore.getState().reportRender(performance.now() - renderStart);
+        });
+
+        // Development only: lets the console and profiling scripts reach the viewer.
+        if (process.env.NODE_ENV !== "production") (window as unknown as { __orbitview?: unknown }).__orbitview = { viewer: v };
+
         setViewer(v);
         return () => {
+            offPre(); offPost();
             setViewer(null);
             if (!v.isDestroyed()) v.destroy();
         };
     }, []);
+
+    // Light profile for slow devices / battery saver
+    const lowPower = useLowPower();
+    const nightShadowSetting = useAppStore((s) => s.settings.showNightShadow);
+    useEffect(() => {
+        if (!viewer) return;
+        const scene = viewer.scene;
+        scene.msaaSamples = lowPower ? 1 : 4;
+        viewer.resolutionScale = lowPower ? 0.8 : 1;
+        scene.globe.maximumScreenSpaceError = lowPower ? 4 : 2;
+        scene.globe.tileCacheSize = lowPower ? 50 : 100;
+        scene.globe.showGroundAtmosphere = !lowPower;
+        scene.globe.enableLighting = nightShadowSetting && !lowPower;
+        scene.requestRender();
+    }, [viewer, lowPower, nightShadowSetting]);
+
+    // Globe or flat map
+    const view = useAppStore((s) => s.settings.view);
+    useEffect(() => {
+        if (!viewer) return;
+        const scene = viewer.scene;
+        if (view === "2d" && scene.mode !== Cesium.SceneMode.SCENE2D) scene.morphTo2D(0.8);
+        if (view === "3d" && scene.mode !== Cesium.SceneMode.SCENE3D) scene.morphTo3D(0.8);
+    }, [viewer, view]);
 
     // Basemap
     const basemap = useAppStore((s) => s.settings.basemap);
@@ -116,15 +158,8 @@ export default function Globe({ paused = false, compass = false, onCompassExit }
             credit: cfg.credit,
             maximumLevel: cfg.maximumLevel,
         }));
-    }, [viewer, basemap]);
-
-    // Night shadow
-    const nightShadow = useAppStore((s) => s.settings.showNightShadow);
-    useEffect(() => {
-        if (!viewer) return;
-        viewer.scene.globe.enableLighting = nightShadow;
         viewer.scene.requestRender();
-    }, [viewer, nightShadow]);
+    }, [viewer, basemap]);
 
     // Clock: Cesium → store, a few times per second
     const syncFromCesium = useTimelineStore((s) => s.syncFromCesium);
@@ -151,34 +186,33 @@ export default function Globe({ paused = false, compass = false, onCompassExit }
     useEffect(() => {
         if (!viewer || seekRequest.seq === 0) return;
         viewer.clock.currentTime = Cesium.JulianDate.fromDate(seekRequest.time);
+        viewer.scene.requestRender();
     }, [viewer, seekRequest]);
 
-    // Pause rendering while hidden. Cesium advances its clock from the render
-    // loop, so keep ticking it by hand or simulation time would stop too.
-    useEffect(() => {
-        if (!viewer) return;
-        viewer.useDefaultRenderLoop = !paused;
-        if (!paused) return;
-        const id = window.setInterval(() => { if (!viewer.isDestroyed()) viewer.clock.tick(); }, 250);
-        return () => window.clearInterval(id);
-    }, [viewer, paused]);
-
-    // Gentle auto-rotation, suspended for 15 s after any interaction
+    // Gentle auto-rotation, suspended for 15 s after any interaction.
+    // Off on the light profile: it forces a render every frame.
     const autoRotate = useAppStore((s) => s.settings.autoRotate);
     const hasSelection = useAppStore((s) => s.selectedId !== null);
     useEffect(() => {
-        if (!viewer || !autoRotate || hasSelection || compass) return;
+        if (!viewer || !autoRotate || hasSelection || compass || lowPower || view === "2d") return;
         let lastInput = 0;
         const handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
         const touch = () => { lastInput = performance.now(); };
         handler.setInputAction(touch, Cesium.ScreenSpaceEventType.LEFT_DOWN);
         handler.setInputAction(touch, Cesium.ScreenSpaceEventType.WHEEL);
         handler.setInputAction(touch, Cesium.ScreenSpaceEventType.PINCH_START);
-        const remove = viewer.scene.preRender.addEventListener(() => {
-            if (performance.now() - lastInput > 15_000) viewer.camera.rotate(Cesium.Cartesian3.UNIT_Z, -0.0004);
-        });
-        return () => { remove(); handler.destroy(); };
-    }, [viewer, autoRotate, hasSelection, compass]);
+        let raf = 0;
+        const step = () => {
+            if (viewer.isDestroyed()) return;
+            if (!document.hidden && performance.now() - lastInput > 15_000) {
+                viewer.camera.rotate(Cesium.Cartesian3.UNIT_Z, -0.0004);
+                viewer.scene.requestRender();
+            }
+            raf = requestAnimationFrame(step);
+        };
+        raf = requestAnimationFrame(step);
+        return () => { cancelAnimationFrame(raf); handler.destroy(); };
+    }, [viewer, autoRotate, hasSelection, compass, lowPower, view]);
 
     return (
         <ViewerContext.Provider value={viewer}>
@@ -188,6 +222,7 @@ export default function Globe({ paused = false, compass = false, onCompassExit }
                     <SatellitePoints />
                     <SelectedTrack />
                     <ObserverMarker />
+                    <SatelliteModel />
                     {compass && <CompassView onExit={onCompassExit} />}
                 </>
             )}

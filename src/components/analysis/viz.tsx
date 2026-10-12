@@ -64,7 +64,11 @@ export function PassStrip({ passes, observer, start, end, now, selected, onSelec
     const H = height;
     const base = H - 16;
     const x = (t: number) => ((t - start) / (end - start)) * W;
-    const nights = useMemo(() => nightBands(observer, start, end), [observer, start, end]);
+    // Night bands only move with the Sun: key them on a 6 h bucket, not on "now".
+    const sixH = 6 * 3600_000;
+    const nightFrom = Math.floor(start / sixH) * sixH;
+    const nightTo = Math.ceil(end / sixH) * sixH;
+    const nights = useMemo(() => nightBands(observer, nightFrom, nightTo), [observer, nightFrom, nightTo]);
     const ticks = useMemo(() => {
         const out: number[] = [];
         const six = 6 * 3600_000;

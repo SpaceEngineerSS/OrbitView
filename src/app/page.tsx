@@ -1,6 +1,9 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { MotionConfig } from "motion/react";
+import { useLowPower } from "@/store/perfStore";
+import { usePassAlerts } from "@/hooks/usePassActions";
 import { useAppBoot, useIsMobile } from "@/hooks/useAppBoot";
 import { useUiStore } from "@/store/uiStore";
 import { useT } from "@/hooks/useLocale";
@@ -26,13 +29,21 @@ function GlobePlaceholder() {
     );
 }
 
+/** Pass notifications run for the whole session, whatever is on screen. */
+function PassAlerts() {
+    usePassAlerts();
+    return null;
+}
+
 export default function Home() {
     useAppBoot();
     const isMobile = useIsMobile();
     const compass = useUiStore((s) => s.compass);
     const setCompass = useUiStore((s) => s.setCompass);
+    const lowPower = useLowPower();
 
     return (
+        <MotionConfig reducedMotion={lowPower ? "always" : "user"}>
         <main className="fixed inset-0 overflow-hidden bg-[#020306]">
             <div className="globe-region" style={{ zIndex: "var(--z-globe)" }}>
                 <GlobeBoundary>
@@ -43,9 +54,11 @@ export default function Home() {
             {isMobile === false && <DesktopShell />}
             {isMobile === true && <MobileShell />}
 
+            <PassAlerts />
             <ObserverDialog />
             {isMobile === false && <SettingsDialog />}
             {isMobile === false && <AboutDialog />}
         </main>
+        </MotionConfig>
     );
 }

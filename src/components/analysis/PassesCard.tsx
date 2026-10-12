@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { Eye, ArrowRight, CalendarBlank } from "@phosphor-icons/react";
+import { Eye, ArrowRight, CalendarBlank, CalendarPlus } from "@phosphor-icons/react";
+import { useAddToCalendar } from "@/hooks/usePassActions";
 import type { SpaceObject } from "@/lib/space-objects";
 import { getSatrec } from "@/lib/orbit";
 import { useT } from "@/hooks/useLocale";
@@ -32,6 +33,7 @@ export default function PassesCard({ obj, index }: { obj: SpaceObject; index: nu
     const seek = useTimelineStore((s) => s.seek);
     const now = useSimTimeBucket(60_000);
     const [picked, setPicked] = useState(0);
+    const addToCalendar = useAddToCalendar();
 
     const rec = useMemo(() => (obj.tle ? getSatrec(obj.tle.line1, obj.tle.line2) : null), [obj]);
     if (!observer) return null;
@@ -125,10 +127,15 @@ export default function PassesCard({ obj, index }: { obj: SpaceObject; index: nu
                                         labels={{ n: t("compass.N"), e: t("compass.E"), s: t("compass.S"), w: t("compass.W") }} />
                                     <p className="mt-1 text-[12px] text-ink-3 text-center">{t("passes.skyplotLegend")}</p>
                                 </div>
-                                <Button size="sm" variant="tinted" className="w-full mt-3"
-                                    onClick={() => seek(new Date(sel.aosTime.getTime() - 60_000))}>
-                                    {t("passes.jumpTo")}
-                                </Button>
+                                <div className="grid grid-cols-2 gap-2 mt-3">
+                                    <Button size="sm" variant="tinted" onClick={() => seek(new Date(sel.aosTime.getTime() - 60_000))}>
+                                        {t("passes.jumpTo")}
+                                    </Button>
+                                    <Button size="sm" variant="tinted" icon={<CalendarPlus size={15} weight="bold" />}
+                                        onClick={() => addToCalendar(obj.id, obj.name, sel)}>
+                                        {t("calendar.add")}
+                                    </Button>
+                                </div>
                             </motion.div>
                         )}
                     </AnimatePresence>

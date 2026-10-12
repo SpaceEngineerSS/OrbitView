@@ -6,18 +6,30 @@ import { useTimelineStore } from "@/store/timelineStore";
 import { fetchSatelliteCatalog } from "@/lib/tle";
 import { convertToSpaceObject } from "@/lib/space-objects";
 import { getEngine } from "@/lib/propagation";
+import { usePerfStore } from "@/store/perfStore";
+import { useSatcatStore } from "@/store/satcatStore";
 
 /**
  * Start-up work for the page:
- *  - restore persisted settings/observer/favourites
  *  - load the catalog (cached first, then refreshed in the background)
  *  - keep ?sat=<NORAD id> in the URL in sync with the selection; ?t= sets the start time
  *  - global keyboard shortcuts
  */
 export function useAppBoot() {
-    // Persisted state
+    // First guess at the device tier (persisted settings load with the store)
     useEffect(() => {
-        void useAppStore.persist.rehydrate();
+        usePerfStore.getState().init();
+    }, []);
+
+    // Satellite catalog metadata (owner, launch), once the globe is up and idle
+    useEffect(() => {
+        return useAppStore.subscribe((s, prev) => {
+            if (s.catalogStatus === "ready" && prev.catalogStatus !== "ready") {
+                const load = () => void useSatcatStore.getState().load();
+                if ("requestIdleCallback" in window) window.requestIdleCallback(load, { timeout: 5000 });
+                else setTimeout(load, 2000);
+            }
+        });
     }, []);
 
     // Theme: no attribute = follow the system (handled in CSS)

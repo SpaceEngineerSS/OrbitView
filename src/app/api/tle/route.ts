@@ -51,6 +51,8 @@ const CELESTRAK_GROUPS: Record<string, string> = {
     active: 'https://celestrak.org/NORAD/elements/gp.php?GROUP=active&FORMAT=tle',
     oneweb: 'https://celestrak.org/NORAD/elements/gp.php?GROUP=oneweb&FORMAT=tle',
     iridium: 'https://celestrak.org/NORAD/elements/gp.php?GROUP=iridium-NEXT&FORMAT=tle',
+    // ~100 brightest objects, used for the "tonight" list
+    visual: 'https://celestrak.org/NORAD/elements/gp.php?GROUP=visual&FORMAT=tle',
 };
 
 const MULTI_GROUPS: Record<string, string[]> = {

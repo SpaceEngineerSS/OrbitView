@@ -2,7 +2,8 @@
 
 import { useEffect, useRef } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { MapPin, GearSix, Info } from "@phosphor-icons/react";
+import { MapPin, GearSix, Info, GlobeHemisphereEast, MapTrifold } from "@phosphor-icons/react";
+import TonightCard from "@/components/common/TonightCard";
 import { useAppStore, useSelectedObject } from "@/store/appStore";
 import { useUiStore } from "@/store/uiStore";
 import { useT } from "@/hooks/useLocale";
@@ -36,6 +37,8 @@ export default function DesktopShell() {
     const t = useT();
     const selected = useSelectedObject();
     const open = useUiStore((s) => s.openDialog);
+    const view = useAppStore((s) => s.settings.view);
+    const updateSettings = useAppStore((s) => s.updateSettings);
     const searchRef = useRef<HTMLInputElement>(null);
 
     // "/" focuses search
@@ -63,11 +66,23 @@ export default function DesktopShell() {
                 </div>
                 <FilterChips />
                 <DataStatus className="px-2 !text-white/85 [text-shadow:0_1px_2px_rgba(0,0,0,0.8)]" />
+                <AnimatePresence>
+                    {!selected && (
+                        <motion.div key="tonight" initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }}
+                            transition={SPRING} className="w-[380px] max-h-[calc(100dvh-300px)] scroll rounded-[var(--r-card)] [scrollbar-width:none]">
+                            <TonightCard />
+                        </motion.div>
+                    )}
+                </AnimatePresence>
             </div>
 
             {/* Top right: location and app controls */}
             <div className="fixed top-4 right-4 flex items-center gap-2" style={{ zIndex: "var(--z-hud)" }}>
                 <ObserverChip />
+                <IconButton variant="float" label={view === "3d" ? t("settings.view2d") : t("settings.view3d")}
+                    onClick={() => updateSettings({ view: view === "3d" ? "2d" : "3d" })}>
+                    {view === "3d" ? <MapTrifold size={20} weight="bold" /> : <GlobeHemisphereEast size={20} weight="bold" />}
+                </IconButton>
                 <IconButton variant="float" label={t("settings.title")} onClick={() => open("settings")}><GearSix size={20} weight="bold" /></IconButton>
                 <IconButton variant="float" label={t("about.title")} onClick={() => open("about")}><Info size={20} weight="bold" /></IconButton>
             </div>

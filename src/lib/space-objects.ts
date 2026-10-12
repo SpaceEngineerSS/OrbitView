@@ -1,7 +1,6 @@
-import * as Cesium from "cesium";
 import { SatelliteData, SatelliteCategory } from "./tle";
 
-export type SpaceObjectType = 'TLE' | 'EPHEMERIS';
+export type SpaceObjectType = 'TLE';
 
 export interface SpaceObject {
     id: string;
@@ -11,12 +10,6 @@ export interface SpaceObject {
     tle?: {
         line1: string;
         line2: string;
-    };
-    // Ephemeris Data (Optional - for deep space)
-    ephemeris?: {
-        positionProperty: Cesium.SampledPositionProperty;
-        modelUrl?: string; // For Module C (True Scale Models)
-        description?: string;
     };
     // Common
     /** Orbit regime / display category (LEO, MEO, GEO, HEO, DEBRIS, ...) used by UI filters */

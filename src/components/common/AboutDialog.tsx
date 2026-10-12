@@ -29,6 +29,16 @@ export function AboutBody() {
                 <p>{t("about.srcMap")}</p>
                 <p>{t("about.srcSgp4")}</p>
             </div>
+            <div className="rounded-[16px] bg-card-2 px-4 py-3 space-y-1.5">
+                <div className="text-[13px] font-semibold text-ink">{t("about.references")}</div>
+                <p>Vallado, D. A. <i>Fundamentals of Astrodynamics and Applications</i>, 4th ed., 2013.</p>
+                <p>Hoots, F. R. &amp; Roehrich, R. L. <i>Spacetrack Report No. 3</i>, 1980.</p>
+                <p>Vallado, Crawford, Hujsak &amp; Kelso. <i>Revisiting Spacetrack Report #3</i>, AIAA 2006-6753.</p>
+                <p>King-Hele, D. <i>Satellite Orbits in an Atmosphere</i>, 1987.</p>
+                <p>Hoots, Crawford &amp; Roehrich. An analytic method to determine future close approaches between satellites. <i>Celestial Mechanics</i> 33, 1984.</p>
+                <p>Kelso, T. S. Predicting satellite visibility. <i>Satellite Times</i> 2(6), 1996.</p>
+            </div>
+            <p className="text-[12px] text-ink-3">{t("about.modelCredit")}</p>
             <a className="inline-flex items-center gap-2 font-semibold text-accent" href="https://github.com/SpaceEngineerSS/OrbitView" target="_blank" rel="noreferrer">
                 <GithubLogo size={18} weight="fill" /> SpaceEngineerSS/OrbitView
             </a>

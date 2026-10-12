@@ -1,9 +1,10 @@
 /**
- * Message protocol between the main thread and satellite.worker.ts.
+ * Message protocols for the two workers.
  */
 
 import type { SatellitePass, ObserverLocation } from '../lib/PassPrediction';
 import type { ConjunctionEvent } from '../lib/ConjunctionAnalysis';
+import type { TonightPass } from '../lib/tonight';
 
 export interface TLEInitData {
     id: string;
@@ -12,30 +13,28 @@ export interface TLEInitData {
     line2: string;
 }
 
-export type WorkerInbound =
-    | { type: 'init'; generation: number; sats: TLEInitData[] }
-    | { type: 'update'; generation: number; time: number; buffer?: ArrayBuffer }
-    | {
-        type: 'passes';
-        requestId: number;
-        id: string;
-        observer: ObserverLocation;
-        start: number;
-        end: number;
-        minElevation: number;
-    }
-    | {
-        type: 'conjunctions';
-        requestId: number;
-        id: string;
-        start: number;
-        hours: number;
-        thresholdKm: number;
-    };
+/* Frame worker (satellite.worker.ts) */
 
-export type WorkerOutbound =
-    | { type: 'init_complete'; generation: number; count: number; failed: number }
-    | { type: 'update_complete'; generation: number; time: number; positions: Float32Array }
+export type FrameInbound =
+    | { type: 'init'; generation: number; sats: TLEInitData[] }
+    | { type: 'visible'; generation: number; indices: Int32Array }
+    | { type: 'update'; generation: number; time: number; buffer?: ArrayBuffer };
+
+export type FrameOutbound =
+    | { type: 'init_complete'; generation: number; count: number }
+    | { type: 'update_complete'; generation: number; time: number; positions: Float32Array; computeMs: number }
+    | { type: 'error'; message: string };
+
+/* Analysis worker (analysis.worker.ts) */
+
+export type AnalysisInbound =
+    | { type: 'init'; sats: TLEInitData[] }
+    | { type: 'passes'; requestId: number; id: string; observer: ObserverLocation; start: number; end: number; minElevation: number }
+    | { type: 'conjunctions'; requestId: number; id: string; start: number; hours: number; thresholdKm: number }
+    | { type: 'tonight'; requestId: number; sats: TLEInitData[]; observer: ObserverLocation; from: number; minElevation: number };
+
+export type AnalysisOutbound =
     | { type: 'passes_result'; requestId: number; passes: SatellitePass[] }
     | { type: 'conjunctions_result'; requestId: number; events: ConjunctionEvent[] }
-    | { type: 'error'; requestId?: number; generation?: number; message: string };
+    | { type: 'tonight_result'; requestId: number; window: { start: number; end: number } | null; passes: TonightPass[] }
+    | { type: 'error'; requestId?: number; message: string };

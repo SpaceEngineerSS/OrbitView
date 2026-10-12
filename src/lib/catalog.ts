@@ -26,7 +26,22 @@ export const FILTERS: FilterKey[] = ['all', 'stations', 'starlink', 'gnss', 'leo
 
 export function countByFilter(objects: SpaceObject[], favorites: ReadonlySet<string>): Record<FilterKey, number> {
     const out = Object.fromEntries(FILTERS.map((f) => [f, 0])) as Record<FilterKey, number>;
-    for (const o of objects) for (const f of FILTERS) if (matchesFilter(o, f, favorites)) out[f]++;
+    // One pass, each name upper-cased once.
+    for (const o of objects) {
+        out.all++;
+        if (favorites.has(o.id)) out.favorites++;
+        if (o.group === 'station') out.stations++;
+        const name = o.name.toUpperCase();
+        if (name.startsWith('STARLINK')) out.starlink++;
+        if (GNSS.test(name)) out.gnss++;
+        switch (o.category) {
+            case 'LEO': out.leo++; break;
+            case 'MEO': out.meo++; break;
+            case 'GEO': out.geo++; break;
+            case 'HEO': out.heo++; break;
+            case 'DEBRIS': out.debris++; break;
+        }
+    }
     return out;
 }
 

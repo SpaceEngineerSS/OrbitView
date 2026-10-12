@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Compass, GearSix } from "@phosphor-icons/react";
+import { Compass, GearSix, GlobeHemisphereEast, MapTrifold } from "@phosphor-icons/react";
+import TonightCard from "@/components/common/TonightCard";
 import { useAppStore, useSelectedObject } from "@/store/appStore";
 import { useUiStore } from "@/store/uiStore";
 import { useT } from "@/hooks/useLocale";
@@ -68,6 +69,8 @@ export default function MobileShell() {
     const vh = useViewportHeight();
     const sheet = useRef<BottomSheetHandle>(null);
     const [compassError, setCompassError] = useState<string | null>(null);
+    const view = useAppStore((s) => s.settings.view);
+    const updateSettings = useAppStore((s) => s.updateSettings);
 
     // A new selection shows its summary; clearing it goes back to browsing.
     useEffect(() => { sheet.current?.snapTo(selected ? "half" : "peek"); }, [selected?.id]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -75,6 +78,7 @@ export default function MobileShell() {
     const toggleCompass = async () => {
         if (compass) { setCompass(false); return; }
         if (!observer) { openDialog("observer"); return; }
+        if (view === "2d") updateSettings({ view: "3d" });
         const ok = await SensorManager.getInstance().requestPermission();
         if (ok) { setCompassError(null); setCompass(true); }
         else setCompassError(t("compassMode.denied"));
@@ -91,6 +95,10 @@ export default function MobileShell() {
                     <SimClock compact />
                 </button>
                 <div className="flex-1" />
+                <IconButton variant="float" label={view === "3d" ? t("settings.view2d") : t("settings.view3d")}
+                    onClick={() => { setCompass(false); updateSettings({ view: view === "3d" ? "2d" : "3d" }); }}>
+                    {view === "3d" ? <MapTrifold size={20} weight="bold" /> : <GlobeHemisphereEast size={20} weight="bold" />}
+                </IconButton>
                 <IconButton variant="float" label={compass ? t("compassMode.exit") : t("compassMode.enter")} active={compass} onClick={toggleCompass}>
                     <Compass size={20} weight="bold" />
                 </IconButton>
@@ -131,6 +139,7 @@ export default function MobileShell() {
                                 <div className="pt-1"><InspectorCards obj={selected} /></div>
                             ) : (
                                 <div className="pt-3 space-y-5">
+                                    <TonightCard className="!shadow-none !p-0 !bg-transparent" onPicked={() => sheet.current?.snapTo("half")} />
                                     <FeaturedList onPicked={() => sheet.current?.snapTo("half")} />
                                     <div className="space-y-1">
                                         <DataStatus className="block" />

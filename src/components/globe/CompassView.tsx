@@ -41,6 +41,7 @@ export default function CompassView({ onExit }: { onExit?: () => void }) {
                     roll: 0,
                 },
             });
+            viewer.scene.requestRender();
         });
         sensors.start();
         camera.setView({ destination: eye, orientation: { heading: 0, pitch: Cesium.Math.toRadians(20), roll: 0 } });

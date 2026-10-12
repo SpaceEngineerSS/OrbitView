@@ -19,7 +19,6 @@ interface CardProps {
 export function Card({ title, icon, action, children, className, index = 0 }: CardProps) {
     return (
         <motion.section
-            layout="position"
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ type: "spring", stiffness: 380, damping: 34, delay: index * 0.04 }}

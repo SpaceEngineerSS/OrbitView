@@ -14,6 +14,13 @@ export interface Observer extends ObserverGeodetic {
 
 export interface Settings {
     theme: 'system' | 'light' | 'dark';
+    /** auto: lighter globe on slow devices; on/off force it */
+    batterySaver: 'auto' | 'on' | 'off';
+    view: '3d' | '2d';
+    /** Ground track length in orbits ahead */
+    trackOrbits: number;
+    /** Minutes before a pass to notify; 0 = off */
+    alertMinutes: number;
     showOrbit: boolean;
     showGroundTrack: boolean;
     showFootprint: boolean;
@@ -26,6 +33,10 @@ export interface Settings {
 
 export const DEFAULT_SETTINGS: Settings = {
     theme: 'system',
+    batterySaver: 'auto',
+    view: '3d',
+    trackOrbits: 1,
+    alertMinutes: 0,
     showOrbit: true,
     showGroundTrack: true,
     showFootprint: true,
@@ -47,7 +58,11 @@ interface AppState {
     selectedId: string | null;
     hoveredId: string | null;
     filter: FilterKey;
+    /** SATCAT owner code, or null for all countries */
+    country: string | null;
     follow: boolean;
+    /** Camera riding along with the selected object */
+    pov: boolean;
 
     observer: Observer | null;
     settings: Settings;
@@ -58,7 +73,9 @@ interface AppState {
     select: (id: string | null) => void;
     hover: (id: string | null) => void;
     setFilter: (f: FilterKey) => void;
+    setCountry: (c: string | null) => void;
     setFollow: (on: boolean) => void;
+    setPov: (on: boolean) => void;
     setObserver: (o: Observer | null) => void;
     updateSettings: (patch: Partial<Settings>) => void;
     toggleFavorite: (id: string) => void;
@@ -77,7 +94,9 @@ export const useAppStore = create<AppState>()(
             selectedId: null,
             hoveredId: null,
             filter: 'all',
+            country: null,
             follow: false,
+            pov: false,
 
             observer: null,
             settings: DEFAULT_SETTINGS,
@@ -92,10 +111,12 @@ export const useAppStore = create<AppState>()(
                 catalogError: null,
             }),
             setCatalogStatus: (catalogStatus, error = null) => set({ catalogStatus, catalogError: error }),
-            select: (selectedId) => set((s) => ({ selectedId, follow: selectedId ? s.follow : false })),
+            select: (selectedId) => set((s) => ({ selectedId, follow: selectedId ? s.follow : false, pov: false })),
             hover: (hoveredId) => set({ hoveredId }),
             setFilter: (filter) => set({ filter }),
-            setFollow: (follow) => set({ follow }),
+            setCountry: (country) => set({ country }),
+            setFollow: (follow) => set({ follow, pov: false }),
+            setPov: (pov) => set({ pov, follow: false }),
             setObserver: (observer) => set({ observer }),
             updateSettings: (patch) => set((s) => ({ settings: { ...s.settings, ...patch } })),
             toggleFavorite: (id) => set((s) => ({
@@ -106,9 +127,9 @@ export const useAppStore = create<AppState>()(
             name: 'orbitview-v4',
             version: 1,
             storage: createJSONStorage(() => localStorage),
-            // Hydrated manually after mount to avoid SSR mismatches.
+            // Hydrated explicitly below, only in the browser.
             skipHydration: true,
-            partialize: (s) => ({ observer: s.observer, settings: s.settings, favorites: s.favorites, filter: s.filter }),
+            partialize: (s) => ({ observer: s.observer, settings: s.settings, favorites: s.favorites, filter: s.filter, country: s.country }),
             merge: (persisted, current) => {
                 const p = (persisted ?? {}) as Partial<AppState>;
                 return { ...current, ...p, settings: { ...DEFAULT_SETTINGS, ...(p.settings ?? {}) } };
@@ -116,6 +137,11 @@ export const useAppStore = create<AppState>()(
         }
     )
 );
+
+// Read persisted state as soon as the store exists in the browser, before any
+// component can write to it (a write before hydration would save the defaults
+// over the user's settings). Nothing that depends on it is server-rendered.
+if (typeof window !== 'undefined') void useAppStore.persist.rehydrate();
 
 /** The selected object, resolved from the catalog. */
 export function useSelectedObject(): SpaceObject | null {

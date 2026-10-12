@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { CaretRight } from "@phosphor-icons/react";
 import { useAppStore } from "@/store/appStore";
 import { useUiStore } from "@/store/uiStore";
@@ -25,6 +25,17 @@ export function SettingsBody() {
     const update = useAppStore((s) => s.updateSettings);
     const observer = useAppStore((s) => s.observer);
     const openDialog = useUiStore((s) => s.openDialog);
+    const [alertNote, setAlertNote] = useState<string | null>(null);
+
+    const setAlerts = async (alertMinutes: number) => {
+        setAlertNote(null);
+        if (alertMinutes > 0) {
+            if (typeof Notification === "undefined") { setAlertNote(t("alerts.unsupported")); return; }
+            const perm = Notification.permission === "default" ? await Notification.requestPermission() : Notification.permission;
+            if (perm !== "granted") { setAlertNote(t("alerts.denied")); return; }
+        }
+        update({ alertMinutes });
+    };
 
     return (
         <div>
@@ -58,13 +69,38 @@ export function SettingsBody() {
                 </Field>
             </Group>
 
+            <Group title={t("alerts.group")}>
+                <Field label={t("alerts.label")} description={t("alerts.hint")}>
+                    <Segmented size="sm" label={t("alerts.label")} value={settings.alertMinutes} onChange={setAlerts}
+                        options={[{ value: 0, label: t("alerts.off") }, ...[5, 10, 15].map((v) => ({ value: v, label: `${v} ${t("units.min")}` }))]} />
+                </Field>
+                {alertNote && <p className="py-2 text-[13px] text-orange">{alertNote}</p>}
+            </Group>
+
+            <Group title={t("settings.performance")}>
+                <Field label={t("settings.batterySaver")} description={t("settings.batterySaverHint")}>
+                    <Segmented size="sm" label={t("settings.batterySaver")} value={settings.batterySaver} onChange={(batterySaver) => update({ batterySaver })}
+                        options={[{ value: "auto", label: t("settings.themeSystem") }, { value: "on", label: t("settings.on") }, { value: "off", label: t("settings.off") }]} />
+                </Field>
+            </Group>
+
             <Group title={t("settings.globe")}>
+                <Field label={t("settings.view")}>
+                    <Segmented size="sm" label={t("settings.view")} value={settings.view} onChange={(view) => update({ view })}
+                        options={[{ value: "3d", label: t("settings.view3d") }, { value: "2d", label: t("settings.view2d") }]} />
+                </Field>
                 <Field label={t("settings.basemap")}>
                     <Segmented size="sm" label={t("settings.basemap")} value={settings.basemap} onChange={(basemap) => update({ basemap })}
                         options={[{ value: "imagery", label: t("settings.basemapImagery") }, { value: "dark", label: t("settings.basemapDark") }]} />
                 </Field>
                 <Switch label={t("settings.showOrbit")} checked={settings.showOrbit} onChange={(showOrbit) => update({ showOrbit })} />
                 <Switch label={t("settings.showGroundTrack")} checked={settings.showGroundTrack} onChange={(showGroundTrack) => update({ showGroundTrack })} />
+                {settings.showGroundTrack && (
+                    <Field label={t("settings.trackOrbits")}>
+                        <Segmented size="sm" label={t("settings.trackOrbits")} value={settings.trackOrbits} onChange={(trackOrbits) => update({ trackOrbits })}
+                            options={[1, 2, 3, 5].map((v) => ({ value: v, label: String(v) }))} />
+                    </Field>
+                )}
                 <Switch label={t("settings.showFootprint")} description={t("settings.showFootprintHint")} checked={settings.showFootprint} onChange={(showFootprint) => update({ showFootprint })} />
                 <Switch label={t("settings.nightShadow")} checked={settings.showNightShadow} onChange={(showNightShadow) => update({ showNightShadow })} />
                 <Switch label={t("settings.autoRotate")} checked={settings.autoRotate} onChange={(autoRotate) => update({ autoRotate })} />

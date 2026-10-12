@@ -54,7 +54,13 @@ export function useFormat(): Formatters {
 
         return {
             num: (v, digits = 1) => (ok(v) ? numFmt(digits).format(v) : null),
-            signed: (v, digits = 1) => (ok(v) ? (v >= 0 ? "+" : "−") + numFmt(digits).format(Math.abs(v)) : null),
+            signed: (v, digits = 1) => {
+                if (!ok(v)) return null;
+                const text = numFmt(digits).format(Math.abs(v));
+                // A value that rounds to zero gets no sign ("0.00", not "−0.00").
+                if (Math.abs(v) < 0.5 * 10 ** -digits) return text;
+                return (v > 0 ? "+" : "−") + text;
+            },
             time: (d, seconds = true) => (seconds ? tFmt : tFmtShort).format(d),
             date: (d) => dFmt.format(d),
             dateTime: (d) => dtFmt.format(d),

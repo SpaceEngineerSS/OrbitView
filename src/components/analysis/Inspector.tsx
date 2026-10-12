@@ -1,6 +1,6 @@
 "use client";
 
-import { Star, Crosshair, X } from "@phosphor-icons/react";
+import { Star, Crosshair, X, Binoculars } from "@phosphor-icons/react";
 import type { SpaceObject } from "@/lib/space-objects";
 import { regimeColor } from "@/lib/catalog";
 import { useT } from "@/hooks/useLocale";
@@ -13,6 +13,7 @@ import OrbitCard from "./OrbitCard";
 import LifetimeCard from "./LifetimeCard";
 import ApproachesCard from "./ApproachesCard";
 import DataCard from "./DataCard";
+import IdentityCard from "./IdentityCard";
 
 /** Name, catalog number and the three actions that apply to the object. */
 export function InspectorHeader({ obj }: { obj: SpaceObject }) {
@@ -22,6 +23,9 @@ export function InspectorHeader({ obj }: { obj: SpaceObject }) {
     const follow = useAppStore((s) => s.follow);
     const setFollow = useAppStore((s) => s.setFollow);
     const select = useAppStore((s) => s.select);
+    const pov = useAppStore((s) => s.pov);
+    const setPov = useAppStore((s) => s.setPov);
+    const flat = useAppStore((s) => s.settings.view === "2d");
 
     return (
         <div className="flex items-start gap-3">
@@ -38,6 +42,11 @@ export function InspectorHeader({ obj }: { obj: SpaceObject }) {
             <IconButton size="sm" label={follow ? t("inspector.unfollow") : t("inspector.follow")} active={follow} onClick={() => setFollow(!follow)}>
                 <Crosshair size={17} weight="bold" />
             </IconButton>
+            {!flat && (
+                <IconButton size="sm" label={pov ? t("inspector.povExit") : t("inspector.pov")} active={pov} onClick={() => setPov(!pov)}>
+                    <Binoculars size={17} weight="bold" />
+                </IconButton>
+            )}
             <IconButton size="sm" label={t("inspector.close")} onClick={() => select(null)}>
                 <X size={16} weight="bold" />
             </IconButton>
@@ -52,10 +61,11 @@ export function InspectorCards({ obj }: { obj: SpaceObject }) {
             <HeroCard obj={obj} />
             <PassesCard obj={obj} index={1} />
             <DopplerCard obj={obj} index={2} />
-            <OrbitCard obj={obj} index={3} />
-            <LifetimeCard obj={obj} index={4} />
-            <ApproachesCard obj={obj} index={5} />
-            <DataCard obj={obj} index={6} />
+            <IdentityCard obj={obj} index={3} />
+            <OrbitCard obj={obj} index={4} />
+            <LifetimeCard obj={obj} index={5} />
+            <ApproachesCard obj={obj} index={6} />
+            <DataCard obj={obj} index={7} />
         </div>
     );
 }

@@ -1,7 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { CloudWarning, ArrowClockwise } from "@phosphor-icons/react";
+import { CloudWarning, ArrowClockwise, Flag } from "@phosphor-icons/react";
+import { useSatcatStore, countByOwner } from "@/store/satcatStore";
+import { COUNTRY_FILTERS } from "@/lib/satcat";
+import { useCountryName } from "@/components/analysis/IdentityCard";
 import { useAppStore, type FilterKey } from "@/store/appStore";
 import { FILTERS, countByFilter, REGIME_COLORS, featured, regimeColor } from "@/lib/catalog";
 import { useT } from "@/hooks/useLocale";
@@ -18,6 +21,40 @@ const SWATCH: Partial<Record<FilterKey, string>> = {
     debris: REGIME_COLORS.DEBRIS,
 };
 
+/** Owner-country filter as a pill-shaped native select (a real picker on phones). */
+function CountrySelect() {
+    const t = useT();
+    const f = useFormat();
+    const country = useAppStore((s) => s.country);
+    const setCountry = useAppStore((s) => s.setCountry);
+    const objects = useAppStore((s) => s.objects);
+    const owners = useSatcatStore((s) => s.owners);
+    const name = useCountryName();
+    const counts = useMemo(() => countByOwner(objects.map((o) => o.id), owners), [objects, owners]);
+    if (!owners) return null;
+    return (
+        <label className={cx(
+            "relative shrink-0 h-8 pl-3 pr-3 rounded-full text-[13px] font-semibold flex items-center gap-1.5 cursor-pointer",
+            country ? "bg-accent text-on-accent" : "bg-card text-ink shadow-card hover:bg-card-2"
+        )}>
+            <Flag size={14} weight={country ? "fill" : "bold"} />
+            <span>{country ? name(country) : t("filter.country")}</span>
+            {country && <span className="opacity-75">{f.num(counts.get(country) ?? 0, 0)}</span>}
+            <select
+                aria-label={t("filter.country")}
+                value={country ?? ""}
+                onChange={(e) => setCountry(e.target.value || null)}
+                className="absolute inset-0 opacity-0 cursor-pointer"
+            >
+                <option value="">{t("filter.allCountries")}</option>
+                {COUNTRY_FILTERS.filter((c) => (counts.get(c) ?? 0) > 0).map((c) => (
+                    <option key={c} value={c}>{name(c)} ({f.num(counts.get(c) ?? 0, 0)})</option>
+                ))}
+            </select>
+        </label>
+    );
+}
+
 /** Which part of the catalog is drawn, as a scrollable row of chips. */
 export function FilterChips({ className }: { className?: string }) {
     const t = useT();
@@ -29,7 +66,8 @@ export function FilterChips({ className }: { className?: string }) {
     const counts = useMemo(() => countByFilter(objects, new Set(favorites)), [objects, favorites]);
 
     return (
-        <div className={cx("overflow-x-auto [scrollbar-width:none] -mx-1 px-1 py-1", className)}>
+        <div className={cx("flex gap-1.5 overflow-x-auto [scrollbar-width:none] -mx-1 px-1 py-1", className)}>
+            <CountrySelect />
             <ChipGroup
                 label={t("catalog.filters")}
                 value={filter}

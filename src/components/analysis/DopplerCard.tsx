@@ -115,7 +115,8 @@ export default function DopplerCard({ obj, index }: { obj: SpaceObject; index: n
                 </div>
             </div>
 
-            {pass && curve.length > 1 && (
+            {/* A geostationary object has no meaningful shift curve. */}
+            {pass && curve.length > 1 && Math.max(...curve.map((c) => Math.abs(c.hz))) > 50 && (
                 <div className="mt-4">
                     <div className="flex items-baseline justify-between mb-1.5">
                         <span className="text-[13px] font-semibold text-ink-2">{t("doppler.curveTitle")}</span>

@@ -51,6 +51,8 @@ export default function LifetimeCard({ obj, index }: { obj: SpaceObject; index: 
         const p = lifetimeParts(days);
         return t(`lifetime.unit.${p.unit}`, { n: f.num(p.value, p.unit === "year" ? 1 : 0) ?? "" });
     };
+    // Stations and constellations re-boost; drag alone says little about them.
+    const manoeuvres = obj.group === "station" || /^STARLINK|^ONEWEB|^ISS|^CSS|TIANHE/i.test(obj.name);
     const tone = decay.riskLevel === "critical" ? "red" : decay.riskLevel === "high" ? "orange" : decay.riskLevel === "medium" ? "orange" : "green";
 
     return (
@@ -60,6 +62,7 @@ export default function LifetimeCard({ obj, index }: { obj: SpaceObject; index: 
             icon={<Hourglass size={16} weight="bold" />}
             action={<InfoButton title={t("lifetime.title")} closeLabel={t("common.close")}><p>{t("lifetime.note")}</p></InfoButton>}
         >
+            {manoeuvres && <Note className="mb-3 rounded-[12px] bg-orange-soft text-orange px-3 py-2">{t("lifetime.manoeuvres")}</Note>}
             {decay.dragUnknown ? (
                 <Note>{t("lifetime.dragUnknown")}</Note>
             ) : (
