@@ -1,532 +1,229 @@
-# OrbitView: Mathematical Foundations
+# The maths behind OrbitView
 
-A comprehensive guide to the astrodynamics and physics behind OrbitView satellite tracking.
+Notes on what the app actually computes, in the order a position flows
+through it. Each section names the file that implements it. Equations are in
+plain text so they read the same everywhere.
 
-## Table of Contents
+References I lean on throughout:
 
-1. [Coordinate Systems](#1-coordinate-systems)
-2. [Two-Line Element (TLE) Format](#2-two-line-element-tle-format)
-3. [Keplerian Orbital Elements](#3-keplerian-orbital-elements)
-4. [SGP4/SDP4 Propagation](#4-sgp4sdp4-propagation)
-5. [Doppler Effect](#5-doppler-effect)
-6. [Orbital Decay](#6-orbital-decay)
-7. [Pass Prediction](#7-pass-prediction)
-8. [Ground Track Calculation](#8-ground-track-calculation)
-9. [Conjunction Analysis](#9-conjunction-analysis)
-10. [Lagrange Point Orbits (JWST)](#10-lagrange-point-orbits-jwst)
-11. [Orbit Rendering Methodology](#12-orbit-rendering-methodology)
-12. [References](#references)
+- Vallado, *Fundamentals of Astrodynamics and Applications*, 4th ed. (2013)
+- Hoots & Roehrich, *Spacetrack Report No. 3* (1980) — SGP4
+- Vallado, Crawford, Hujsak & Kelso, *Revisiting Spacetrack Report #3* (AIAA 2006-6753)
+- King-Hele, *Satellite Orbits in an Atmosphere* (1987)
 
 ---
 
-## 1. Coordinate Systems
+## 1. Element sets and SGP4
 
-OrbitView uses multiple coordinate reference frames for satellite tracking:
+A two-line element set (TLE) is not a position. It is a set of *mean*
+elements fitted so that the SGP4/SDP4 propagator reproduces observations. They
+are only meaningful when fed back into SGP4, which is why OrbitView never uses
+them with plain Kepler equations.
 
-### Earth-Centered Inertial (ECI)
-The ECI frame is fixed in inertial space with:
-- **Origin**: Earth's center of mass
-- **X-axis**: Vernal equinox direction (♈)
-- **Z-axis**: North pole direction
-- **Y-axis**: Completes right-handed system
+Propagation is done by [satellite.js](https://github.com/shashwatak/satellite-js),
+a port of the Vallado 2006 code. It returns position and velocity in the
+**TEME** frame (true equator, mean equinox of date), in km and km/s.
 
-### Earth-Centered Earth-Fixed (ECEF/ECF)
-The ECF frame rotates with Earth:
-- **Origin**: Earth's center of mass
-- **X-axis**: Prime meridian (0° longitude)
-- **Z-axis**: North pole
-- **Y-axis**: 90° East longitude
+`satrec.error` is checked after every call; a non-zero value (eccentricity out
+of range, decayed orbit…) means the object is hidden rather than drawn at a
+wrong place. — `src/lib/orbit.ts`, `src/workers/satellite.worker.ts`
 
-### Geodetic Coordinates
-Human-readable form:
-- **Latitude (φ)**: Angle from equatorial plane (-90° to +90°)
-- **Longitude (λ)**: Angle from prime meridian (-180° to +180°)
-- **Altitude (h)**: Height above reference ellipsoid (WGS-84)
+### Derived elements
 
-ECI to ECF conversion uses Greenwich Mean Sidereal Time (GMST):
-
-$$\theta_{GMST} = \theta_0 + \omega_E \times (t - t_0)$$
-
-Where:
-- $\theta_0$ = GMST at epoch
-- $\omega_E$ = Earth's rotation rate ($7.292115 \times 10^{-5}$ rad/s)
-
-#### Coordinate Transformation Pipeline
-
-```mermaid
-graph LR
-    subgraph "Inertial Space"
-        ECI[ECI: J2000]
-    end
-    
-    subgraph "Rotating Frame"
-        ECF[ECF: WGS-84]
-    end
-    
-    subgraph "Surface View"
-        GEO[Geodetic: Lat/Lon/Alt]
-    end
-
-    ECI -- "(t - t_epoch) * GMST" --> ECF
-    ECF -- "Reference Ellipsoid" --> GEO
-    
-    GEO -- "Inverse Geodetic" --> ECF
-    ECF -- "Precession/Nutation" --> ECI
-```
-
----
-
-## 2. Two-Line Element (TLE) Format
-
-TLE is the standard format for distributing satellite orbital data, maintained by NORAD.
-
-### Format Structure
+From the SGP4 record, not from the instantaneous radius:
 
 ```
-AAAAAAAAAAAAAAAAAAAAAAAA
-1 NNNNNC NNNNNAAA NNNNN.NNNNNNNN +.NNNNNNNN +NNNNN-N +NNNNN-N N NNNNN
-2 NNNNN NNN.NNNN NNN.NNNN NNNNNNN NNN.NNNN NNN.NNNN NN.NNNNNNNNNNNNNN
+period      = 2π / n             (n: un-Kozai'd mean motion, rad/min)
+a           = rec.a · 6378.135 km
+perigee alt = a (1 − e) − 6378.135
+apogee alt  = a (1 + e) − 6378.135
 ```
 
-### Line 1 Fields
-
-| Column | Description | Example |
-|--------|-------------|---------|
-| 01 | Line Number | 1 |
-| 03-07 | Satellite Number | 25544 |
-| 08 | Classification | U (Unclassified) |
-| 10-11 | Launch Year | 98 |
-| 12-14 | Launch Number | 067 |
-| 15-17 | Piece of Launch | A |
-| 19-20 | Epoch Year | 24 |
-| 21-32 | Epoch Day (fractional) | 356.51824815 |
-| 34-43 | First Derivative of Mean Motion | .00001234 |
-| 45-52 | Second Derivative of Mean Motion | 00000-0 |
-| 54-61 | B* Drag Term | 12345-4 |
-| 63 | Ephemeris Type | 0 |
-| 65-68 | Element Set Number | 999 |
-| 69 | Checksum | 5 |
-
-### Line 2 Fields
-
-| Column | Description | Symbol | Units |
-|--------|-------------|--------|-------|
-| 09-16 | Inclination | i | degrees |
-| 18-25 | Right Ascension of Ascending Node | Ω | degrees |
-| 27-33 | Eccentricity | e | (decimal assumed) |
-| 35-42 | Argument of Perigee | ω | degrees |
-| 44-51 | Mean Anomaly | M | degrees |
-| 53-63 | Mean Motion | n | revs/day |
-| 64-68 | Revolution Number at Epoch | | |
+Earlier versions used `6371 + current altitude` as the semi-major axis, which
+is wrong for anything eccentric. — `elementsFromSatrec` in `src/lib/orbit.ts`
 
 ---
 
-## 3. Keplerian Orbital Elements
+## 2. From TEME to the ground
 
-The six classical orbital elements uniquely define an orbit:
+### Sidereal time
 
-### Shape of Orbit
-1. **Semi-major axis (a)**: Size of the orbit
-   ```
-   a = ∛(μ / n²)
-   ```
-   Where μ = 398600.4418 km³/s² (Earth's gravitational parameter)
+TEME is rotated to the Earth-fixed frame by the Greenwich mean sidereal angle
+θ (IAU-82, the model SGP4 is built on). OrbitView uses `satellite.gstime`
+everywhere.
 
-2. **Eccentricity (e)**: Shape (0 = circle, 0 < e < 1 = ellipse)
+Version 3 had its own GMST function that evaluated the 0h-UT polynomial at the
+full Julian date *and* added the rotation for the time of day, counting it
+twice — up to about 1° late by 23:59 UTC. A test now compares against
+`gstime` across a day to 1e-12 rad.
 
-### Orientation of Orbital Plane
-3. **Inclination (i)**: Tilt relative to equator (0-180°)
-   - i = 0°: Equatorial (prograde)
-   - i = 90°: Polar
-   - i > 90°: Retrograde
-
-4. **Right Ascension of Ascending Node (Ω)**: Rotation in equatorial plane
-
-### Orientation Within Orbital Plane
-5. **Argument of Perigee (ω)**: Angle from ascending node to perigee
-
-### Position Along Orbit
-6. **Mean Anomaly (M)**: Current position relative to perigee.
-   To find the position, we must solve **Kepler's Equation**:
-   $$M = E - e \sin(E)$$
-   Where $E$ is the Eccentric Anomaly.
-
-### Derived Parameters
-
-**Orbital Period:**
-$$T = 2\pi \sqrt{\frac{a^3}{\mu}}$$
-
-**Apogee/Perigee Altitude:**
-$$r_a = a(1 + e) - R_E \quad \text{(Apogee)}$$
-$$r_p = a(1 - e) - R_E \quad \text{(Perigee)}$$
-Where $R_E = 6378.137$ km (Earth's equatorial radius)
-
----
-
-## 4. SGP4/SDP4 Propagation
-
-OrbitView uses the SGP4 (Simplified General Perturbations 4) algorithm for orbit prediction.
-
-### Algorithm Overview
-
-SGP4 solves the perturbed two-body problem considering:
-- Earth's oblateness (J2, J3, J4 harmonics)
-- Atmospheric drag (via B* coefficient)
-- Deep-space perturbations (SDP4 for high-altitude)
-
-### SGP4 vs SDP4 Selection
+### Position and velocity
 
 ```
-if (orbital_period ≥ 225 minutes):
-    use SDP4  # Deep space
-else:
-    use SGP4  # Near-Earth
+r_ecf = R3(θ) · r_teme
+v_ecf = R3(θ) · v_teme − ω⊕ × r_ecf         ω⊕ = 7.292115e-5 rad/s
 ```
 
-### Key Equations
+The second term is the one people forget. Rotating the velocity is not
+enough: a point fixed on the ground moves at up to 0.46 km/s in the inertial
+frame, so the velocity *relative to the ground* has to subtract it. Every
+calculation that uses velocity (Doppler, range rate) goes through
+`temeToEcf` in `src/lib/orbit.ts`.
 
-**Mean Motion with Secular Effects:**
-```
-n(t) = n_0 + (3/2) × J2 × n_0 × (R_E/a)² × [(3cos²i - 1) / (1-e²)^(3/2)]
-```
+### Geodetic coordinates
 
-**J2 Perturbation on RAAN:**
-```
-dΩ/dt = -(3/2) × J2 × n × (R_E/a)² × cos(i) / (1-e²)²
-```
-
-### Accuracy
-
-| Orbit Type | SGP4 Accuracy | Duration |
-|------------|---------------|----------|
-| LEO | ~1 km | 1-3 days |
-| MEO | ~5 km | 1 week |
-| GEO | ~10 km | 2 weeks |
-
-### Propagation Process
-
-```mermaid
-sequenceDiagram
-    participant User as UI/Viewer
-    participant SGP4 as SGP4 Engine
-    participant TLE as TLE Data
-    participant Earth as Coordinate Frame
-
-    User->>SGP4: Request Position at Time (t)
-    TLE->>SGP4: Providing i, Ω, e, ω, M, n
-    Note over SGP4: Solve Kepler's Equation<br/>M = E - e * sin(E)
-    SGP4->>SGP4: Calculate Perturbations (J2, J3, J4)
-    SGP4->>SGP4: Apply Atmospheric Drag (B*)
-    SGP4->>Earth: Output Position in ECI (TEME)
-    Earth->>User: Transform to ECF (WGS84)
-```
-
----
-
-## 5. Doppler Effect
-
-Radio signals from satellites experience frequency shifts due to relative motion.
-
-### Classical Doppler Formula
-
-$$\Delta f = \frac{v_r}{c} f_0$$
-
-Where:
-- $\Delta f$ = Frequency shift (Hz)
-- $v_r$ = Radial velocity (m/s)
-- $c$ = Speed of light ($299,792,458$ m/s)
-- $f_0$ = Transmitted frequency (Hz)
-
-### Radial Velocity Calculation
+Latitude is found iteratively on the WGS-84 ellipsoid; height is computed as
 
 ```
-v_r = v⃗_sat · r̂
+h = p cos φ + z sin φ − a √(1 − e² sin² φ)
 ```
 
-Where:
-- `v⃗_sat` = Satellite velocity vector (ECF)
-- `r̂` = Unit range vector (satellite - observer)
-
-### Sign Convention
-- **v_r < 0**: Satellite approaching → Positive frequency shift
-- **v_r > 0**: Satellite receding → Negative frequency shift
-
-### Implementation
-
-OrbitView calculates Doppler for common frequencies:
-- ISS APRS: 145.825 MHz
-- GPS L1: 1575.42 MHz
-- Starlink Ku-band: ~12 GHz
+which, unlike `p / cos φ − N`, doesn't blow up at the poles.
+— `ecfToGeodetic` in `src/lib/CoordinateConverter.ts`
 
 ---
 
-## 6. Orbital Decay
+## 3. Look angles
 
-Atmospheric drag causes satellites in LEO to gradually lose altitude.
+For an observer at geodetic (φ, λ, h), the range vector ρ = r_sat − r_obs is
+projected onto the local South-East-Zenith axes:
 
-### King-Hele Decay Model
+```
+S = sin φ cos λ ρx + sin φ sin λ ρy − cos φ ρz
+E = −sin λ ρx + cos λ ρy
+Z = cos φ cos λ ρx + cos φ sin λ ρy + sin φ ρz
 
-Rate of semi-major axis decrease:
-$$\frac{da}{dt} = -\frac{1}{2} \rho v (C_D \frac{A}{m}) a$$
-
-Simplified using TLE $B^*$ term:
-$$\frac{da}{dt} \approx -B^* \rho a v$$
-
-### Atmospheric Density Model
-
-Exponential atmosphere approximation:
-$$\rho(h) = \rho_0 \exp\left(-\frac{h - h_0}{H}\right)$$
-
-| Altitude (km) | ρ₀ (kg/m³) | Scale Height H (km) |
-|---------------|------------|---------------------|
-| 200 | 2.789×10⁻¹⁰ | 37.1 |
-| 400 | 2.803×10⁻¹² | 58.5 |
-| 600 | 1.454×10⁻¹³ | 71.8 |
-| 800 | 1.170×10⁻¹⁴ | 124.6 |
-
-### Lifetime Estimation
-
-Approximate remaining lifetime:
-$$\tau \approx -\frac{a}{da/dt}$$
-
-### Model Comparison & Validation
-
-| Model | Complexity | Fidelity | Usage in OrbitView |
-|-------|------------|----------|-------------------|
-| **Exponential** | Low | Medium | Real-time Dashboard |
-| **NRLMSISE-00** | High | Ultra | Offline Analysis (TBD) |
-| **Harris-Priester**| Medium | High | Future Integration |
-
-> [!NOTE]
-> OrbitView currently uses an **Optimized Exponential Model** for real-time performance. For satellites below 300km, a scale-height lookup table is used to minimize linear approximation errors.
-
-### Known Limitations
-
-1. **J2 Dominance**: Model assumes J2 is the primary perturbation. J3/J4 are included in SGP4 but not displayed in the simple perturbations panel.
-2. **Atmospheric Drag**: Drag coefficients (`C_D`) are estimated based on B* term and may vary during solar maximums.
-3. **Maneuvers**: OrbitView relies on TLE updates. Impulsive maneuvers between TLE epochs are not modeled.
-4. **Pass Accuracy**: Optical visibility assumes a spherical Earth shadow (Umbra). Atmospheric refraction near the horizon (penumbra) is not modeled.
-
----
-
-## 7. Pass Prediction
-
-Calculating when a satellite is visible from a ground location.
-
-### Look Angles
-
-**Azimuth ($Az$):** Horizontal direction (clockwise from North)
-$$Az = \text{atan2}(\sin(\Delta\lambda), \cos(\phi_{obs})\tan(\phi_{sat}) - \sin(\phi_{obs})\cos(\Delta\lambda))$$
-
-**Elevation ($El$):** Angle above horizon
-$$El = \arcsin(\sin(\phi_{obs})\sin(\phi_{sat}) + \cos(\phi_{obs})\cos(\phi_{sat})\cos(\Delta\lambda))$$
-
-### Pass Terminology
-
-- **AOS** (Acquisition of Signal): Satellite rises above minimum elevation
-- **LOS** (Loss of Signal): Satellite sets below minimum elevation
-- **TCA** (Time of Closest Approach): Maximum elevation point
-
-### Algorithm (Coarse-to-Fine Search)
-
-1. Step through time at 60-second intervals
-2. Calculate elevation at each step
-3. When elevation crosses threshold (typically 10°):
-   - Refine timing with smaller steps
-   - Record AOS/LOS/MaxEl
-
----
-
-## 8. Ground Track Calculation
-
-The ground track is the satellite's subsatellite point traced on Earth's surface.
-
-### Subsatellite Point
-
-Convert ECI position to geodetic coordinates:
-
-1. **Calculate ECF position:**
-   $$\mathbf{r}_{ECF} = R_z(-\theta_{GMST}) \mathbf{r}_{ECI}$$
-
-2. **Convert to geodetic (iterative for WGS-84):**
-   $$\lambda = \text{atan2}(y, x)$$
-   $$\phi = \text{atan2}(z, \sqrt{x^2 + y^2}) \quad \text{[initial estimate]}$$
-
-### Footprint (Coverage Circle)
-
-Satellite visibility radius on Earth's surface:
-$$r_{footprint} = R_E \arccos\left(\frac{R_E}{R_E + h}\right)$$
-
-For minimum elevation angle $\epsilon$:
-$$r_{footprint} = R_E \left( \arccos\left(\frac{R_E \cos(\epsilon)}{R_E + h}\right) - \epsilon \right)$$
-
----
-
-## 9. Conjunction Analysis
-
-OrbitView detects close approaches (conjunctions) between satellites to evaluate collision risk.
-
-### Miss Distance Calculation
-The Euclidean distance between two satellites at time $t$:
-$$d(t) = \sqrt{(x_1 - x_2)^2 + (y_1 - y_2)^2 + (z_1 - z_2)^2}$$
-
-### TCA Estimation
-TimeTo-Closest-Approach (TCA) is found by finding the root of the relative velocity dot product:
-$$\mathbf{v}_{rel} \cdot \mathbf{r}_{rel} = 0$$
-
----
-
-## 10. Lagrange Point Orbits (JWST)
-
-For deep space missions like the James Webb Space Telescope (JWST), OrbitView models orbits around the **Earth-Sun L2 Point**.
-
-### The Sun-Earth L2 Point
-Located approx. 1.5 million km from Earth in the anti-sunward direction. The position of $L_2$ in the Rotating Libration Point (RLP) frame:
-$$x_{L2} \approx L \left(1 + \left(\frac{\mu}{3}\right)^{1/3}\right)$$
-
-### Halo & Lissajous Orbits
-JWST does not sit *at* $L_2$ but orbits it. We use **NASA Horizons Ephemerides** to visualize the complex Halo orbit path, which is defined by a 3rd-order Richardson expansion or higher-fidelity numerical integration:
-$$\delta \mathbf{r}(t) = \mathbf{A}_x \sin(\omega t + \phi)$$
-
----
-
-## 12. Orbit Rendering Methodology
-
-OrbitView uses a specialized rendering technique to display satellite orbits accurately in 3D space.
-
-### Ground Track vs. Inertial Orbit
-
-There are two fundamentally different ways to visualize a satellite's path:
-
-| Approach | What It Shows | Use Case |
-|----------|---------------|----------|
-| **Ground Track** | Path traced on Earth's surface (subsatellite points) | Showing where satellite "covers" on Earth |
-| **Inertial Orbit** | True orbital shape in 3D space (Kepler ellipse) | Showing the actual orbit ring in space |
-
-### The Problem with GEO Satellites
-
-Geostationary satellites (GEO) orbit at the same rate as Earth rotates. If we calculate each orbit point using that point's GMST (Ground Track approach), GEO satellites appear as:
-- A single dot
-- A broken line near the equator
-- An incomplete path
-
-This is because the satellite's *ground track* is indeed a single point—it hovers over one location on Earth.
-
-### The Solution: Fixed GMST (Inertial Frame Rendering)
-
-To display the **true Kepler orbit ring** in space, we "freeze" Earth's rotation at the current moment:
-
-```javascript
-// Calculate GMST once at the current time (epoch)
-const fixedGmst = satellite.gstime(currentTime);
-
-// For ALL orbit points, use the SAME GMST
-for (let i = 0; i <= pointsPerPeriod; i++) {
-    const time = new Date(now.getTime() + i * stepSeconds * 1000);
-    const posEci = propagateToECI(satrec, time);
-    
-    // Use fixedGmst, NOT satellite.gstime(time)
-    const posEcf = satellite.eciToEcf(posEci, fixedGmst);
-    positions.push(toCartesian3(posEcf));
-}
+azimuth   = atan2(E, −S)          (clockwise from north)
+elevation = asin(Z / |ρ|)
+range rate = (ρ · v_ecf) / |ρ|     (positive = moving away)
 ```
 
-### Visual Result
+— `lookAngles` in `src/lib/orbit.ts`
 
-| Satellite Type | Ground Track | Inertial (Fixed GMST) |
-|----------------|--------------|----------------------|
-| **LEO (ISS)** | Sinusoidal ground path | Inclined elliptical ring |
-| **MEO (GPS)** | Looping ground path | Circular ring at 20,200 km |
-| **GEO (TURKSAT)** | Single point | Perfect circular ring at 35,786 km |
+---
 
-### Mathematical Explanation
+## 4. Passes
 
-The transformation from ECI to ECF is:
+A pass is the interval in which elevation ≥ the mask (10° by default,
+adjustable in settings).
 
-$$\mathbf{r}_{ECF} = R_z(-\theta_{GMST}(t)) \cdot \mathbf{r}_{ECI}(t)$$
+1. **Scan** the window every 60 s. A LEO pass above 10° lasts several minutes,
+   so none is skipped.
+2. **Bisect** each sign change of (elevation − mask) down to 0.5 s to get rise
+   (AOS) and set (LOS).
+3. **Golden-section search** between AOS and LOS for culmination; elevation
+   is unimodal over a single pass.
 
-Where $R_z$ is the rotation matrix around the Z-axis.
+The window starts 30 minutes before "now" so a pass already in progress keeps
+its real rise time, and a pass still in progress at the end of the window is
+followed until it sets. An object that never sets (a geostationary satellite
+in view) is reported as one pass covering the window.
 
-**Ground Track:** Each point uses $\theta_{GMST}(t)$ — time-varying rotation.  
-**Inertial Ring:** All points use $\theta_{GMST}(t_0)$ — fixed rotation at epoch.
+**Visibility.** A pass is marked visible when, at culmination, the satellite
+is sunlit and the Sun is more than 6° below the observer's horizon (civil
+twilight). Shadow uses a cylindrical Earth-shadow model, which is accurate to
+a few seconds at the shadow boundary.
 
-### Implementation in OrbitView
+Not modelled: atmospheric refraction (≈ 0.5° at the horizon, so real rises are
+a little earlier), and the Earth's oblateness in the horizon itself.
 
-```mermaid
-graph TD
-    A[SGP4 Propagation] --> B[ECI Position at time t]
-    B --> C{Rendering Mode}
-    C -->|Ground Track| D[GMST_t = gstime_t]
-    C -->|Inertial Orbit| E[GMST_t = gstime_epoch]
-    D --> F[ECF Position]
-    E --> F
-    F --> G[Cesium Cartesian3]
+The test suite checks AOS/LOS against a 1-second brute-force scan (± 2 s) and
+that no 5-second sample in a pass is higher than the reported maximum.
+— `src/lib/PassPrediction.ts`
+
+---
+
+## 5. Doppler
+
+```
+Δf = −(ṙ / c) · f₀
+f_received = f₀ + Δf
 ```
 
-This technique is consistent with how NASA/GMAT and other professional orbit visualization tools render satellite trajectories.
+with ṙ the range rate from section 3 and c = 299 792 458 m/s. Negative ṙ
+(approaching) raises the frequency. This is first-order Doppler; for LEO
+speeds the relativistic terms are below 1 Hz at VHF/UHF.
+
+Because ṙ uses the Earth-fixed velocity, a geostationary satellite correctly
+shows almost no shift. The tests check ṙ against the numerical derivative of
+the range (< 1 m/s) and a GEO case (< 20 m/s).
+— `computeDoppler` in `src/lib/DopplerCalculator.ts`
 
 ---
 
-## Model Accuracy & Validation
+## 6. Orbital lifetime
 
-OrbitView aims for high scientific fidelity by implementing industry-standard algorithms. Below are the estimated accuracy bounds for the core models.
+This is an estimate, not a reentry prediction.
 
-### 1. SGP4/SDP4 Propagation
-*   **Initial Accuracy:** 1-5 km (depending on TLE age)
-*   **Error Growth:** ~1-3 km per day (position), ~0.1-1.0 m/s (velocity).
-*   **Validation:** Benchmarked against NAVSTAR GPS ephemerides. Residuals typically remain within the 1-sigma uncertainty of the TLE data itself.
+**Ballistic coefficient from B\*.** SGP4 defines
 
-### 2. Doppler Shift Calculation
-*   **Frequency Accuracy:** ±5 Hz at 435 MHz (UHF), ±25 Hz at 2.4 GHz (S-Band).
-*   **Source of Error:** Primarily driven by UTC time sync and TLE propagation error.
+```
+B* = ρ₀ B / 2,   ρ₀ = 0.15696615 kg m⁻² ER
+B  = C_D A / m = 2 B* / ρ₀      [m²/kg]
+```
 
-### 3. Orbital Decay (King-Hele)
-*   **Precision:** ±15% of remaining lifetime for objects below 400 km.
-*   **Limitations:** High sensitivity to solar cycle variations (F10.7 index) and unpredictable atmospheric expansion.
+**Decay.** For a near-circular orbit (King-Hele):
 
-### 4. Pass Prediction
-*   **Timeline Precision:** ±5 seconds (AOS/LOS times).
-*   **Elevation Accuracy:** ±0.2°.
-*   **Validation:** Verified against ISS (Zarya) real-time tracking data and visual observations.
+```
+da/dt = −B ρ(h) √(μ a)
+```
 
----
+Drag acts mostly near perigee, so the integration runs on the perigee height,
+which is pessimistic for eccentric orbits. The step is adaptive (at most 0.5 km
+of height loss or 30 days per step) down to 120 km; beyond 25 years the result
+is reported as "> 25 years".
 
-## 👨‍💻 Developer & Attribution
+**Atmosphere.** Exponential bands from Vallado table 8-4 (CIRA-72 based),
+all 28 bands from 0 to 1000 km. Earlier versions skipped the 110–180 km bands,
+which put a 19× density jump at 150 km.
 
-This theoretical framework was compiled and verified by **Mehmet Gümüş**.
+**Uncertainty.** Solar activity changes thermospheric density by roughly
+×0.5–×2 over a cycle, so the range shown is the same integration with ρ×2 and
+ρ×0.5. B* in a TLE is a fitted, noisy parameter (it absorbs other model
+errors too); it is used as |B*|, and anything below 1e-7 is treated as "drag
+not measurable".
 
-🌐 **Website:** [spacegumus.com.tr](https://spacegumus.com.tr)  
-🐙 **GitHub:** [OrbitVieW](https://github.com/SpaceEngineerSS/OrbitVieW)
-
----
-
-## References
-
-### Primary Sources
-
-1. **Vallado, D. A.** (2013). *Fundamentals of Astrodynamics and Applications* (4th ed.). Microcosm Press. ISBN: 978-1881883180
-
-2. **Hoots, F. R., & Roehrich, R. L.** (1980). *Spacetrack Report No. 3: Models for Propagation of NORAD Element Sets*. NORAD/USSPACECOM.
-
-3. **Kelso, T. S.** (2007). *Validation of SGP4 and IS-GPS-200D Against GPS Precision Ephemerides*. AAS Paper 07-127.
-
-### Data Sources
-
-4. **CelesTrak** - https://celestrak.org/
-   TLE data source maintained by Dr. T.S. Kelso
-
-5. **JPL Horizons** - https://ssd.jpl.nasa.gov/horizons/
-   Ephemeris data for solar system bodies and spacecraft
-
-### Software Libraries
-
-6. **satellite.js** - https://github.com/shashwatak/satellite-js
-   JavaScript implementation of SGP4/SDP4
-
-7. **CesiumJS** - https://cesium.com/platform/cesiumjs/
-   3D geospatial visualization platform
+Space weather (F10.7, its 81-day mean, Kp) from NOAA SWPC is shown for
+context but not multiplied into the result: B* already reflects the drag the
+satellite actually experienced when the element set was fitted.
+— `src/lib/OrbitalDecay.ts`, `src/lib/SpaceWeather.ts`
 
 ---
 
-*This document is part of OrbitView, an open-source satellite tracking application.*  
-*Last Reviewed: 2026-02-12*
+## 7. Close-approach screening
+
+For the selected object against everything loaded:
+
+1. **Apogee/perigee filter** (Hoots, Crawford & Roehrich 1984). Two orbits
+   whose altitude shells are further apart than the threshold can never meet,
+   so they're skipped. This removes most of the catalog.
+2. **Coarse scan** of the separation every 60 s over the window. A local
+   minimum below `threshold + 15 km/s × 60 s` is a candidate (relative speeds
+   in LEO reach about 15 km/s, so a closer approach could hide between samples).
+3. **Refine** each candidate with a golden-section search to about 0.1 s,
+   giving the time of closest approach, miss distance and relative speed.
+
+TLE positions are uncertain by a kilometre or more, and there is no
+covariance here, so this produces a list worth looking at, not a probability
+of collision. Operators use conjunction data messages from 18 SDS for that.
+— `src/lib/ConjunctionAnalysis.ts`
+
+---
+
+## 8. Ground track, orbit ring and footprint
+
+- **Ground track:** sub-satellite points one period ahead and half a period
+  behind, recomputed every 30 s of simulation time.
+- **Orbit ring:** one revolution of TEME positions, all rotated by the sidereal
+  angle *at the current time*. That is the inertial orbit frozen at the
+  current Earth orientation, so the satellite sits exactly on it. It is
+  rebuilt every 2 s of simulation time as the Earth turns.
+- **Coverage circle:** the ground area from which the object is above the
+  elevation mask ε:
+
+```
+λ = arccos(R cos ε / (R + h)) − ε        (Earth central angle)
+radius on the ground = R λ
+```
+
+— `src/lib/GroundTrack.ts`, `src/components/globe/SelectedTrack.tsx`

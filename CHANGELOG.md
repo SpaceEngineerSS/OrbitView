@@ -7,6 +7,69 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [4.0.0] - 2026-10-12
+
+Most of the app was rewritten for this release. The calculations got a second
+look, the data layer stopped hiding failures, and the interface was redesigned
+from scratch.
+
+### Fixed — calculations
+- Doppler used the inertial velocity rotated into the Earth-fixed frame but
+  left out the Earth's rotation (the ω × r term): up to 0.4 km/s of range-rate
+  error for LEO, about 200 Hz at 145.8 MHz, and a large false shift for GEO.
+- Sidereal time counted the time of day twice, up to about 1° late by the end
+  of each UTC day. It now uses `satellite.gstime`, like SGP4 itself.
+- Pass rise and set times were the first 60-second sample past the threshold.
+  They are now bisected to 0.5 s; culmination comes from a golden-section
+  search. Passes already in progress, or still in progress at the end of the
+  window, keep their real times.
+- Period and semi-major axis were derived from the current altitude. They now
+  come from the SGP4 mean motion.
+- The lifetime model skipped five density bands (a 19× jump at 150 km), mixed
+  units, and clamped its rate. It now uses the full Vallado table, the
+  ballistic coefficient from B*, perigee height and a solar-activity range.
+- The inter-satellite link search missed most pairs between 1000 and 2500 km.
+  It drew nothing, so it was removed.
+
+### Fixed — data
+- A failed TLE group no longer returns the default catalog under that group's
+  name (which could label every satellite as a space station for two hours).
+- Every upstream request has a timeout; unknown groups return 400; failures are
+  cached for five minutes so CelesTrak isn't hammered.
+- IndexedDB errors are caught. A partial or stale refresh never overwrites the
+  stored catalog, and background refreshes now reach the running app.
+- Space-weather fallbacks were shown as live readings. They are now marked.
+- The service worker cached API responses and range requests without limit.
+
+### Changed
+- New interface: light and dark appearance, cards instead of tabs, a first card
+  that changes with the situation (overhead now / visible pass / next pass),
+  a 48-hour pass strip, a pass marker scrubber, and a phone layout built
+  around one bottom sheet.
+- Your location is set from the device, a city list or by hand. Nothing assumes
+  Ankara any more.
+- Turkish and English everywhere; the language switch works on every screen.
+- The main catalog uses Space-Track when configured, then CelesTrak.
+- Next.js 16.3.8, Motion, Phosphor icons, Instrument Sans.
+- Cesium's static files are copied from `node_modules` on install instead of
+  being committed.
+- Security headers and a Content Security Policy are set in `next.config.ts`.
+
+### Added
+- Close-approach screening against the loaded catalog, with time of closest
+  approach and relative speed.
+- Doppler curve across the next pass; any downlink frequency.
+- Ephemeris export (CSV, JSON) from the simulation time.
+- Links to a specific object at a specific time: `?sat=25544&t=…`.
+- Sky view on phones, steered by the compass from your location.
+- Regression tests for every calculation above, against independent
+  references.
+
+### Removed
+- About 4,000 lines of components that were never shown, the unused 3D models,
+  Supabase types, and the placeholder readouts (random Doppler, "98% signal",
+  "ONLINE").
+
 ## [2.4.0] - 2026-07-11
 
 ### Added

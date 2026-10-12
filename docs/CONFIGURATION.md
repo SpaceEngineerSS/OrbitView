@@ -1,49 +1,49 @@
-# Configuration Guide
+# Configuration
 
-OrbitView is highly configurable via environment variables and settings. This guide explains how to customize the application.
+## Environment variables
 
-## 🔑 Environment Variables
+All optional. Put them in `.env.local` for development, or in the Vercel
+project settings for deployments.
 
-Create a `.env.local` file in the root directory to override default settings.
+| Variable | Used by | Effect |
+|---|---|---|
+| `SPACETRACK_USER` | `/api/tle` | Space-Track login. With it, the default catalog is the full GP catalog. |
+| `SPACETRACK_PASS` | `/api/tle` | Space-Track password. Server-side only, never sent to the browser. |
+| `NEXT_PUBLIC_CESIUM_ION_TOKEN` | globe | Only needed if you add Cesium ion assets. The default map tiles come from Esri and need no token. |
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `NEXT_PUBLIC_APP_URL` | Base URL of your deployment | `http://localhost:3000` |
-| `SPACETRACK_USER` | Space-Track.org login email | (empty) |
-| `SPACETRACK_PASS` | Space-Track.org login password | (empty) |
-| `NEXT_PUBLIC_CESIUM_ION_TOKEN` | Cesium Ion access token | (optional) |
+## In-app settings
 
-> [!NOTE]
-> Space-Track credentials enable the "Full Catalog" mode, tracking over 20,000 objects. Without them, the app falls back to CelesTrak (~5,000 active satellites).
+Stored in the browser (`localStorage`, key `orbitview-v4`), never sent
+anywhere:
 
-## ⚙️ Application Settings (In-App)
+| Setting | Default |
+|---|---|
+| Language | from the browser, Turkish or English |
+| Appearance | follows the system (light / dark) |
+| Times shown in | UTC (or local time) |
+| Location | not set — used for passes, look angles and Doppler |
+| Elevation mask | 10° |
+| Map | satellite imagery (or a dark map) |
+| Orbit, ground track, coverage circle, day/night shading | on |
+| Slow rotation when idle | off |
 
-Users can customize their experience through the **Settings Panel** (Gear icon):
+Favourites and the selected filter are stored the same way.
 
-### 🌍 Visualization
-- **Show Orbits**: Toggle rendering of orbital paths (performance impact: Medium).
-- **Show Labels**: Display satellite names next to their positions (performance impact: Low).
-- **Show Ground Track**: Toggle the sub-satellite point track (performance impact: Low).
-- **Enable Lighting**: Use real-time Sun position for globe lighting (performance impact: High).
-- **Enable Atmosphere**: Use high-fidelity atmospheric scattering (performance impact: High).
+## Links
 
-### ⚡ Performance
-- **Max Satellites**: Limit the number of satellites rendered simultaneously.
-- **Orbit Path Quality**: Step size for orbit lines (Lower = Faster).
+| Parameter | Example | |
+|---|---|---|
+| `sat` | `?sat=25544` | open with this NORAD catalog number selected |
+| `t` | `?t=2026-10-14T03:40Z` | start the simulation at this moment (any ISO 8601 time) |
 
-## 🔬 Scientific Calibration
+"Copy link" in the Data card produces both.
 
-Parameters for scientific models are located in `src/lib/`:
+## Security headers
 
-- **Atmospheric Model**: Scaling factors for drag are in `src/lib/OrbitalDecay.ts`.
-- **Pass Prediction**: Default minimum elevation is set to 10° in `src/lib/PassPrediction.ts`.
-- **Conjunction Risk**: Thresholds for "High Risk" are defined in `src/lib/ConjunctionAnalysis.ts`.
-
----
-
-## 👨‍💻 Developer Attribution
-
-Configured and documented by **Mehmet Gümüş**.
-🌐 [spacegumus.com.tr](https://spacegumus.com.tr)
-
-*Last Updated: 2026-02-12*
+Set in `next.config.ts`, so they apply both locally and on Vercel:
+`X-Content-Type-Options`, `X-Frame-Options: DENY`, `Referrer-Policy`, a
+`Permissions-Policy` that allows only geolocation and the motion sensors, and
+in production a Content Security Policy. The CSP allows Esri tiles, NOAA SWPC
+and Cesium's workers; it needs `'unsafe-eval'` and `'wasm-unsafe-eval'`
+because Cesium compiles WebAssembly decoders and one of its dependencies uses
+`eval`.

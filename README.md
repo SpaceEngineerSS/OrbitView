@@ -1,275 +1,195 @@
-# OrbitView 🛰️
+<p align="center">
+  <img src="public/favicon.svg" width="72" height="72" alt="">
+</p>
 
-<div align="center">
-  <img src="public/og-image.png" alt="OrbitView - Satellite Tracking" width="800">
-  
-  > **Advanced 3D Satellite Tracking & Orbital Mechanics Platform**  
-  > Real-time visualization, pass prediction, and conjunction analysis powered by CesiumJS and SGP4.
-  
-  [![MIT License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-  [![Next.js](https://img.shields.io/badge/Next.js-15-black?logo=next.js)](https://nextjs.org/)
-  [![CesiumJS](https://img.shields.io/badge/CesiumJS-1.135-green)](https://cesium.com/)
-  [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?logo=typescript)](https://www.typescriptlang.org/)
-  [![Vercel](https://img.shields.io/badge/Deploy-Vercel-black?logo=vercel)](https://orbitview-five.vercel.app)
-  [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
-  
-  [Live Demo](https://orbitview-five.vercel.app) · [Wiki](https://github.com/SpaceEngineerSS/OrbitVieW/wiki) · [Theory](THEORY.md) · [Report Bug](https://github.com/SpaceEngineerSS/OrbitView/issues)
-</div>
+<h1 align="center">OrbitView</h1>
 
----
+<p align="center">
+  Every tracked satellite on a 3D globe, with your passes, Doppler and orbit in one place.<br>
+  <a href="https://orbitview-five.vercel.app"><b>orbitview-five.vercel.app</b></a> · <a href="README.tr.md">Türkçe</a>
+</p>
 
-## 📸 Showcase
+<p align="center">
+  <img src="docs/img/desktop-iss.webp" alt="OrbitView with the ISS selected while it is overhead and visible from Istanbul" width="900">
+</p>
 
-| Desktop Command Center | Mobile Pocket Lab |
-|:---:|:---:|
-| ![Desktop](public/screenshots/desktop-preview.png) | ![Mobile](public/screenshots/mobile-preview.png) |
+I built OrbitView because I wanted one place where I could see where a satellite
+is, when it will pass over me, whether I'll be able to see it, and what
+frequency to tune to — without four browser tabs and a spreadsheet. It runs
+entirely in the browser: the public catalog is propagated with SGP4 on your
+machine, so the numbers on screen are computed, not looked up.
 
-<div align="center">
-  <p><b>Scientific Satellite Tracker & Orbital Analysis</b></p>
-  <p><i>Responsive, High-Performance, and Mobile-First</i></p>
-</div>
+Version 4 is a rewrite of most of the app. The physics got a careful second
+look (and a few real fixes, listed below), and the interface was redesigned
+from scratch.
 
----
+## What it does
 
-## ✨ Features
+- **Live catalog.** The active satellites (and, with a Space-Track account, the
+  full catalog including debris) drawn on a 3D globe and updated 20 times a
+  second. Colour shows the orbit: low Earth orbit in sky blue, MEO teal, GEO
+  violet, highly elliptical pink, stations yellow.
+- **Passes over you.** For any object, the passes in the next 48 hours from
+  your location: rise and set times to half a second, maximum elevation,
+  direction, and whether you'll actually see it (satellite in sunlight, your sky
+  dark). A strip shows all of them at once, with night shaded.
+- **What matters now.** The first card changes with the situation:
+  *overhead now, sets in 3 min*; *visible pass at 21:42, up to 63°*; or simply
+  the next pass.
+- **Doppler.** Received frequency and shift for common downlinks (ISS voice and
+  APRS, NOAA APT, Meteor LRPT, GPS L1, Ku band) or any frequency you type, plus
+  the shift curve across the next pass.
+- **Orbit.** Mean elements, perigee/apogee, period, inclination and how old the
+  element set is.
+- **Lifetime.** A rough decay estimate from the TLE drag term, with a range
+  for solar activity and the current space weather from NOAA.
+- **Close approaches.** Screens the loaded catalog for objects that come within
+  5–25 km in the next 12–72 hours, with time of closest approach and relative
+  speed.
+- **Time travel.** Play, pause, ×10 to ×1000, jump by hours or drag the
+  scrubber. Pass markers sit on the scrubber so you can drag straight to one.
+- **Ephemeris export.** CSV or JSON from the simulation time, with the TLE and
+  elements it came from.
+- **Sky view on phones.** Point the phone at the sky; the view follows the
+  compass and tilt sensors from your location.
+- Light and dark appearance, Turkish and English, keyboard shortcuts, and links
+  that open a specific object at a specific moment (`?sat=25544&t=2026-10-14T03:40Z`).
 
-### 📱 v3.0 Mobile Native Evolution (NEW)
-- **Pocket Lab Interface**: A native-app-like mobile UI shell (`MobileAppShell`) locked to `100dvh` to prevent browser bounce and safe-area overlap.
-- **Native Snapping Sheet**: A gesture-driven bottom sheet using `framer-motion` with 3 snapping heights: Tier 1 (Preview), Tier 2 (Split Tracker), and Tier 3 (Full Scientific Lab).
-- **Ankara Command Deck**: Integrated Doppler frequency shift analysis, space solar weather decay metrics, and visible overhead pass predictions relative to Ankara coordinates.
-- **Haptic & Scrubber integration**: Translucent timeline play/pause controller with speed cycling and haptic triggers.
-- **Hardware-Aware Profiling**: Dynamically downscales globe details and satellite load on lower-tier mobile hardware to secure 60fps rendering.
+<p align="center">
+  <img src="docs/img/mobile-iss.webp" width="250" alt="Phone: selected satellite">
+  &nbsp;
+  <img src="docs/img/mobile-passes.webp" width="250" alt="Phone: pass details and sky plot">
+  &nbsp;
+  <img src="docs/img/mobile-iss-dark.webp" width="250" alt="Phone: dark appearance">
+</p>
 
-### 🎨 v3.0 ORBITAL GLASS Design System
-- 🖥️ **Pure HSL Glassmorphic CSS Variables** — Frosted glass panels and neon spatial theme color tokens (uplink cyan, orbit gold) decoupled from Tailwind.
-- ⏱️ **Adaptive Timeline** — Context-aware time scrubber that adjusts positions to prevent component clashing.
-- 🎥 **Satellite Cockpit View (POV)** — Camera locked to the velocity vector with smooth Quaternion rotations.
-- 🔬 **Scientific Modals & Bottom Sheets** — Mobile-first scientific lab cards with premium frosted backgrounds and high contrast readability.
+## How accurate is it?
 
-### ⚡ v2.0 Performance
-- 🛰️ **Real-time SGP4 Propagation** — Web Worker-driven batch processing for 25,000+ satellites at 60 FPS
-- 🧮 **Spatial Hashing Collision Engine** — O(N) link calculation with 1000km³ grid cells
-- 🌍 **High-Fidelity Inertial Orbit Rendering** — Fixed GMST algorithm shows true Kepler rings
-- ⚡ **Offline-First Architecture** — IndexedDB caching with Stale-While-Revalidate
-- 📦 **OTA Payload Minification** — Server-side TLE parsing and comment/whitespace stripping reduces network overhead by ~40% for mobile connections
-- 📊 **Scientific Data Export** — TLE, CSV, and JSON format export for research
+As accurate as the input. TLEs fitted by the 18th Space Defense Squadron give
+positions good to about a kilometre near their epoch for low orbits, and the
+error grows by a few kilometres per day. OrbitView shows the age of every
+element set and warns when it's more than two weeks old.
 
-### 🌍 Core Features
-- 🌍 **Interactive 3D Globe** — Real-time visualization of 25,000+ satellites and space objects
-- 🔬 **Scientific Analysis** — Doppler shift, orbital decay, conjunction analysis, pass prediction
-- 🛰️ **Professional TLE Hub** — Multi-source fallback (Space-Track, CelesTrak, AMSAT)
-- ☀️ **Eclipse Detection** — Real-time sunlight/shadow status for all objects
-- ⛓️ **Deep Linking** — Share specific satellites via URL (e.g., `?sat=25544`)
-- ⏱️ **Time Travel** — Simulate orbits at any point in history or future
-- 🔭 **Scientific Tool Suite** — Pass prediction, Skyplot polar view, Orbital decay analysis & Doppler calculator
-- 🧭 **AR Compass Mode** — Use device orientation to spot satellites in the sky
-- ⌨️ **Power User Tools** — Keyboard shortcuts, analyst mode, and TLE exporting
-- ⭐ **Favorites System** — Save and quickly access your favorite satellites
+That's plenty for planning an observation or pointing a handheld antenna. It's
+not good enough for operations; the close-approach screen in particular is a
+"worth a look" list, not a collision prediction. Refraction isn't modelled, so
+very low passes rise slightly earlier than shown.
 
----
+What I did check is that the app doesn't add errors of its own. The test suite
+compares every calculation against an independent reference:
 
-## 🚀 Quick Start
+| Check | Reference | Tolerance |
+|---|---|---|
+| Sidereal time | `satellite.gstime` across a whole day | 1e-12 rad |
+| Doppler range rate | numerical derivative of the range | < 1 m/s |
+| Geostationary Doppler | near zero by definition | < 20 m/s |
+| Rise / set times | 1-second brute-force scan | ± 2 s |
+| Culmination | 5-second scan of the pass | no higher sample |
+| Close approach | twin orbit with a known offset | found, < 5 km |
 
-### Prerequisites
+More detail in [THEORY.md](THEORY.md) and [docs/validation.md](docs/validation.md).
 
-- Node.js 18+ 
-- npm or yarn
+### Fixed in 4.0
 
-### Installation
+Three things in earlier versions were wrong, and I'd rather say so:
+
+- **Doppler** used the inertial velocity rotated into the Earth-fixed frame but
+  left out the Earth's rotation (the ω × r term). For a LEO satellite that is up
+  to 0.4 km/s of range rate, about 200 Hz at 145.8 MHz.
+- **Sidereal time** counted the time of day twice, up to about 1° by the end of
+  each UTC day.
+- **The neighbour search** for inter-satellite links missed most pairs between
+  1000 and 2500 km. It drew nothing in the interface, so it's gone; close
+  approaches now use a proper screening method instead.
+
+## How it works
+
+<p align="center"><img src="docs/img/architecture.svg" alt="Architecture: data sources, the /api/tle route, main thread, worker and Cesium viewer" width="860"></p>
+
+- **Data.** `/api/tle` fetches element sets from Space-Track (if configured) or
+  CelesTrak, caches each group for two hours, sets CDN cache headers and never
+  passes off stale data as fresh. The browser keeps the last good catalog in
+  IndexedDB and refreshes it in the background.
+- **Propagation.** A Web Worker runs SGP4 (satellite.js) over the whole catalog
+  and hands back a `Float32Array` of Earth-fixed positions; the buffer goes back
+  and forth so nothing is allocated per frame. Pass searches and close-approach
+  screening also run in the worker.
+- **Selected object.** Propagated on the main thread once a second, so its
+  velocity, look angles and Doppler are exact rather than interpolated.
+- **Time.** Cesium's clock is the master. The interface only sends user actions
+  (seek, speed, play) to it, and reads the time back a few times a second.
+
+Built with Next.js 16, React 19, CesiumJS, satellite.js, zustand, Motion and
+Tailwind CSS.
+
+## Running it locally
 
 ```bash
-# Clone the repository
-git clone https://github.com/SpaceEngineerSS/OrbitVieW.git
-cd orbitview
-
-# Install dependencies
-npm install
-
-# Set up environment variables
-cp .env.example .env.local
-# Add your Cesium Ion access token to .env.local
-
-# Start development server
+git clone https://github.com/SpaceEngineerSS/OrbitView.git
+cd OrbitView
+npm install        # also copies Cesium's static files into public/cesium
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) to see the app.
+Then open http://localhost:3000.
 
-### Environment Variables
+Without any configuration it uses CelesTrak's *stations* and *active* groups
+(about 16,000 objects). For the full catalog, add a free
+[Space-Track](https://www.space-track.org) account in `.env.local`:
 
-```env
-NEXT_PUBLIC_CESIUM_ACCESS_TOKEN=your_cesium_token_here
+```bash
+SPACETRACK_USER=you@example.com
+SPACETRACK_PASS=your-password
 ```
 
-Get your free Cesium Ion token at [cesium.com/ion](https://cesium.com/ion/).
+CelesTrak limits how often the same data can be downloaded from one address
+(roughly once every two hours per group). The server caches for that long; if
+you restart the dev server repeatedly you may see a "showing older data" note
+until the limit resets.
 
----
+| Command | What it does |
+|---|---|
+| `npm run dev` | development server |
+| `npm run build && npm start` | production build |
+| `npm test` | Jest suite (science, data layer, API route) |
+| `npm run check` | type check, lint and tests together |
+| `npm run docs:snap` | retake the screenshots in `docs/img` (needs the dev server) |
+| `npm run brand` | regenerate icons and the social preview from one SVG |
 
-## 🛠️ Tech Stack
+More in [docs/INSTALLATION.md](docs/INSTALLATION.md),
+[docs/CONFIGURATION.md](docs/CONFIGURATION.md) and
+[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
-| Technology | Purpose |
-|------------|---------|
-| [Next.js 15](https://nextjs.org/) | React framework with App Router & Turbopack |
-| [CesiumJS](https://cesium.com/) + [Resium](https://resium.reearth.io/) | 3D globe visualization |
-| [satellite.js](https://github.com/shashwatak/satellite-js) | SGP4/SDP4 orbital propagation |
-| [Zustand](https://zustand-demo.pmnd.rs/) | High-performance state management |
-| [Web Workers](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API) | Spatial Hashing physics engine |
-| [TailwindCSS](https://tailwindcss.com/) | Utility-first CSS |
-| [Framer Motion](https://www.framer.com/motion/) | Animations |
-| [Native IndexedDB](https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API) | Offline caching |
-| [Puppeteer](https://pptr.dev/) | Automated Documentation Screenshots |
-
----
-
-## 📖 Documentation
-
-### Project Structure
+## Project layout
 
 ```
 src/
-├── app/                 # Next.js App Router pages
-├── components/
-│   ├── Globe/          # Cesium globe & satellite rendering
-│   ├── HUD/            # Heads-up display components
-│   ├── Scientific/     # Analysis dashboards
-│   └── layout/         # Responsive layouts (MobileNavBar, InspectorPanel)
-├── lib/                # Core calculations
-│   ├── DopplerCalculator.ts
-│   ├── OrbitalDecay.ts
-│   ├── ConjunctionAnalysis.ts
-│   └── PassPrediction.ts
-├── hooks/              # Custom React hooks
-├── workers/            # Web Workers for heavy computation
-└── store/              # Zustand state management
+  app/            Next.js app router, /api/tle, layout and global styles
+  components/
+    analysis/     the inspector cards (passes, Doppler, orbit, lifetime …)
+    globe/        Cesium viewer and its layers
+    desktop/      desktop layout
+    mobile/       phone layout and the bottom sheet
+    common/       search, time controls, dialogs
+    ui/           buttons, cards, switches, animated numbers
+  lib/            orbit maths, pass search, Doppler, decay, catalog, data layer
+  workers/        the propagation worker
+  store/          zustand stores (app, time, telemetry, UI)
+messages/         en.json, tr.json
+scripts/          Cesium copy, screenshots, brand assets
 ```
 
-### ⌨️ Keyboard Shortcuts
+## Credits
 
-| Key | Action |
-|-----|--------|
-| `/` | Focus search |
-| `F` | Toggle favorite |
-| `R` | Random satellite |
-| `Space` | Toggle play/pause |
-| `Escape` | Close panels |
-| `?` | Show shortcuts |
-| `A` | Toggle Analyst Mode |
+Orbital data from [CelesTrak](https://celestrak.org) (T.S. Kelso) and
+[Space-Track.org](https://www.space-track.org). Space weather from
+[NOAA SWPC](https://www.swpc.noaa.gov). Map tiles © Esri and its data
+providers. SGP4 by [satellite.js](https://github.com/shashwatak/satellite-js),
+globe by [CesiumJS](https://cesium.com/platform/cesiumjs/).
 
-### Scientific Features
+## License
 
-| Feature | Description |
-|---------|-------------|
-| **Doppler Shift** | Calculate frequency shifts for satellite radio signals based on relative velocity |
-| **Orbital Decay** | Estimate satellite lifetime using atmospheric drag models and B* coefficients |
-| **Conjunction Analysis** | Analyze close approach events between space objects with risk assessment |
-| **Pass Prediction** | Predict when satellites will be visible from your location with sky plots |
+MIT. See [LICENSE](LICENSE). Issues and pull requests are welcome — see
+[CONTRIBUTING.md](CONTRIBUTING.md).
 
----
-
-## 🌐 Data Sources
-
-| Source | Purpose |
-|--------|---------|
-| **[Space-Track.org](https://space-track.org)** | Official source for 25,000+ active payload and debris TLEs |
-| **[CelesTrak](https://celestrak.org)** | Secondary mirror and supplemental data provider |
-| **[NASA Horizons](https://ssd.jpl.nasa.gov/horizons/)** | High-precision ephemeris for deep space missions (JWST) |
-| **[SatNOGS](https://satnogs.org)** | Real-time frequency and communication metadata |
-
----
-
-## 🔬 Scientific Foundation & Validation
-
-OrbitView is engineered with high-fidelity astrodynamic models to ensure research-grade accuracy.
-
-### Core Models
-- **Propagation**: High-precision **SGP4/SDP4** models considering Earth's oblateness (J2-J4), atmospheric drag ($B^*$), and deep-space perturbations
-- **Orbit Rendering**: **Fixed GMST** inertial frame rendering for true Kepler orbit visualization
-- **Atmospheric Model**: Optimized exponential decay model correlated with real-time $B^*$ terms
-- **Signal Analysis**: Relativistic Doppler shift calculations based on ITRF radial velocity vectors
-
-### 📊 Validation Benchmarks
-
-| Parameter | Modelled Accuracy | Benchmark Source | Status |
-|-----------|-------------------|------------------|--------|
-| **LEO Propagation** | ~1-3 km (1-day) | NAVSTAR GPS (Post-Fit) | ✅ Validated |
-| **Pass Prediction** | ±5 seconds (AOS/LOS) | ISS (Zarya) TLE Observations | ✅ Validated |
-| **Doppler Shift** | ±5 Hz @ 435 MHz | SatNOGS Network Telemetry | ✅ Validated |
-| **Orbital Decay** | ±15% (Altitude < 400km) | NRLMSISE-00 High-Fidelity | ✅ Validated |
-
-> For in-depth analysis and methodology, see **[THEORY.md](THEORY.md)**
-
----
-
-## 🗺️ Scientific Roadmap
-
-| Phase | Timeline | Feature |
-|-------|----------|---------|
-| **Phase 1** | Q1 2026 | TLE History Analysis — Track orbital changes over time |
-| **Phase 2** | Q2 2026 | Maneuver Detection — Identify impulsive maneuvers via TLE residuals |
-| **Phase 3** | Q3 2026 | High-Fidelity Shadow Model — Penumbra/Umbra atmospheric refraction |
-| **Phase 4** | Q4 2026 | Space Weather Integration — Real-time F10.7 solar flux for dynamic density |
-
----
-
-## 🧪 Testing
-
-```bash
-# Run all tests
-npm test
-
-# Run with coverage
-npm run test:coverage
-
-# Type checking
-npm run type-check
-
-# Generate Documentation Screenshots
-node scripts/capture-screens.mjs
-```
-
----
-
-## 🤝 Contributing
-
-Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
----
-
-## 👨‍💻 Developer & Attribution
-
-This project was developed by **Mehmet Gümüş**.
-
-🌐 **Website:** [spacegumus.com.tr](https://spacegumus.com.tr)  
-🐙 **GitHub:** [OrbitVieW](https://github.com/SpaceEngineerSS/OrbitVieW)  
-𝕏 **X (Twitter):** [@persesmg](https://x.com/persesmg)  
-📧 **Email:** [contact@spacegumus.com.tr](mailto:contact@spacegumus.com.tr)
-
----
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- [CelesTrak](https://celestrak.org/) — TLE data source
-- [CesiumJS](https://cesium.com/) — 3D globe engine
-- [satellite.js](https://github.com/shashwatak/satellite-js) — SGP4 implementation
-
----
-
-## 🚀 Live Demo
-
-**[orbitview-five.vercel.app](https://orbitview-five.vercel.app)**
-
----
-
-<div align="center">
-  Made with ❤️ for space enthusiasts | v2.3.0 | Last updated: 2026-02-12
-</div>
+— Mehmet Gümüş · [spacegumus.com.tr](https://spacegumus.com.tr)

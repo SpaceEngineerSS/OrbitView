@@ -19,6 +19,7 @@ export function useElements(obj: SpaceObject | null): OrbitalElements | null {
 }
 
 const PASS_WINDOW_MS = 48 * 3600_000;
+const LOOKBACK_MS = 30 * 60_000;
 
 /**
  * Passes over the observer for the next 48 h of simulation time.
@@ -55,8 +56,9 @@ export function usePasses(obj: SpaceObject | null, observer: Observer | null): A
         }
         let cancelled = false;
         setState({ status: "loading", data: null, error: null });
+        // Start a little before "now" so a pass already in progress keeps its real rise time.
         getEngine()
-            .passes(obj.id, observer, new Date(anchor), new Date(anchor + PASS_WINDOW_MS), minEl)
+            .passes(obj.id, observer, new Date(anchor - LOOKBACK_MS), new Date(anchor + PASS_WINDOW_MS), minEl)
             .then((passes) => { if (!cancelled) setState({ status: "ready", data: passes, error: null }); })
             .catch((e: Error) => { if (!cancelled) setState({ status: "error", data: null, error: e.message }); });
         return () => { cancelled = true; };

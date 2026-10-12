@@ -18,7 +18,7 @@ const MAX_ENTRIES = {
 const PRECACHE_ASSETS = [
     '/icon-192x192.png',
     '/icon-512x512.png',
-    '/orbitview-logo.png',
+    '/favicon.svg',
 ];
 
 const OFFLINE_HTML = `<!doctype html>
@@ -27,12 +27,14 @@ const OFFLINE_HTML = `<!doctype html>
 <title>OrbitView - Offline</title>
 <style>
 body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;
-background:#0a0a0a;color:#e2e8f0;font-family:system-ui,-apple-system,sans-serif;text-align:center;padding:16px}
-button{margin-top:16px;padding:8px 16px;border-radius:6px;border:1px solid #0891b2;background:transparent;color:#22d3ee;cursor:pointer}
+background:#eef0f5;color:#101218;font-family:system-ui,-apple-system,sans-serif;text-align:center;padding:16px}
+main{background:#fff;border-radius:24px;padding:28px;max-width:340px;box-shadow:0 14px 36px rgba(16,18,24,.14)}
+h1{font-size:20px;margin:0 0 8px}p{color:#636878;margin:0}
+button{margin-top:18px;height:40px;padding:0 18px;border-radius:999px;border:0;background:#3466f2;color:#fff;font-weight:600;cursor:pointer}
 </style></head>
 <body><main><h1>You are offline</h1>
-<p>OrbitView needs a network connection to load this page.</p>
-<button onclick="location.reload()">Retry</button></main></body></html>`;
+<p>OrbitView needs a connection to load. / OrbitView'i açmak için bağlantı gerekiyor.</p>
+<button onclick="location.reload()">Retry / Tekrar dene</button></main></body></html>`;
 
 self.addEventListener('install', (event) => {
     event.waitUntil(

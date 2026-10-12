@@ -1,44 +1,40 @@
-# OrbitView FAQ (Frequently Asked Questions)
+# FAQ
 
-## 📡 General Questions
+**Why is the next pass listed as "radio only"?**
+The satellite is above your horizon but either in Earth's shadow or passing
+in daylight, so you won't see it with your eyes. You can still hear it if it
+transmits. Visible passes are green.
 
-### What is OrbitView?
-OrbitView is a professional-grade satellite tracking and orbital analysis platform designed for space enthusiasts, researchers, and satellite operators.
+**The pass time is a few seconds off from another site.**
+Small differences come from different element sets (they're updated several
+times a day), a different elevation mask, or refraction, which OrbitView
+doesn't model. Check that both use the same TLE epoch — it's in the Orbit card.
 
-### Where does the data come from?
-Data is primary sourced from **Space-Track.org** (via Joint Space Operations Center), **CelesTrak**, and **NASA Horizons**.
+**Why does the lifetime estimate say 8 years for the ISS?**
+Because the estimate assumes no reboosts. The ISS and Starlink satellites
+manoeuvre, so their real lifetime has nothing to do with drag alone. The
+number is meaningful for passive objects: debris, rocket bodies, dead
+satellites.
 
-### How accurate are the satellite positions?
-Satellite positions are calculated using the SGP4/SDP4 propagation model based on current TLE data. Accuracy is typically within 1-5 km. For more details, see [THEORY.md](../THEORY.md).
+**Is the close-approach list a collision warning?**
+No. It's a screen using TLEs, which are uncertain by a kilometre or more and
+come without covariance. Treat a small miss distance as "interesting", not
+"dangerous".
 
-## 🛰️ Using OrbitView
+**Where does my location go?**
+Nowhere. It is stored in your browser and used for calculations in your
+browser. The server only ever sees requests for TLE data.
 
-### How do I track a specific satellite?
-Use the search bar in the sidebar or append `?sat=NORAD_ID` to the URL.
+**Does it work offline?**
+Partly. If you've opened it before, the service worker serves the cached
+pages and scripts, and the last catalog is in IndexedDB, so it usually opens
+and propagates without a connection. Map tiles you haven't seen before won't load,
+and the catalog gets older until you're back online — the age is always shown.
 
-### What is "Analyst Mode"?
-Analyst Mode unlocks advanced scientific dashboards, including Doppler shift analysis, orbital decay prediction, and conjunction analysis.
+**Why do my numbers use commas?**
+In Turkish, numbers are written with a decimal comma (7,66 km/s). Switch the
+language in Settings if you prefer the other style.
 
-### Can I use OrbitView on my phone?
-Yes! OrbitView is a Progressive Web App (PWA) and is fully responsive. You can even use the **AR Compass Mode** on mobile devices to point your phone at the sky and see satellite positions.
-
-## 🛠️ Technical Troubleshooting
-
-### The satellites are not loading.
-Ensure you have a stable internet connection. If the official Space-Track API is down, OrbitView automatically falls back to CelesTrak and AMSAT mirrors.
-
-### AR Compass mode is not working.
-Ensure your device has a magnetometer and gyroscope, and that you have granted permission for "Motion & Orientation" access in your browser.
-
-### How can I contribute?
-Check our [Contributing Guide](../CONTRIBUTING.md) on GitHub.
-
----
-
-## 👨‍💻 Developer
-
-**Mehmet Gümüş**  
-🌐 [spacegumus.com.tr](https://spacegumus.com.tr)  
-🐙 [@SpaceEngineerSS](https://github.com/SpaceEngineerSS)
-
-*Last Updated: 2026-02-12*
+**Can I use the data in my own project?**
+The code is MIT-licensed. The orbital data comes from CelesTrak and
+Space-Track; check their terms if you redistribute it.

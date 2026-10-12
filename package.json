@@ -29,7 +29,8 @@
     "test:coverage": "jest --coverage",
     "docs:snap": "node scripts/capture-screens.mjs",
     "postinstall": "node scripts/copy-cesium.mjs",
-    "check": "tsc --noEmit && eslint && jest"
+    "check": "tsc --noEmit && eslint && jest",
+    "brand": "node scripts/render-brand.mjs"
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.10",
