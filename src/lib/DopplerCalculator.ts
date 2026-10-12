@@ -227,31 +227,3 @@ export const COMMON_FREQUENCIES = {
     IRIDIUM: 1_626_000_000,        // Iridium - 1626 MHz
 };
 
-/**
- * Format frequency for display
- */
-export function formatFrequency(freqHz: number): string {
-    if (freqHz >= 1_000_000_000) {
-        return `${(freqHz / 1_000_000_000).toFixed(6)} GHz`;
-    } else if (freqHz >= 1_000_000) {
-        return `${(freqHz / 1_000_000).toFixed(6)} MHz`;
-    } else if (freqHz >= 1_000) {
-        return `${(freqHz / 1_000).toFixed(3)} kHz`;
-    }
-    return `${freqHz.toFixed(1)} Hz`;
-}
-
-/**
- * Format Doppler shift for display
- */
-export function formatDopplerShift(shiftHz: number): string {
-    const absShift = Math.abs(shiftHz);
-    const sign = shiftHz >= 0 ? '+' : '-';
-
-    if (absShift >= 1_000_000) {
-        return `${sign}${(absShift / 1_000_000).toFixed(3)} MHz`;
-    } else if (absShift >= 1_000) {
-        return `${sign}${(absShift / 1_000).toFixed(3)} kHz`;
-    }
-    return `${sign}${absShift.toFixed(1)} Hz`;
-}

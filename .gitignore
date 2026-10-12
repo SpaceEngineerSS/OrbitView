@@ -42,15 +42,8 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# Antigravity agent files
-.agent/
-
-# Build logs and temporary files
-build.log
-build_result.txt
-build_utf8*.txt
-lint-errors.txt
-lint-output.txt
+# compiler caches
+.swc/
 
 # Local certificates
 certificates/
