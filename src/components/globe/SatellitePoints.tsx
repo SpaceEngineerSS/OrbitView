@@ -9,7 +9,7 @@ import { useTimelineStore } from "@/store/timelineStore";
 import { usePerfStore, isLowPower } from "@/store/perfStore";
 import { useSatcatStore, matchesCountry } from "@/store/satcatStore";
 import { getEngine } from "@/lib/propagation";
-import { frameInterval } from "@/lib/frameMath";
+import { frameInterval, readPosition } from "@/lib/frameMath";
 import { matchesFilter, regimeColor, isStation } from "@/lib/catalog";
 import type { SpaceObject } from "@/lib/space-objects";
 import { getSatrec, stateAt, lookAngles } from "@/lib/orbit";
@@ -95,10 +95,7 @@ export default function SatellitePoints() {
         if (!labels) return;
         for (let k = 0; k < labels.length; k++) {
             const l = labels.get(k);
-            const i = indexRef.current.get(l.id as string);
-            const x = i === undefined ? NaN : pos[i * 3];
-            if (x === x) {
-                scratch.x = x; scratch.y = pos[i! * 3 + 1]; scratch.z = pos[i! * 3 + 2];
+            if (readPosition(pos, indexRef.current.get(l.id as string), scratch)) {
                 l.position = scratch;
                 l.show = true;
             } else l.show = false;
@@ -114,9 +111,7 @@ export default function SatellitePoints() {
             const i = list[k];
             if (i >= n) continue;
             const p = points.get(i);
-            const x = pos[i * 3];
-            if (x === x) {
-                scratch.x = x; scratch.y = pos[i * 3 + 1]; scratch.z = pos[i * 3 + 2];
+            if (readPosition(pos, i, scratch)) {
                 p.position = scratch;
                 if (!p.show) p.show = true;
             } else if (p.show) p.show = false;
@@ -211,7 +206,9 @@ export default function SatellitePoints() {
         };
         if (!pov) add(selectedId);
         if (hoveredId !== selectedId) add(hoveredId);
-        if (lastPosRef.current) placeLabels(lastPosRef.current);
+        // The last buffer may already be on its way back to the worker
+        // (detached, empty); then the labels appear with the next frame.
+        if (lastPosRef.current?.length) placeLabels(lastPosRef.current);
         viewer.scene.requestRender();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [viewer, selectedId, hoveredId, pov]);
