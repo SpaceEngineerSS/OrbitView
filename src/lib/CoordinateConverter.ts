@@ -170,36 +170,48 @@ export function calculateSunPosition(date: Date): ECFCoordinates {
     return eciToEcf(eci, date);
 }
 
+const SUN_RADIUS_KM = 696_000;
+
+export type ShadowState = 'sunlit' | 'penumbra' | 'umbra';
+
 /**
- * Determine if a satellite is currently sunlit or in Earth's shadow.
- * Uses a simplified cylindrical shadow model.
- * 
- * @param satelliteEcf - Satellite position in ECF (km)
- * @param sunEcf - Sun position in ECF (km)
- * @returns boolean - True if sunlit, false if in shadow
+ * Where a satellite is relative to the Earth's shadow: a cone (umbra) inside
+ * a wider cone (penumbra), both set by the Sun's and Earth's radii and the
+ * Sun's distance. Vallado (2013), Algorithm 34 (SHADOW).
+ *
+ * The Earth is a sphere of equatorial radius and the atmosphere is not
+ * allowed for; at ISS height the umbra edge is placed to within a few
+ * seconds of flight.
+ *
+ * @param satelliteEcf - Satellite position, km (any Earth-centred frame)
+ * @param sunEcf - Sun position in the same frame, km
+ */
+export function shadowState(satelliteEcf: ECFCoordinates, sunEcf: ECFCoordinates): ShadowState {
+    const rSun = Math.hypot(sunEcf.x, sunEcf.y, sunEcf.z);
+    const rSat = Math.hypot(satelliteEcf.x, satelliteEcf.y, satelliteEcf.z);
+    // Component of the satellite position along the Sun direction
+    const along = (satelliteEcf.x * sunEcf.x + satelliteEcf.y * sunEcf.y + satelliteEcf.z * sunEcf.z) / rSun;
+    if (along >= 0) return 'sunlit'; // day side of the terminator plane
+
+    const behind = -along;                                         // distance behind the Earth, along the shadow axis
+    const off = Math.sqrt(Math.max(0, rSat * rSat - along * along)); // distance from the shadow axis
+
+    const re = WGS84.a;
+    const alphaPen = Math.asin((SUN_RADIUS_KM + re) / rSun);
+    const alphaUmb = Math.asin((SUN_RADIUS_KM - re) / rSun);
+
+    // Penumbra cone widens away from the Sun, its apex on the Sun side of the Earth.
+    const penRadius = Math.tan(alphaPen) * (re / Math.sin(alphaPen) + behind);
+    if (off > penRadius) return 'sunlit';
+    // Umbra cone narrows to an apex ~1.4 million km behind the Earth.
+    const umbRadius = Math.tan(alphaUmb) * (re / Math.sin(alphaUmb) - behind);
+    return off <= umbRadius ? 'umbra' : 'penumbra';
+}
+
+/**
+ * True unless the satellite is in the umbra. In the penumbra part of the Sun
+ * is still in view and the satellite still shines, so it counts as sunlit.
  */
 export function isSatelliteSunlit(satelliteEcf: ECFCoordinates, sunEcf: ECFCoordinates): boolean {
-    const rSat = Math.sqrt(satelliteEcf.x ** 2 + satelliteEcf.y ** 2 + satelliteEcf.z ** 2);
-    const rSun = Math.sqrt(sunEcf.x ** 2 + sunEcf.y ** 2 + sunEcf.z ** 2);
-
-    // Unit vector towards Sun
-    const sunUnit = {
-        x: sunEcf.x / rSun,
-        y: sunEcf.y / rSun,
-        z: sunEcf.z / rSun
-    };
-
-    // Projection of satellite position onto Sun vector
-    const projection = satelliteEcf.x * sunUnit.x + satelliteEcf.y * sunUnit.y + satelliteEcf.z * sunUnit.z;
-
-    // If projection is positive, the satellite is on the day side of Earth
-    if (projection > 0) return true;
-
-    // If projection is negative, it's on the night side.
-    // Check if it's within the Earth's shadow cylinder.
-    // Distance from Earth-Sun line
-    const distanceSq = rSat ** 2 - projection ** 2;
-    const earthRadiusSq = WGS84.a ** 2;
-
-    return distanceSq > earthRadiusSq;
+    return shadowState(satelliteEcf, sunEcf) !== 'umbra';
 }

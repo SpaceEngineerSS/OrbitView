@@ -11,6 +11,10 @@
  * 2. When the sign of (elevation − minElevation) changes between two samples,
  *    bisect that interval down to 0.5 s to get AOS / LOS.
  * 3. Find the culmination with a golden-section search between AOS and LOS.
+ * 4. A short pass can rise above the mask and set again between two samples.
+ *    When three samples below the mask peak in the middle (and the peak is
+ *    within 15° of the mask), search that interval for the culmination; if it
+ *    clears the mask, bisect the rise and set on either side.
  *
  * A pass already in progress at `startTime` is reported with
  * `startsBeforeWindow = true`; one still in progress at `endTime` is followed
@@ -18,8 +22,10 @@
  * (e.g. a GEO satellite in view) is reported as a single pass covering the
  * window with both flags set.
  *
- * Visibility (optical): the satellite is sunlit and the observer's sun
- * elevation is below −6° (civil twilight) at culmination.
+ * Visibility (optical): at some moment of the pass the satellite is out of
+ * the Earth's umbra (conical shadow, see CoordinateConverter.shadowState)
+ * while the observer's Sun is below −6° (civil twilight). Checked every 30 s
+ * plus both ends and the culmination.
  *
  * References: Vallado (2013) ch. 11; Kelso, "Predicting Satellite Visibility",
  * Satellite Times 2(6), 1996. Refraction is not modelled.
@@ -103,6 +109,8 @@ function isVisibleDuring(rec: SatRec, obs: ObserverLocation, aos: number, los: n
 }
 
 const MAX_OVERRUN_MS = 6 * 3600_000;
+/** How far below the mask a sampled peak may be and still hide a pass. */
+const GRAZE_DEG = 15;
 
 export function predictPassesForSatrec(
     rec: SatRec,
@@ -119,6 +127,9 @@ export function predictPassesForSatrec(
 
     let prevT = start;
     let prev = sample(rec, observer, start);
+    // The sample before `prev`, to spot a peak that fell between two samples
+    let prev2: Sample | null = null;
+    let prev2T = start;
     let aos: number | null = prev && prev.el >= minElevation ? start : null;
     const startsBefore = aos !== null;
 
@@ -159,8 +170,25 @@ export function predictPassesForSatrec(
             } else if (wasAbove && !isAbove && aos !== null) {
                 const set = bisect(rec, observer, prevT, t, minElevation);
                 close(set, set > end);
+            } else if (!wasAbove && !isAbove && prev2 && prev2.el < minElevation
+                && prev.el > prev2.el && prev.el >= cur.el && prev.el > minElevation - GRAZE_DEG) {
+                // Three samples below the mask with a peak in the middle: a short
+                // pass may have risen above it between samples. Find the peak and,
+                // if it clears the mask, the crossings on either side.
+                const tMax = culminate(rec, observer, prev2T, t);
+                const peak = sample(rec, observer, tMax);
+                if (peak && peak.el >= minElevation) {
+                    const rise = bisect(rec, observer, prev2T, tMax, minElevation);
+                    if (rise <= end) {
+                        aos = rise;
+                        const set = bisect(rec, observer, tMax, t, minElevation);
+                        close(set, set > end);
+                    }
+                }
             }
         }
+        prev2 = prev;
+        prev2T = prevT;
         prev = cur;
         prevT = t;
     }
