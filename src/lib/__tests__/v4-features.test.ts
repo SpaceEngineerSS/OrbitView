@@ -1,6 +1,6 @@
 import * as satellite from 'satellite.js';
 import { staticTier, measuredTier, median } from '../deviceTier';
-import { propagateInto, frameInterval } from '../frameMath';
+import { propagateInto, frameInterval, readPosition } from '../frameMath';
 import { getSatrec, stateAt } from '../orbit';
 import { passToIcs, escapeText, fold } from '../ics';
 import { parseSatcatCsv, splitCsv, rowToInfo } from '../satcat';
@@ -161,5 +161,24 @@ describe('country filter', () => {
     it('hides nothing while the catalog is missing (v4.0 drew an empty globe)', () => {
         expect(matchesCountry('25544', 'TURK', null)).toBe(true);
         expect(matchesCountry('25544', null, null)).toBe(true);
+    });
+});
+
+describe('readPosition', () => {
+    const out = { x: 0, y: 0, z: 0 };
+    it('reads a valid position', () => {
+        expect(readPosition(new Float32Array([1, 2, 3, 4, 5, 6]), 1, out)).toBe(true);
+        expect(out).toEqual({ x: 4, y: 5, z: 6 });
+    });
+    it('rejects NaN, out-of-range and missing indices', () => {
+        expect(readPosition(new Float32Array([NaN, NaN, NaN]), 0, out)).toBe(false);
+        expect(readPosition(new Float32Array([1, 2, 3]), 1, out)).toBe(false);
+        expect(readPosition(new Float32Array([1, 2, 3]), undefined, out)).toBe(false);
+    });
+    it('treats a buffer handed back to the worker as empty (v4.0 stopped rendering)', () => {
+        const pos = new Float32Array([1, 2, 3]);
+        (pos.buffer as ArrayBuffer & { transfer(): ArrayBuffer }).transfer(); // detaches, like postMessage does
+        expect(pos.length).toBe(0);
+        expect(readPosition(pos, 0, out)).toBe(false);
     });
 });

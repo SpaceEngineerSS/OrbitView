@@ -32,6 +32,11 @@ from scratch.
   It drew nothing, so it was removed.
 
 ### Fixed — after release
+- The globe could stop rendering for good ("Rendering has stopped") when the
+  mouse moved over satellites while time was running. The hover label read
+  from the previous position buffer after it had been handed back to the
+  worker (an empty, detached buffer); the undefined coordinate made Cesium
+  give up. Positions are now read with bounds checks.
 - On repeat visits no satellite was drawn. The service worker cached the
   bundler's worker bootstrap, which tells workers apart only by its #fragment
   (ignored by the Cache API), so the position worker ran the analysis code.

@@ -34,6 +34,21 @@ export function propagateInto(out: Float32Array, list: ArrayLike<number>, record
     return failed;
 }
 
+/**
+ * Copy object `i` out of a position buffer into `out`. False when there is
+ * no usable position: propagation failed (NaN), the index is past the end,
+ * or the buffer is empty because it was handed back to the worker for the
+ * next frame (a transferred ArrayBuffer is detached and reads as length 0).
+ * Cesium stops rendering for good if it is given an undefined coordinate.
+ */
+export function readPosition(pos: Float32Array, i: number | undefined, out: { x: number; y: number; z: number }): boolean {
+    if (i === undefined || i < 0 || i * 3 + 2 >= pos.length) return false;
+    const x = pos[i * 3];
+    if (x !== x) return false;
+    out.x = x; out.y = pos[i * 3 + 1]; out.z = pos[i * 3 + 2];
+    return true;
+}
+
 export interface FrameRateInput {
     playing: boolean;
     multiplier: number;
