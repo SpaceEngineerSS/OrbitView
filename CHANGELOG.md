@@ -32,6 +32,11 @@ from scratch.
   It drew nothing, so it was removed.
 
 ### Fixed — after release
+- Earth's shadow is now a cone with umbra and penumbra (Vallado Alg. 34)
+  instead of a cylinder; shadow entry and exit move by a few seconds, and
+  penumbra counts as lit.
+- Short passes that rise above the elevation mask between two scan samples
+  are no longer missed (a 44-second ISS pass above 20° was).
 - The globe could stop rendering for good ("Rendering has stopped") when the
   mouse moved over satellites while time was running. The hover label read
   from the previous position buffer after it had been handed back to the

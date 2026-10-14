@@ -8,7 +8,7 @@ import { computeDoppler } from '../DopplerCalculator';
 import { getSatrec, stateAt, lookAngles, elementsFromTLE } from '../orbit';
 import { predictPassesForSatrec } from '../PassPrediction';
 import { parseBStar, predictOrbitalDecay, riskFromLifetime } from '../OrbitalDecay';
-import { calculateSunPosition, isSatelliteSunlit } from '../CoordinateConverter';
+import { calculateSunPosition, isSatelliteSunlit, shadowState } from '../CoordinateConverter';
 import { screenConjunctions, shellsOverlap } from '../ConjunctionAnalysis';
 
 const ISS1 = '1 25544U 98067A   23351.58334491  .00016717  00000-0  30142-3 0  9999';
@@ -144,6 +144,83 @@ describe('Pass visibility covers the whole pass, not only culmination', () => {
         }
         // The case v4.0 missed: sunlit part of the pass, but not at the peak.
         expect(partial).toBeGreaterThan(0);
+    });
+});
+
+describe('Earth shadow is a cone with a penumbra (v4.0 used a cylinder)', () => {
+    const sun = calculateSunPosition(new Date('2026-03-20T12:00:00Z'));
+    const rs = Math.hypot(sun.x, sun.y, sun.z);
+    const u = { x: sun.x / rs, y: sun.y / rs, z: sun.z / rs };
+    // A unit vector perpendicular to the Sun direction
+    const n0 = Math.hypot(u.y, u.x);
+    const perp = { x: -u.y / n0, y: u.x / n0, z: 0 };
+    const at = (behindKm: number, offKm: number) => ({
+        x: -u.x * behindKm + perp.x * offKm, y: -u.y * behindKm + perp.y * offKm, z: -u.z * behindKm + perp.z * offKm,
+    });
+
+    it('classifies day side, umbra and penumbra', () => {
+        expect(shadowState({ x: u.x * 6800, y: u.y * 6800, z: u.z * 6800 }, sun)).toBe('sunlit');
+        expect(shadowState(at(6800, 0), sun)).toBe('umbra');
+        // Behind the Earth the umbra narrows and the penumbra widens: at GEO
+        // distance their radii are about 6,184 and 6,576 km (Earth: 6,378).
+        expect(shadowState(at(42164, 6378.137 - 100), sun)).toBe('penumbra');
+        expect(shadowState(at(42164, 6378.137 + 100), sun)).toBe('penumbra');
+        expect(shadowState(at(42164, 6378.137 - 250), sun)).toBe('umbra');
+        expect(shadowState(at(42164, 6378.137 + 250), sun)).toBe('sunlit');
+    });
+
+    it('gives the ISS the expected umbra: a few seconds shorter than the cylinder', () => {
+        const rec = getSatrec(ISS1, ISS2);
+        let inUmbra = 0, inCylinder = 0;
+        for (let t = EPOCH.getTime(); t < EPOCH.getTime() + 93 * 60_000; t += 1000) {
+            const d = new Date(t);
+            const p = stateAt(rec, d)!.positionEcf;
+            const s = calculateSunPosition(d);
+            if (shadowState(p, s) === 'umbra') inUmbra++;
+            const sr = Math.hypot(s.x, s.y, s.z), along = (p.x * s.x + p.y * s.y + p.z * s.z) / sr;
+            if (along < 0 && p.x ** 2 + p.y ** 2 + p.z ** 2 - along ** 2 <= 6378.137 ** 2) inCylinder++;
+        }
+        expect(inUmbra).toBeGreaterThan(30 * 60);          // ~35 min of an orbit
+        expect(inCylinder - inUmbra).toBeGreaterThan(2);
+        expect(inCylinder - inUmbra).toBeLessThan(20);
+        expect(isSatelliteSunlit(at(6800, 6378.137 - 3), sun)).toBe(true); // penumbra counts as lit
+    });
+
+    it('eclipses a geostationary satellite for about 70 minutes at equinox', () => {
+        // Equatorial GEO, followed for a day around the March equinox
+        let minutes = 0;
+        for (let t = Date.UTC(2026, 2, 20); t < Date.UTC(2026, 2, 21); t += 60_000) {
+            const d = new Date(t);
+            const s = calculateSunPosition(d);
+            // Fixed Earth-fixed point on the equator at GEO radius, longitude 0
+            if (shadowState({ x: 42164, y: 0, z: 0 }, s) === 'umbra') minutes++;
+        }
+        expect(minutes).toBeGreaterThan(60);
+        expect(minutes).toBeLessThan(75);
+    });
+});
+
+describe('Short passes between two scan samples are found', () => {
+    it('finds every pass a 2-second scan finds (ISS, 20° mask, 2 days, any scan phase)', () => {
+        const rec = getSatrec(ISS1, ISS2);
+        const t0 = EPOCH.getTime(), t1 = t0 + 2 * 86_400_000, mask = 20;
+        const brute: number[] = [];
+        let above = false, rise = 0;
+        for (let t = t0; t <= t1; t += 2000) {
+            const s = stateAt(rec, new Date(t));
+            const el = s ? lookAngles(s, ISTANBUL).elevationDeg : -90;
+            if (el >= mask && !above) { above = true; rise = t; }
+            if (el < mask && above) { above = false; if (t - rise >= 4000) brute.push(rise); }
+        }
+        expect(brute.length).toBeGreaterThan(5);
+        // The scan starts at different phases, so a short pass can't hide
+        // behind a lucky alignment of the 60 s samples.
+        for (const offset of [0, 15_000, 30_000, 45_000]) {
+            const passes = predictPassesForSatrec(rec, ISTANBUL, new Date(t0 + offset), new Date(t1), mask);
+            for (const r of brute.filter((b) => b > t0 + offset + 120_000)) {
+                expect(passes.some((p) => Math.abs(p.aosTime.getTime() - r) <= 3000)).toBe(true);
+            }
+        }
     });
 });
 

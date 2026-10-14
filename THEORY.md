@@ -107,8 +107,11 @@ range rate = (ρ · v_ecf) / |ρ|     (positive = moving away)
 A pass is the interval in which elevation ≥ the mask (10° by default,
 adjustable in settings).
 
-1. **Scan** the window every 60 s. A LEO pass above 10° lasts several minutes,
-   so none is skipped.
+1. **Scan** the window every 60 s. A short pass can rise above the mask and
+   set again between two samples, so whenever three samples below the mask
+   peak in the middle (within 15° of the mask), that interval is searched for
+   its culmination; if the peak clears the mask, rise and set are bisected on
+   either side. Without this, a 44-second ISS pass above 20° was missed.
 2. **Bisect** each sign change of (elevation − mask) down to 0.5 s to get rise
    (AOS) and set (LOS).
 3. **Golden-section search** between AOS and LOS for culmination; elevation
@@ -125,8 +128,22 @@ horizon (civil twilight). The pass is checked every 30 s plus its ends and
 culmination: evening passes often enter the shadow before their highest
 point. The app says "sunlit in a dark sky" rather than "visible" because it
 doesn't estimate brightness — a small cubesat can be sunlit and still far too
-faint to see. Shadow uses a cylindrical Earth-shadow model, which is accurate to
-a few seconds at the shadow boundary.
+faint to see.
+
+**Earth's shadow** is a cone, not a cylinder (Vallado 2013, Algorithm 34).
+With the Sun's radius R☉ = 696,000 km, the Earth's R⊕ = 6,378.137 km and the
+Sun's distance r☉, the umbra and penumbra half-angles are
+
+    α_umb = asin((R☉ − R⊕) / r☉) ≈ 0.264°,   α_pen = asin((R☉ + R⊕) / r☉) ≈ 0.269°
+
+A satellite a distance d behind the Earth (along the anti-Sun axis) and s
+from that axis is in the umbra if s ≤ tan α_umb · (R⊕ / sin α_umb − d), and in
+the penumbra if s ≤ tan α_pen · (R⊕ / sin α_pen + d). In the penumbra part of
+the Sun is still visible and the satellite still shines, so only the umbra
+counts as "in shadow". For the ISS the umbra starts ~4 s later and ends ~5 s
+earlier than a cylinder of the Earth's radius would say; a geostationary
+satellite at equinox spends about 70 minutes in it. The atmosphere is not
+allowed for. — `shadowState` in `src/lib/CoordinateConverter.ts`
 
 Not modelled: atmospheric refraction (≈ 0.5° at the horizon, so real rises are
 a little earlier), and the Earth's oblateness in the horizon itself.

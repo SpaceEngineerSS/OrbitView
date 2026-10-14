@@ -36,6 +36,15 @@ GEO satellite showed about 3 km/s of range rate, roughly 100 kHz at 12 GHz.
 | Pass already in progress at window start | — | flagged, starts at the window |
 | Pass still in progress at window end | the same pass in a wider window | same LOS to 2 s |
 | "Sunlit" flag over three days | 5-second scan of sunlight and sky darkness | any sunlit stretch over 30 s is flagged; nothing in shadow is |
+| Short passes between scan samples (ISS, 20° mask, 2 days, 4 scan phases) | 2-second brute-force scan | every pass found, rise within 3 s |
+
+## Earth's shadow — `science-regressions.test.ts`
+
+| What | Assertion |
+|---|---|
+| Day side, on the axis behind the Earth, edges at GEO distance | sunlit / umbra / penumbra as the cone geometry says |
+| ISS over one orbit | ~35 min of umbra, 3–20 s shorter than the old cylinder |
+| Geostationary satellite at the March equinox | 60–75 min of umbra |
 
 ## Lifetime
 
